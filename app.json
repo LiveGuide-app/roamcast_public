@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Roamcastv7",
+    "slug": "Roamcastv7",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "roamcastv7",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "plugins": [
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc",
+      "expo-av"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.roamcastv7.app",
+      "minimumSystemVersion": "13.0",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Roamcast needs access to your microphone to enable audio streaming during tours",
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.roamcastv7.app",
+      "permissions": ["android.permission.RECORD_AUDIO"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51R7dsS2XCNsYZxfb1hJjiEjZZOs67vBVTEZf6VyWKNtG20Yih47P3Eo7PsFIu12Kiaq8YilGKWHMMfOGBNoPhJLg008gilzMkA",
+      "EXPO_PUBLIC_APP_URL_SCHEME": "roamcastv7"
+    }
+  }
+}
