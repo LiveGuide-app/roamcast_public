@@ -1,0 +1,2 @@
+[functions.stripe-onboarding]
+verify_jwt = true 

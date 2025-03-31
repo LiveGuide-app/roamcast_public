@@ -1,0 +1,2 @@
+[functions.stripe-dashboard-link]
+verify_jwt = true 

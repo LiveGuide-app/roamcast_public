@@ -1,0 +1,13 @@
+[global]
+runtime = "deno"
+entrypoint = "index.ts"
+
+[global.environment]
+STRIPE_SECRET_KEY = ""
+STRIPE_PUBLISHABLE_KEY = ""
+SUPABASE_URL = ""
+SUPABASE_SERVICE_ROLE_KEY = ""
+
+[[global.environment]]
+name = "STRIPE_SECRET_KEY"
+value = "" 

@@ -1,0 +1,9 @@
+[global]
+runtime = "deno"
+entrypoint = "index.ts"
+
+[global.environment]
+STRIPE_SECRET_KEY = ""
+STRIPE_TIP_WEBHOOK_SECRET = ""
+SUPABASE_URL = ""
+SUPABASE_SERVICE_ROLE_KEY = "" 
