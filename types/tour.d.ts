@@ -33,4 +33,25 @@ export class TourError extends Error {
 
 export function createTour(input: CreateTourInput): Promise<Tour>;
 export function getTour(tourId: string): Promise<Tour>;
-export function updateTourStatus(tourId: string, status: TourStatus): Promise<Tour>; 
+export function updateTourStatus(tourId: string, status: TourStatus): Promise<Tour>;
+
+// Hook Return Types
+export type UseTourManagementReturn = {
+  tour: Tour | null;
+  isLoading: boolean;
+  error: TourError | null;
+  isConnected: boolean;
+  isMuted: boolean;
+  onToggleMute: () => void;
+  onLeaveTour: () => Promise<void>;
+  onRatingSubmit: (rating: number) => Promise<void>;
+};
+
+export type UseTourPaymentReturn = {
+  isPaymentReady: boolean;
+  isLoading: boolean;
+  error: Error | null;
+  onTipSubmit: (amount: TipAmount) => Promise<void>;
+};
+
+export type TipAmount = 500 | 1000 | 2000 | 5000; 
