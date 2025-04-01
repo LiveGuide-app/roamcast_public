@@ -4,6 +4,7 @@ export type Tour = {
   status: 'pending' | 'active' | 'completed' | 'cancelled';
   unique_code: string;
   created_at: string;
+  participant_id?: string;
 };
 
 export type TourParticipant = {

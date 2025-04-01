@@ -1,4 +1,4 @@
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/config/theme';
@@ -6,10 +6,7 @@ import { TourPendingScreen } from '@/components/tour/TourPendingScreen';
 import { TourActiveScreen } from '@/components/tour/TourActiveScreen';
 import { TourCompletedScreen } from '@/components/tour/TourCompletedScreen';
 import { useTourManagement } from '@/hooks/useTourManagement';
-import { useTourPayment } from '@/hooks/useTourPayment';
-import { useCallback } from 'react';
-import { getDeviceId } from '@/services/device';
-import { TipAmount } from '@/types/tour';
+import { useEffect } from 'react';
 
 export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -25,18 +22,6 @@ export default function TourCodeScreen() {
     onLeaveTour,
     onRatingSubmit
   } = useTourManagement(code);
-
-  const {
-    isPaymentReady,
-    isLoading: isPaymentLoading,
-    handleTip
-  } = useTourPayment();
-
-  const handleTipSubmit = useCallback(async (amount: TipAmount) => {
-    if (!tour?.id) return;
-    const deviceId = await getDeviceId();
-    await handleTip(tour.id, amount);
-  }, [tour?.id, handleTip]);
 
   if (isLoading) {
     return (
@@ -78,7 +63,6 @@ export default function TourCodeScreen() {
         <TourCompletedScreen
           tour={tour}
           onRatingSubmit={onRatingSubmit}
-          onTipSubmit={handleTipSubmit}
           onLeaveTour={onLeaveTour}
         />
       )}

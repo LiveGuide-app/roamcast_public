@@ -61,6 +61,8 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
       console.log('Found tour participant:', participant);
       if (participant) {
         setTourParticipantId(participant.id);
+        // Update tour with participant_id
+        setTour(prev => prev ? { ...prev, participant_id: participant.id } : null);
       } else {
         console.error('No tour participant found for:', { tourId: tourData.id, deviceId });
       }

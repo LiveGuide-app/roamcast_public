@@ -11,7 +11,6 @@ export default function GuideProfile() {
   const router = useRouter();
   const { signOut, user, session } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [stripeAccountStatus, setStripeAccountStatus] = useState<string | null>(null);
   const [stripeAccountEnabled, setStripeAccountEnabled] = useState<boolean>(false);
 
   useEffect(() => {
@@ -24,7 +23,7 @@ export default function GuideProfile() {
       console.log('User ID:', user?.id);
       const { data: userData, error } = await supabase
         .from('users')
-        .select('stripe_account_status, stripe_account_enabled')
+        .select('stripe_account_enabled')
         .eq('id', user?.id)
         .is('deleted_at', null)
         .maybeSingle();
@@ -33,11 +32,8 @@ export default function GuideProfile() {
       if (error) throw error;
 
       if (userData) {
-        setStripeAccountStatus(userData.stripe_account_status);
         setStripeAccountEnabled(userData.stripe_account_enabled);
       } else {
-        // Set default values if no user data is found
-        setStripeAccountStatus(null);
         setStripeAccountEnabled(false);
       }
     } catch (error) {
@@ -122,9 +118,6 @@ export default function GuideProfile() {
             <Text style={styles.buttonText}>Set Up Payments</Text>
           </TouchableOpacity>
         )}
-        <Text style={styles.statusText}>
-          Status: {stripeAccountStatus}
-        </Text>
       </View>
 
       <View style={styles.section}>
@@ -224,15 +217,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  statusText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
   logoutButton: {
     margin: spacing.lg,
     backgroundColor: colors.error.light,
-    
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',

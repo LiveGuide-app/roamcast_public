@@ -41,18 +41,19 @@ serve(async (req) => {
       )
     }
 
-    // Create dashboard link
-    const link = await stripe.accounts.createLoginLink(
-      guide.stripe_account_id
-    )
+    // Construct the Stripe dashboard URL for Standard account
+    const dashboardUrl = `https://dashboard.stripe.com/b/${guide.stripe_account_id}`
 
-    return new Response(JSON.stringify({ url: link.url }), {
+    return new Response(JSON.stringify({ url: dashboardUrl }), {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
     console.error('Error creating dashboard link:', error)
     return new Response(
-      JSON.stringify({ error: 'Failed to create dashboard link' }),
+      JSON.stringify({ 
+        error: 'Failed to create dashboard link',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
