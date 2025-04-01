@@ -19,9 +19,13 @@ export class TourError extends Error {
 }
 
 export async function createTour(input: CreateTourInput): Promise<Tour> {
-  const { data: { user } } = await supabase.auth.getUser();
+  console.log('Starting tour creation...');
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  console.log('Auth state:', { user, authError });
   
   if (!user) {
+    console.log('No user found in auth state');
     throw new TourError('User must be authenticated to create a tour', TourErrorCode.UNAUTHORIZED);
   }
 

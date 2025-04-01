@@ -7,6 +7,9 @@ import { TourActiveScreen } from '@/components/tour/TourActiveScreen';
 import { TourCompletedScreen } from '@/components/tour/TourCompletedScreen';
 import { useTourManagement } from '@/hooks/useTourManagement';
 import { useTourPayment } from '@/hooks/useTourPayment';
+import { useCallback } from 'react';
+import { getDeviceId } from '@/services/device';
+import { TipAmount } from '@/types/tour';
 
 export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -26,8 +29,14 @@ export default function TourCodeScreen() {
   const {
     isPaymentReady,
     isLoading: isPaymentLoading,
-    onTipSubmit
+    handleTip
   } = useTourPayment();
+
+  const handleTipSubmit = useCallback(async (amount: TipAmount) => {
+    if (!tour?.id) return;
+    const deviceId = await getDeviceId();
+    await handleTip(tour.id, amount);
+  }, [tour?.id, handleTip]);
 
   if (isLoading) {
     return (
@@ -69,7 +78,7 @@ export default function TourCodeScreen() {
         <TourCompletedScreen
           tour={tour}
           onRatingSubmit={onRatingSubmit}
-          onTipSubmit={onTipSubmit}
+          onTipSubmit={handleTipSubmit}
           onLeaveTour={onLeaveTour}
         />
       )}

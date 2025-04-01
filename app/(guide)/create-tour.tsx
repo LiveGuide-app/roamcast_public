@@ -39,7 +39,7 @@ export default function CreateTour() {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Tour Name</Text>
           <TextInput
-            style={[styles.input, error && styles.inputError]}
+            style={[styles.input, error ? styles.inputError : null]}
             value={name}
             onChangeText={(text) => {
               setName(text);
