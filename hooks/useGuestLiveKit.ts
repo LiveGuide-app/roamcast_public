@@ -1,8 +1,9 @@
 import { Room, RoomEvent, RemoteParticipant, LocalParticipant } from 'livekit-client';
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../components/auth/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
+import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 
 interface GuestLiveKitState {
   isConnected: boolean;
@@ -46,7 +47,7 @@ export const useGuestLiveKit = (tourId: string) => {
   const connect = useCallback(async () => {
     try {
       const token = await getToken();
-      const wsUrl = process.env.EXPO_PUBLIC_LIVEKIT_WS_URL;
+      const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
       if (!wsUrl) {
         throw new Error('LiveKit WebSocket URL not configured');
@@ -55,7 +56,6 @@ export const useGuestLiveKit = (tourId: string) => {
       const room = new Room({
         adaptiveStream: true,
         dynacast: true,
-        autoSubscribe: true, // Automatically subscribe to guide's audio
       });
 
       // Set up event listeners

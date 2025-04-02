@@ -9,7 +9,13 @@ module.exports = function (api) {
         moduleName: '@env',
         path: '.env',
         blacklist: null,
-        whitelist: ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_ANON_KEY', 'EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'EXPO_PUBLIC_APP_URL_SCHEME'],
+        whitelist: [
+          'EXPO_PUBLIC_SUPABASE_URL',
+          'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+          'EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+          'EXPO_PUBLIC_APP_URL_SCHEME',
+          'EXPO_PUBLIC_LIVEKIT_WS_URL'
+        ],
         safe: false,
         allowUndefined: true,
       }],

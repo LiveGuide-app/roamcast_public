@@ -18,8 +18,10 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Roamcast needs access to your microphone to enable audio streaming during tours",
         "UIBackgroundModes": [
+          "audio",
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bitcode": false
     },

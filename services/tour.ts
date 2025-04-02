@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 import type { Tour, TourStatus, CreateTourInput, TourParticipant } from '../types/tour';
 
 export type { Tour, TourStatus, CreateTourInput, TourParticipant };

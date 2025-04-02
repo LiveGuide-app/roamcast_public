@@ -1,4 +1,5 @@
 import { Room, LocalParticipant, RemoteParticipant, LocalTrack } from '@livekit/react-native';
+import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 
 export interface LiveKitState {
   isConnected: boolean;
@@ -23,4 +24,4 @@ export type GuideIdentity = `guide-${string}`;
 export type ListenerIdentity = string; // This will be the UUID from getDeviceId()
 
 // WebSocket URL type from environment variables
-export type LiveKitWebSocketUrl = typeof process.env.EXPO_PUBLIC_LIVEKIT_WS_URL; 
+export type LiveKitWebSocketUrl = typeof EXPO_PUBLIC_LIVEKIT_WS_URL; 

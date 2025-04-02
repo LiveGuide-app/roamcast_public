@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
+import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 
 interface LiveKitState {
   isConnected: boolean;
@@ -77,7 +78,7 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       }
 
       const token = await getLiveKitToken();
-      const wsUrl = process.env.EXPO_PUBLIC_LIVEKIT_WS_URL;
+      const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
       if (!wsUrl) {
         throw new Error('LiveKit WebSocket URL not configured');
