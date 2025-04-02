@@ -73,3 +73,13 @@ yarn-error.log*
 *.tsbuildinfo
 
 node_modules
+
+# iCloud backups
+.icloud
+*/.icloud/*
+*.icloud
+Icon?
+**/Icon?
+**/Icon\r
+**(null)
+**/.icloud
