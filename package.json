@@ -11,8 +11,7 @@
   "dependencies": {
     "@anycable/web": "^1.1.0",
     "@config-plugins/react-native-webrtc": "^8.0.0",
-    "@livekit/react-native": "^2.6.5",
-    "@livekit/react-native-expo-plugin": "^1.0.1",
+    "@livekit/react-native": "^2.1.0",
     "@livekit/react-native-webrtc": "^125.0.9",
     "@react-native-async-storage/async-storage": "1.21.0",
     "@react-navigation/native": "^6.1.9",
@@ -28,6 +27,7 @@
     "expo-dev-client": "~3.3.12",
     "expo-device": "~5.9.3",
     "expo-linking": "~6.2.2",
+    "expo-modules-core": "~1.11.0",
     "expo-router": "3.4.10",
     "expo-secure-store": "~12.8.1",
     "expo-status-bar": "~1.11.1",
