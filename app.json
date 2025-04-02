@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "scheme": "roamcastv7",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -21,11 +20,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.roamcastv7.app",
-      "minimumSystemVersion": "13.0",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Roamcast needs access to your microphone to enable audio streaming during tours",
-        "UIBackgroundModes": ["audio"]
-      }
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      },
+      "bitcode": false
     },
     "android": {
       "adaptiveIcon": {
@@ -33,14 +34,27 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.roamcastv7.app",
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.BLUETOOTH",
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WAKE_LOCK"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51R7dsS2XCNsYZxfb1hJjiEjZZOs67vBVTEZf6VyWKNtG20Yih47P3Eo7PsFIu12Kiaq8YilGKWHMMfOGBNoPhJLg008gilzMkA",
-      "EXPO_PUBLIC_APP_URL_SCHEME": "roamcastv7"
-    }
+      "EXPO_PUBLIC_APP_URL_SCHEME": "roamcastv7",
+      "eas": {
+        "projectId": "34e80e5c-a714-42f6-bc4c-00cbda250acc"
+      }
+    },
+    "owner": "rrohner"
   }
 }
