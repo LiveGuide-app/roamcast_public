@@ -20,5 +20,9 @@
   },
   "submit": {
     "production": {}
+  },
+  "projectId": "34e80e5c-a714-42f6-bc4c-00cbda250acc",
+  "git": {
+    "repository": "https://github.com/LiveGuide-app/roamcast.git"
   }
 }
