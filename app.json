@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Roamcastv7",
-    "slug": "Roamcastv7",
+    "name": "Roamcast",
+    "slug": "Roamcast",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "roamcastv7",
+    "scheme": "roamcast",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.roamcastv7.app",
+      "bundleIdentifier": "com.roamcast.app",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Roamcast needs access to your microphone to enable audio streaming during tours",
         "UIBackgroundModes": [
@@ -28,9 +28,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#00615f"
       },
-      "package": "com.roamcastv7.app",
+      "package": "com.roamcast.app",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_NETWORK_STATE",
