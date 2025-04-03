@@ -1,16 +1,21 @@
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/config/theme';
 import { TourPendingScreen } from '@/components/tour/TourPendingScreen';
 import { TourActiveScreen } from '@/components/tour/TourActiveScreen';
 import { TourCompletedScreen } from '@/components/tour/TourCompletedScreen';
+import { TourErrorScreen } from '@/components/tour/TourErrorScreen';
 import { useTourManagement } from '@/hooks/useTourManagement';
-import { useEffect } from 'react';
 
 export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const router = useRouter();
+  
+  if (!code) {
+    router.replace('/');
+    return null;
+  }
   
   const {
     tour,
@@ -32,12 +37,11 @@ export default function TourCodeScreen() {
   }
 
   if (error) {
-    // Error handling is done in the hook
-    return null;
+    return <TourErrorScreen message={error.message} />;
   }
 
   if (!tour) {
-    return null;
+    return <TourErrorScreen />;
   }
 
   return (

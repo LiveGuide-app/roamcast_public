@@ -5,8 +5,8 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 
-// Enable LiveKit debug logging
-setLogLevel(LogLevel.debug);
+// Set LiveKit logging to warnings and errors only
+setLogLevel(LogLevel.warn);
 
 interface GuestLiveKitState {
   isConnected: boolean;
@@ -52,14 +52,9 @@ export const useGuestLiveKit = (tourId: string) => {
       const token = await getToken();
       const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
-      console.log('Guest attempting to connect to LiveKit');
-      console.log('WebSocket URL:', wsUrl);
-
       if (!wsUrl) {
         throw new Error('LiveKit WebSocket URL not configured');
       }
-
-      console.log('Token obtained successfully');
 
       const room = new Room({
         adaptiveStream: true,
@@ -68,7 +63,6 @@ export const useGuestLiveKit = (tourId: string) => {
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
-        console.log('Guest connected to LiveKit room');
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -79,7 +73,6 @@ export const useGuestLiveKit = (tourId: string) => {
       });
 
       room.on(RoomEvent.Disconnected, () => {
-        console.log('Guest disconnected from LiveKit room');
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -90,7 +83,6 @@ export const useGuestLiveKit = (tourId: string) => {
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-        console.log('Participant connected:', participant.identity);
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
@@ -98,7 +90,6 @@ export const useGuestLiveKit = (tourId: string) => {
       });
 
       room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-        console.log('Participant disconnected:', participant.identity);
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),

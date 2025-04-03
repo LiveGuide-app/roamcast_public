@@ -1,11 +1,12 @@
 import { Room, RoomEvent, RemoteParticipant, LocalParticipant, RoomOptions, setLogLevel, LogLevel } from 'livekit-client';
+import { AudioSession } from '@livekit/react-native';
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 
-// Enable LiveKit debug logging
-setLogLevel(LogLevel.debug);
+// Set LiveKit logging to warnings and errors only
+setLogLevel(LogLevel.warn);
 
 interface GuideLiveKitState {
   isConnected: boolean;
@@ -24,6 +25,26 @@ export const useGuideLiveKit = (tourId: string) => {
     remoteParticipants: [],
     isMicrophoneEnabled: false,
   });
+
+  // Initialize audio session
+  const initializeAudio = useCallback(async () => {
+    try {
+      await AudioSession.startAudioSession();
+    } catch (error) {
+      console.error('Failed to start audio session:', error);
+      throw error;
+    }
+  }, []);
+
+  // Clean up audio session
+  const cleanupAudio = useCallback(async () => {
+    try {
+      await AudioSession.stopAudioSession();
+    } catch (error) {
+      console.error('Failed to stop audio session:', error);
+      throw error;
+    }
+  }, []);
 
   const getToken = useCallback(async () => {
     try {
@@ -51,14 +72,9 @@ export const useGuideLiveKit = (tourId: string) => {
       const token = await getToken();
       const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
-      console.log('Guide attempting to connect to LiveKit');
-      console.log('WebSocket URL:', wsUrl);
-
       if (!wsUrl) {
         throw new Error('LiveKit WebSocket URL not configured');
       }
-
-      console.log('Token obtained successfully');
 
       const room = new Room({
         adaptiveStream: true,
@@ -67,7 +83,6 @@ export const useGuideLiveKit = (tourId: string) => {
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
-        console.log('Guide connected to LiveKit room');
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -78,7 +93,6 @@ export const useGuideLiveKit = (tourId: string) => {
       });
 
       room.on(RoomEvent.Disconnected, () => {
-        console.log('Guide disconnected from LiveKit room');
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -89,7 +103,6 @@ export const useGuideLiveKit = (tourId: string) => {
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-        console.log('Guest connected:', participant.identity);
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
@@ -97,7 +110,6 @@ export const useGuideLiveKit = (tourId: string) => {
       });
 
       room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-        console.log('Guest disconnected:', participant.identity);
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
@@ -133,7 +145,16 @@ export const useGuideLiveKit = (tourId: string) => {
   const toggleMicrophone = useCallback(async (enabled: boolean) => {
     try {
       if (state.room?.localParticipant) {
+        if (enabled) {
+          await initializeAudio();
+        }
+        
         await state.room.localParticipant.setMicrophoneEnabled(enabled);
+        
+        if (!enabled) {
+          await cleanupAudio();
+        }
+        
         setState(prev => ({
           ...prev,
           isMicrophoneEnabled: enabled,
@@ -143,14 +164,15 @@ export const useGuideLiveKit = (tourId: string) => {
       console.error('Error toggling microphone:', error);
       throw error;
     }
-  }, [state.room?.localParticipant]);
+  }, [state.room?.localParticipant, initializeAudio, cleanupAudio]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      cleanupAudio().catch(console.error);
       disconnect();
     };
-  }, [disconnect]);
+  }, [disconnect, cleanupAudio]);
 
   return {
     ...state,

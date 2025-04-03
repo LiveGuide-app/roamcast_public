@@ -5,8 +5,8 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 
-// Enable LiveKit debug logging
-setLogLevel(LogLevel.debug);
+// Set LiveKit logging to warnings and errors only
+setLogLevel(LogLevel.warn);
 
 interface LiveKitState {
   isConnected: boolean;
@@ -29,7 +29,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
   // Add effect to handle tourId changes
   useEffect(() => {
     if (tourId && !state.isConnected) {
-      console.log('Tour ID changed, attempting to connect:', tourId);
       connectToRoom();
     }
   }, [tourId]);
@@ -37,7 +36,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
   const getLiveKitToken = useCallback(async () => {
     try {
       if (!tourId) {
-        console.log('No tour ID available for token generation');
         throw new Error('Tour ID is required');
       }
 
@@ -45,8 +43,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       if (role === 'listener') {
         deviceId = await getDeviceId();
       }
-
-      console.log('Getting LiveKit token with params:', { tourId, role, deviceId });
 
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: { 
@@ -61,7 +57,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       });
 
       if (error) {
-        console.error('LiveKit token error:', error);
         throw new Error(`Failed to get LiveKit token: ${error.message}`);
       }
       return data.token;
@@ -73,11 +68,7 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
 
   const connectToRoom = useCallback(async () => {
     try {
-      console.log('Attempting to connect with tourId:', tourId);
-      console.log('WebSocket URL:', EXPO_PUBLIC_LIVEKIT_WS_URL);
-      
       if (!tourId) {
-        console.log('No tour ID available, skipping connection');
         return;
       }
 
@@ -88,9 +79,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
         throw new Error('LiveKit WebSocket URL not configured');
       }
 
-      console.log('Connecting to LiveKit with URL:', wsUrl);
-      console.log('Token obtained successfully');
-
       // Create room instance
       const room = new Room({
         adaptiveStream: true,
@@ -99,7 +87,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
-        console.log('Connected to LiveKit room');
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -110,7 +97,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       });
 
       room.on(RoomEvent.Disconnected, () => {
-        console.log('Disconnected from LiveKit room');
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -121,7 +107,6 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-        console.log('Participant connected:', participant.identity);
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
@@ -129,14 +114,13 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       });
 
       room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-        console.log('Participant disconnected:', participant.identity);
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
         }));
       });
 
-      // Connect to room (LiveKit handles room creation/joining)
+      // Connect to room
       await room.connect(wsUrl, token);
     } catch (error) {
       console.error('Error connecting to LiveKit room:', error);

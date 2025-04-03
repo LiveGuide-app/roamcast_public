@@ -15,8 +15,19 @@ serve(async (req) => {
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
-      Deno.env.get('STRIPE_WEBHOOK_SECRET')!
+      Deno.env.get('STRIPE_TIP_WEBHOOK_SECRET')!
     )
+
+    // Check if this is a Connect account event
+    const isConnectEvent = event.account !== undefined
+
+    // If it's not a Connect event and we're expecting one, ignore it
+    if (!isConnectEvent) {
+      console.log('Received non-Connect event, ignoring:', event.type)
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -34,6 +45,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('payment_intent_id', paymentIntent.id)
+          .eq('stripe_account_id', event.account)
         break
 
       case 'payment_intent.payment_failed':
@@ -46,6 +58,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('payment_intent_id', failedPaymentIntent.id)
+          .eq('stripe_account_id', event.account)
         break
 
       case 'payment_intent.processing':
@@ -58,6 +71,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('payment_intent_id', processingPaymentIntent.id)
+          .eq('stripe_account_id', event.account)
         break
 
       case 'payment_intent.requires_payment_method':
@@ -70,6 +84,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('payment_intent_id', requiresPaymentMethodIntent.id)
+          .eq('stripe_account_id', event.account)
         break
 
       case 'payment_intent.requires_confirmation':
@@ -82,6 +97,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('payment_intent_id', requiresConfirmationIntent.id)
+          .eq('stripe_account_id', event.account)
         break
     }
 

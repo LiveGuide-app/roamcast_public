@@ -1,6 +1,6 @@
 import React from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
-import Constants from 'expo-constants';
+import { EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY, EXPO_PUBLIC_APP_URL_SCHEME } from '@env';
 
 type ConnectedStripeProviderProps = {
   children: React.ReactNode;
@@ -11,10 +11,7 @@ export const ConnectedStripeProvider: React.FC<ConnectedStripeProviderProps> = (
   children, 
   stripeAccountId 
 }) => {
-  const stripeKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  const urlScheme = Constants.expoConfig?.extra?.EXPO_PUBLIC_APP_URL_SCHEME;
-
-  if (!stripeKey || !urlScheme) {
+  if (!EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || !EXPO_PUBLIC_APP_URL_SCHEME) {
     console.error('Missing required Stripe configuration');
     return null;
   }
@@ -22,8 +19,8 @@ export const ConnectedStripeProvider: React.FC<ConnectedStripeProviderProps> = (
   // Create a scoped StripeProvider with the connected account ID
   return (
     <StripeProvider
-      publishableKey={stripeKey}
-      urlScheme={urlScheme}
+      publishableKey={EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      urlScheme={EXPO_PUBLIC_APP_URL_SCHEME}
       stripeAccountId={stripeAccountId}
     >
       {children}

@@ -58,7 +58,6 @@ export const TourCompletedScreen = ({
         if (userError) throw userError;
         
         if (userData?.stripe_account_id) {
-          console.log('Guide stripe account ID:', userData.stripe_account_id);
           setStripeAccountId(userData.stripe_account_id);
         } else {
           console.warn('Guide does not have a Stripe account set up');

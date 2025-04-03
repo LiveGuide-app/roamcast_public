@@ -8,8 +8,7 @@ module.exports = function (api) {
       ['module:react-native-dotenv', {
         moduleName: '@env',
         path: '.env',
-        blacklist: null,
-        whitelist: [
+        envList: [
           'EXPO_PUBLIC_SUPABASE_URL',
           'EXPO_PUBLIC_SUPABASE_ANON_KEY',
           'EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY',

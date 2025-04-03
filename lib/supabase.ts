@@ -15,6 +15,7 @@ console.log('Supabase initialization:', {
 });
 
 if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables. Please check your .env file and app configuration.');
   throw new Error('Missing Supabase environment variables');
 }
 

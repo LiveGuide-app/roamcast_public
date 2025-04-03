@@ -37,7 +37,7 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
   const fetchTour = useCallback(async () => {
     try {
       if (!code) {
-        throw new Error('Tour code is required');
+        throw new TourError('Tour code is required', TourErrorCode.NOT_FOUND);
       }
       const tourData = await getTourByCode(code);
       setTour(tourData);
@@ -54,8 +54,11 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
         .single();
 
       if (participantError) {
+        if (participantError.code === 'PGRST116') {
+          throw new TourError("You don't have access to this tour", TourErrorCode.UNAUTHORIZED);
+        }
         console.error('Error fetching tour participant:', participantError);
-        throw participantError;
+        throw new TourError('Unable to verify tour participation', TourErrorCode.NETWORK_ERROR);
       }
 
       console.log('Found tour participant:', participant);
@@ -65,12 +68,13 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
         setTour(prev => prev ? { ...prev, participant_id: participant.id } : null);
       } else {
         console.error('No tour participant found for:', { tourId: tourData.id, deviceId });
+        throw new TourError("You don't have access to this tour", TourErrorCode.UNAUTHORIZED);
       }
     } catch (error) {
       if (error instanceof TourError) {
         setError(error);
       } else {
-        setError(new TourError('Failed to load tour', TourErrorCode.NETWORK_ERROR));
+        setError(new TourError('Unable to load tour', TourErrorCode.NETWORK_ERROR));
       }
     } finally {
       setIsLoading(false);

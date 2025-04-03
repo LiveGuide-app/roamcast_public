@@ -116,7 +116,7 @@ serve(async (req) => {
     }
 
     const guideCurrency = participant.tours.users.stripe_default_currency || currency
-    const applicationFeeAmount = Math.round(amount * 0.05)
+    const applicationFeeAmount = Math.round(amount * 0.075)
     const stripeAccount = participant.tours.users.stripe_account_id
 
     try {
@@ -193,7 +193,8 @@ serve(async (req) => {
           currency: guideCurrency,
           status: 'pending',
           payment_intent_id: paymentIntent.id,
-          application_fee_amount: applicationFeeAmount
+          application_fee_amount: applicationFeeAmount,
+          stripe_account_id: stripeAccount
         })
 
       if (tipError) {
