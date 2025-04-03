@@ -6,8 +6,8 @@ import { enableScreens } from 'react-native-screens';
 import { registerGlobals } from '@livekit/react-native';
 import { useEffect } from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
-import Constants from 'expo-constants';
 import { View, Text } from 'react-native';
+import { EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY, EXPO_PUBLIC_APP_URL_SCHEME } from '@env';
 
 enableScreens();
 
@@ -27,18 +27,15 @@ export default function RootLayout() {
     }
   }, []);
 
-  const stripeKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  const urlScheme = Constants.expoConfig?.extra?.EXPO_PUBLIC_APP_URL_SCHEME;
-
-  if (!stripeKey || !urlScheme) {
+  if (!EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || !EXPO_PUBLIC_APP_URL_SCHEME) {
     return <DebugError error={new Error('Missing required environment variables')} />;
   }
 
   return (
     <SafeAreaProvider>
       <StripeProvider 
-        publishableKey={stripeKey}
-        urlScheme={urlScheme}
+        publishableKey={EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        urlScheme={EXPO_PUBLIC_APP_URL_SCHEME}
       >
         <AuthProvider>
           <ProtectedRoute>

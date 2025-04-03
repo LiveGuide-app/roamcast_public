@@ -1,8 +1,11 @@
-import { Room, RoomEvent, RemoteParticipant, LocalParticipant, RoomOptions } from 'livekit-client';
+import { Room, RoomEvent, RemoteParticipant, LocalParticipant, RoomOptions, setLogLevel, LogLevel } from 'livekit-client';
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
+
+// Enable LiveKit debug logging
+setLogLevel(LogLevel.debug);
 
 interface GuideLiveKitState {
   isConnected: boolean;
@@ -48,9 +51,14 @@ export const useGuideLiveKit = (tourId: string) => {
       const token = await getToken();
       const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
+      console.log('Guide attempting to connect to LiveKit');
+      console.log('WebSocket URL:', wsUrl);
+
       if (!wsUrl) {
         throw new Error('LiveKit WebSocket URL not configured');
       }
+
+      console.log('Token obtained successfully');
 
       const room = new Room({
         adaptiveStream: true,
