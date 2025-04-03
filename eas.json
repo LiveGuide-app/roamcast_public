@@ -9,13 +9,34 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "${EXPO_PUBLIC_SUPABASE_URL}",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "${EXPO_PUBLIC_SUPABASE_ANON_KEY}",
+        "EXPO_PUBLIC_LIVEKIT_WS_URL": "${EXPO_PUBLIC_LIVEKIT_WS_URL}",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "${EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_APP_URL_SCHEME": "${EXPO_PUBLIC_APP_URL_SCHEME}"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "${EXPO_PUBLIC_SUPABASE_URL}",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "${EXPO_PUBLIC_SUPABASE_ANON_KEY}",
+        "EXPO_PUBLIC_LIVEKIT_WS_URL": "${EXPO_PUBLIC_LIVEKIT_WS_URL}",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "${EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_APP_URL_SCHEME": "${EXPO_PUBLIC_APP_URL_SCHEME}"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "${EXPO_PUBLIC_SUPABASE_URL}",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "${EXPO_PUBLIC_SUPABASE_ANON_KEY}",
+        "EXPO_PUBLIC_LIVEKIT_WS_URL": "${EXPO_PUBLIC_LIVEKIT_WS_URL}",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "${EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_APP_URL_SCHEME": "${EXPO_PUBLIC_APP_URL_SCHEME}"
+      }
     }
   },
   "submit": {
