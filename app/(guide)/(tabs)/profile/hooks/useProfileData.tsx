@@ -8,6 +8,7 @@ interface ProfileData {
   user: User | null;
   stripeAccountEnabled: boolean;
   profileImageUrl: string | null;
+  recommendationsLink: string | null;
   ratings: GuideRatings;
   isLoading: boolean;
   ratingError: string | null;
@@ -19,6 +20,7 @@ export const useProfileData = () => {
     user: authUser,
     stripeAccountEnabled: false,
     profileImageUrl: null,
+    recommendationsLink: null,
     ratings: { averageRating: 0, totalReviews: 0 },
     isLoading: true,
     ratingError: null,
@@ -30,10 +32,10 @@ export const useProfileData = () => {
       
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Fetch stripe account status and profile image
+      // Fetch stripe account status, profile image, and recommendations link
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('stripe_account_enabled, profile_image_url')
+        .select('stripe_account_enabled, profile_image_url, recommendations_link')
         .eq('id', user?.id)
         .single();
 
@@ -49,6 +51,7 @@ export const useProfileData = () => {
           user,
           stripeAccountEnabled: userData?.stripe_account_enabled || false,
           profileImageUrl: userData?.profile_image_url || null,
+          recommendationsLink: userData?.recommendations_link || null,
           ratings: guideRatings,
           isLoading: false,
         }));
@@ -58,6 +61,7 @@ export const useProfileData = () => {
           user,
           stripeAccountEnabled: userData?.stripe_account_enabled || false,
           profileImageUrl: userData?.profile_image_url || null,
+          recommendationsLink: userData?.recommendations_link || null,
           ratingError: 'Failed to load ratings',
           isLoading: false,
         }));
@@ -79,6 +83,31 @@ export const useProfileData = () => {
     }));
   };
 
+  const updateRecommendationsLink = async (link: string) => {
+    try {
+      setProfileData(prev => ({ ...prev, isLoading: true }));
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ recommendations_link: link })
+        .eq('id', profileData.user?.id);
+
+      if (error) throw error;
+
+      setProfileData(prev => ({
+        ...prev,
+        recommendationsLink: link,
+        isLoading: false,
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('Error updating recommendations link:', error);
+      setProfileData(prev => ({ ...prev, isLoading: false }));
+      return false;
+    }
+  };
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -87,5 +116,6 @@ export const useProfileData = () => {
     ...profileData,
     refreshProfile: loadProfile,
     updateProfileImageUrl,
+    updateRecommendationsLink,
   };
 }; 

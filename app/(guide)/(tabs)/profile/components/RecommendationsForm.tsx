@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { colors, spacing, borderRadius } from '@/config/theme';
 
 interface RecommendationsFormProps {
-  onSave: (password: string) => void;
+  recommendationsLink: string | null;
+  isLoading?: boolean;
+  onSave: (link: string) => void;
 }
 
 export const RecommendationsForm: React.FC<RecommendationsFormProps> = ({
+  recommendationsLink,
+  isLoading = false,
   onSave,
 }) => {
-  const [password, setPassword] = useState('');
+  const [link, setLink] = useState(recommendationsLink || '');
 
   return (
     <View style={styles.section}>
@@ -19,16 +23,23 @@ export const RecommendationsForm: React.FC<RecommendationsFormProps> = ({
       </Text>
       <TextInput
         style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
+        placeholder="Enter your recommendations link"
+        value={link}
+        onChangeText={setLink}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="url"
       />
       <TouchableOpacity 
         style={styles.saveButton}
-        onPress={() => onSave(password)}
+        onPress={() => onSave(link)}
+        disabled={isLoading}
       >
-        <Text style={styles.saveButtonText}>Save</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#008080" />
+        ) : (
+          <Text style={styles.saveButtonText}>Save</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -63,6 +74,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignSelf: 'flex-end',
+    opacity: 1,
   },
   saveButtonText: {
     color: '#008080',
