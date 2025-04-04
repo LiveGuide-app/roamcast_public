@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, TextInput, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, TextInput, StatusBar, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius, shadows } from '../../../config/theme';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -8,39 +8,131 @@ import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getGuideRatings, GuideRatings } from '../../../services/tour';
+import { User } from '@supabase/supabase-js';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { Buffer } from 'buffer';
 
 export default function GuideProfile() {
   const router = useRouter();
-  const { signOut, user, session } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signOut, user: authUser, session } = useAuth();
+  const [user, setUser] = useState<User | null>(authUser);
+  const [isLoading, setIsLoading] = useState(true);
   const [stripeAccountEnabled, setStripeAccountEnabled] = useState<boolean>(false);
   const [password, setPassword] = useState('');
+  const [ratings, setRatings] = useState<GuideRatings>({ averageRating: 0, totalReviews: 0 });
+  const [ratingError, setRatingError] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
-    fetchStripeStatus();
+    loadProfile();
   }, []);
 
-  const fetchStripeStatus = async () => {
+  const loadProfile = async () => {
     try {
-      console.log('Current user:', user);
-      console.log('User ID:', user?.id);
-      const { data: userData, error } = await supabase
+      setIsLoading(true);
+      setRatingError(null);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
+      // Fetch stripe account status and profile image
+      const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('stripe_account_enabled')
+        .select('stripe_account_enabled, profile_image_url')
         .eq('id', user?.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      console.log('Query result:', { userData, error });
+        .single();
 
-      if (error) throw error;
+      if (!userError && userData) {
+        setStripeAccountEnabled(userData.stripe_account_enabled || false);
+        setProfileImage(userData.profile_image_url);
+      }
 
-      if (userData) {
-        setStripeAccountEnabled(userData.stripe_account_enabled);
-      } else {
-        setStripeAccountEnabled(false);
+      // Fetch ratings
+      try {
+        console.log('Fetching ratings...');
+        const guideRatings = await getGuideRatings();
+        console.log('Received guide ratings:', guideRatings);
+        setRatings(guideRatings);
+      } catch (ratingError) {
+        console.error('Error fetching ratings:', ratingError);
+        setRatingError('Failed to load ratings');
       }
     } catch (error) {
-      console.error('Error fetching stripe status:', error);
+      console.error('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImagePick = async () => {
+    try {
+      // Request permissions
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to change your profile picture.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      // Early return if user cancelled
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      try {
+        setUploadingImage(true);
+        const imageUri = result.assets[0].uri;
+        
+        // Read the file
+        const base64 = await FileSystem.readAsStringAsync(imageUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Upload to Supabase Storage
+        const fileName = `${user?.id}-${Date.now()}.jpg`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('profile-images')
+          .upload(fileName, Buffer.from(base64, 'base64'), {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // Get public URL
+        const { data: publicUrl } = supabase.storage
+          .from('profile-images')
+          .getPublicUrl(fileName);
+
+        // Update user profile
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ profile_image_url: publicUrl.publicUrl })
+          .eq('id', user?.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        setProfileImage(publicUrl.publicUrl);
+      } finally {
+        setUploadingImage(false);
+      }
+    } catch (error) {
+      console.error('Error handling image:', error);
+      Alert.alert('Error', 'Failed to update profile picture. Please try again.');
     }
   };
 
@@ -97,19 +189,40 @@ export default function GuideProfile() {
       <ScrollView>
         <View style={styles.header}>
           <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>
-                {user?.email?.[0].toUpperCase() || 'G'}
-              </Text>
+            <TouchableOpacity 
+              style={styles.avatarContainer}
+              onPress={handleImagePick}
+              disabled={uploadingImage}
+            >
+              {uploadingImage ? (
+                <ActivityIndicator color={colors.primary.main} />
+              ) : profileImage ? (
+                <Image 
+                  source={{ uri: profileImage }} 
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {user?.email?.[0].toUpperCase() || 'G'}
+                </Text>
+              )}
               <View style={styles.editIconContainer}>
                 <Ionicons name="pencil" size={12} color="white" />
               </View>
-            </View>
-            <Text style={styles.name}>Marcus Lee</Text>
+            </TouchableOpacity>
+            <Text style={styles.name}>{user?.email || 'Guide'}</Text>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={16} color="#4CAF50" />
-              <Text style={styles.rating}>4.8</Text>
-              <Text style={styles.reviewCount}>(127 reviews)</Text>
+              {isLoading ? (
+                <ActivityIndicator size="small" color={colors.primary.main} />
+              ) : ratingError ? (
+                <Text style={styles.errorText}>{ratingError}</Text>
+              ) : (
+                <>
+                  <Text style={styles.rating}>{ratings.averageRating.toFixed(1)}</Text>
+                  <Text style={styles.reviewCount}>({ratings.totalReviews} reviews)</Text>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -302,4 +415,13 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: colors.background.paper,
   } as const,
+  errorText: {
+    color: colors.error.main,
+    fontSize: 14,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
 }); 

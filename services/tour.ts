@@ -352,4 +352,33 @@ export async function getRecentTours(deviceId: string): Promise<Tour[]> {
     console.error('Error in getRecentTours:', error);
     return []; // Return empty array instead of throwing to handle gracefully
   }
-} 
+}
+
+export interface GuideRatings {
+  averageRating: number;
+  totalReviews: number;
+}
+
+export const getGuideRatings = async (): Promise<GuideRatings> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new TourError('User must be authenticated to fetch ratings', TourErrorCode.UNAUTHORIZED);
+  }
+
+  const { data: ratings, error } = await supabase
+    .rpc('calculate_guide_ratings', { input_guide_id: user.id });
+
+  if (error) {
+    console.error('Error fetching guide ratings:', error);
+    throw new TourError('Failed to fetch guide ratings', TourErrorCode.NETWORK_ERROR);
+  }
+
+  // Handle the array response
+  const ratingsData = Array.isArray(ratings) ? ratings[0] : ratings;
+
+  return {
+    averageRating: Number(ratingsData?.average_rating) || 0,
+    totalReviews: Number(ratingsData?.total_reviews) || 0
+  };
+}; 
