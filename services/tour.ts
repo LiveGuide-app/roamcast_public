@@ -3,6 +3,12 @@ import type { Tour, TourStatus, CreateTourInput, TourParticipant } from '../type
 
 export type { Tour, TourStatus, CreateTourInput, TourParticipant };
 
+export interface GuideStats {
+  totalTours: number;
+  totalGuests: number;
+  totalEarnings: number;
+}
+
 export enum TourErrorCode {
   NOT_FOUND = 'NOT_FOUND',
   UNAUTHORIZED = 'UNAUTHORIZED',
@@ -89,7 +95,17 @@ export async function updateTourStatus(tourId: string, status: TourStatus): Prom
   return data;
 }
 
-export async function getGuideTours(): Promise<Tour[]> {
+interface TourTip {
+  amount: number;
+  status: string;
+}
+
+interface TourParticipantWithTips {
+  id: string;
+  tour_tips: TourTip[];
+}
+
+export const getGuideTours = async (): Promise<Tour[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
@@ -98,7 +114,17 @@ export async function getGuideTours(): Promise<Tour[]> {
 
   const { data, error } = await supabase
     .from('tours')
-    .select('*')
+    .select(`
+      *,
+      total_participants:tour_participants(count),
+      tour_participants(
+        id,
+        tour_tips(
+          amount,
+          status
+        )
+      )
+    `)
     .eq('guide_id', user.id)
     .order('created_at', { ascending: false });
 
@@ -107,8 +133,77 @@ export async function getGuideTours(): Promise<Tour[]> {
     throw new TourError('Failed to fetch tours', TourErrorCode.NETWORK_ERROR);
   }
 
-  return data;
-}
+  return data.map(tour => {
+    // Calculate total tips by summing up all completed tips
+    const totalTips = tour.tour_participants?.reduce((sum: number, participant: TourParticipantWithTips) => {
+      const participantTips = participant.tour_tips?.reduce((tipSum: number, tip: TourTip) => {
+        // Only count tips that are completed/succeeded
+        if (tip.status === 'succeeded') {
+          return tipSum + (tip.amount || 0);
+        }
+        return tipSum;
+      }, 0) || 0;
+      return sum + participantTips;
+    }, 0) || 0;
+
+    return {
+      ...tour,
+      total_participants: tour.total_participants?.[0]?.count || 0,
+      total_tips: totalTips
+    };
+  });
+};
+
+export const getGuideStats = async (): Promise<GuideStats> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new TourError('User must be authenticated to fetch stats', TourErrorCode.UNAUTHORIZED);
+  }
+
+  // Get all tours with their participants and tips
+  const { data: tourData, error: tourError } = await supabase
+    .from('tours')
+    .select(`
+      id,
+      tour_participants(
+        id,
+        tour_tips(
+          amount,
+          status
+        )
+      )
+    `)
+    .eq('guide_id', user.id);
+
+  if (tourError) {
+    console.error('Error fetching guide stats:', tourError);
+    throw new TourError('Failed to fetch guide stats', TourErrorCode.NETWORK_ERROR);
+  }
+
+  let totalGuests = 0;
+  let totalEarnings = 0;
+
+  tourData.forEach(tour => {
+    // Count total guests
+    totalGuests += tour.tour_participants?.length || 0;
+
+    // Sum up all completed tips
+    tour.tour_participants?.forEach(participant => {
+      participant.tour_tips?.forEach(tip => {
+        if (tip.status === 'succeeded') {
+          totalEarnings += tip.amount || 0;
+        }
+      });
+    });
+  });
+
+  return {
+    totalTours: tourData.length || 0,
+    totalGuests,
+    totalEarnings
+  };
+};
 
 export async function getTourByCode(code: string): Promise<Tour> {
   const { data, error } = await supabase

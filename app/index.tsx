@@ -13,6 +13,22 @@ export default function LandingScreen() {
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
+    // Set status bar for this screen
+    if (Platform.OS === 'android') {
+      StatusBar.setBackgroundColor(colors.primary.main);
+    }
+    StatusBar.setBarStyle('light-content');
+
+    // Reset status bar when component unmounts
+    return () => {
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+      }
+      StatusBar.setBarStyle('dark-content');
+    };
+  }, []);
+
+  useEffect(() => {
     async function loadRecentTours() {
       try {
         const deviceId = await getDeviceId();
@@ -77,10 +93,6 @@ export default function LandingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar
-        backgroundColor={colors.primary.main}
-        barStyle="light-content"
-      />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}

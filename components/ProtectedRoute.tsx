@@ -28,9 +28,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     if (!session && inGuideGroup) {
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
-      router.replace('/(guide)/dashboard');
+      router.replace('/(guide)/tours');
     } else if (session && !inGuideGroup) {
-      router.replace('/(guide)/dashboard');
+      router.replace('/(guide)/tours');
     }
   }, [session, loading, segments]);
 

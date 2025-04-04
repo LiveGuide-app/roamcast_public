@@ -6,6 +6,8 @@ export type Tour = {
   created_at: string;
   participant_id?: string;
   guide_name?: string;
+  total_participants?: number;
+  total_tips?: number;
 };
 
 export type TourParticipant = {

@@ -1,5 +1,5 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar } from 'react-native';
+import { useState, useEffect } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../../config/theme';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../components/auth/AuthContext';
@@ -13,6 +13,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
+
+  useEffect(() => {
+    // Ensure light status bar for login screen
+    if (Platform.OS === 'android') {
+      StatusBar.setBackgroundColor('transparent');
+    }
+    StatusBar.setBarStyle('dark-content');
+  }, []);
 
   const handleLogin = async () => {
     // Clear previous errors
@@ -32,7 +40,7 @@ export default function LoginScreen() {
       if (error) {
         setErrors([{ field: 'general', message: error.message }]);
       } else {
-        router.replace('/(guide)/dashboard');
+        router.replace('/(guide)/tours');
       }
     } catch (error) {
       setErrors([{ field: 'general', message: 'An unexpected error occurred' }]);
@@ -60,7 +68,7 @@ export default function LoginScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={[styles.input, getFieldError('email') && styles.inputError]}
+              style={[styles.input, getFieldError('email') ? styles.inputError : null]}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -80,7 +88,7 @@ export default function LoginScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password</Text>
             <TextInput
-              style={[styles.input, getFieldError('password') && styles.inputError]}
+              style={[styles.input, getFieldError('password') ? styles.inputError : null]}
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
