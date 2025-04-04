@@ -4,6 +4,11 @@ export const colors = {
     light: '#00807D',
     dark: '#004140',
   },
+  secondary: {
+    main: '#636E72',
+    light: '#95A5A6',
+    dark: '#2D3436',
+  },
   background: {
     default: '#F8F9FA',
     paper: '#FFFFFF',
@@ -19,8 +24,8 @@ export const colors = {
     light: '#ff7973',
   },
   warning: {
-    main: '#fffb9b',
-    light: '#fffb9b',
+    main: '#E5A13B',
+    light: '#E5A13B',
   },
   success: {
     main: '#67d695',

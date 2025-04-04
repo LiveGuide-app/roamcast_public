@@ -1,10 +1,12 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, StatusBar } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { colors, spacing, borderRadius, shadows } from '@/config/theme';
+import { colors, spacing, borderRadius } from '@/config/theme';
 import { createTour } from '@/services/tour';
 import { validateTourName } from '@/utils/validation';
 import { handleTourError } from '@/utils/error-handling';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '@/components/Button';
 
 export default function CreateTour() {
   const [name, setName] = useState('');
@@ -34,33 +36,41 @@ export default function CreateTour() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.form}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Tour Name</Text>
-          <TextInput
-            style={[styles.input, error ? styles.inputError : null]}
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              setError(null);
-            }}
-            placeholder="Enter tour name"
-            placeholderTextColor={colors.text.secondary}
-            editable={!isLoading}
-          />
-          {error && <Text style={styles.errorText}>{error}</Text>}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.default} />
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>{'<'}</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Tour</Text>
         </View>
+        
+        <View style={styles.contentContainer}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Tour Name</Text>
+            <TextInput
+              style={[styles.input, error ? styles.inputError : null]}
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                setError(null);
+              }}
+              placeholder="Historic Downtown Tour"
+              placeholderTextColor={colors.text.secondary}
+              editable={!isLoading}
+            />
+            {error && <Text style={styles.errorText}>{error}</Text>}
+          </View>
 
-        <TouchableOpacity 
-          style={[styles.button, styles.primaryButton, isLoading && styles.buttonDisabled]} 
-          onPress={handleCreateTour}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Creating...' : 'Create Tour'}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.footer}>
+            <Button 
+              title={isLoading ? 'Creating...' : 'Create Tour'}
+              onPress={handleCreateTour}
+              disabled={isLoading}
+            />
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -71,25 +81,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.default,
   },
-  form: {
-    padding: spacing.lg,
+  content: {
+    flex: 1,
+    padding: spacing.md,
   },
-  inputGroup: {
-    marginBottom: spacing.lg,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary.main,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
   },
-  label: {
-    fontSize: 14,
+  headerTitle: {
+    color: colors.text.white,
+    fontSize: 20,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  backButton: {
+    padding: spacing.sm,
+    marginRight: spacing.sm,
+    marginLeft: -spacing.sm,
+  },
+  backButtonText: {
+    color: colors.text.white,
+    fontSize: 24,
+    fontWeight: '400',
+  },
+  contentContainer: {
+    flex: 1,
+    marginTop: spacing.xl,
+  },
+  inputContainer: {
+    marginHorizontal: spacing.md,
+  },
+  inputLabel: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
     fontSize: 16,
     color: colors.text.primary,
-    ...shadows.small,
+    backgroundColor: colors.background.paper,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
   },
   inputError: {
     borderColor: colors.error.main,
@@ -100,23 +139,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: spacing.xs,
   },
-  button: {
+  footer: {
     padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    ...shadows.small,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary.main,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: colors.text.white,
-    fontSize: 16,
-    fontWeight: '600',
+    marginTop: 'auto',
   },
 });
