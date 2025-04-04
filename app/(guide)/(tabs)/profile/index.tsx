@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StatusBar } from 'react-native';
+import { ScrollView, StatusBar, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/config/theme';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -23,8 +23,10 @@ export default function GuideProfile() {
     ratings,
     ratingError,
     stripeAccountEnabled,
+    recommendationsLink,
     isLoading,
     updateProfileImageUrl,
+    updateRecommendationsLink,
   } = useProfileData();
 
   const { handleImagePick, isUploading } = useProfileImage({
@@ -45,9 +47,18 @@ export default function GuideProfile() {
     }
   };
 
-  const handleSaveRecommendations = (password: string) => {
-    // TODO: Implement recommendations save functionality
-    console.log('Save recommendations with password:', password);
+  const handleSaveRecommendations = async (link: string) => {
+    if (!link) {
+      Alert.alert('Error', 'Please enter a valid link');
+      return;
+    }
+
+    const success = await updateRecommendationsLink(link);
+    if (success) {
+      Alert.alert('Success', 'Recommendations link saved successfully');
+    } else {
+      Alert.alert('Error', 'Failed to save recommendations link');
+    }
   };
 
   const handleChangePassword = () => {
@@ -80,6 +91,8 @@ export default function GuideProfile() {
         />
 
         <RecommendationsForm
+          recommendationsLink={recommendationsLink}
+          isLoading={isLoading}
           onSave={handleSaveRecommendations}
         />
 
