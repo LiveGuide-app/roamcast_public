@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Roamcast",
-    "slug": "Roamcast",
+    "slug": "Roamcastv7",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,6 +17,8 @@
       "bundleIdentifier": "com.roamcast.app",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Roamcast needs access to your microphone to enable audio streaming during tours",
+        "NSCameraUsageDescription": "Roamcast needs access to your camera to allow you to upload a profile picture",
+        "NSPhotoLibraryUsageDescription": "Roamcast needs access to your photo library to allow you to select a profile picture",
         "UIBackgroundModes": [
           "audio",
           "voip"
@@ -36,7 +38,10 @@
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -58,7 +63,8 @@
         }
       ],
       "@config-plugins/react-native-webrtc",
-      "expo-av"
+      "expo-av",
+      "expo-image-picker"
     ]
   }
 }
