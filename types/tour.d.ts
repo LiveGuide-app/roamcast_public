@@ -5,6 +5,7 @@ export type Tour = {
   unique_code: string;
   created_at: string;
   participant_id?: string;
+  guide_name?: string;
 };
 
 export type TourParticipant = {

@@ -205,4 +205,56 @@ export async function submitTourRating(tourId: string, deviceId: string, rating:
       throw new TourError('Failed to submit rating', TourErrorCode.NETWORK_ERROR);
     }
   }
+}
+
+type TourParticipantWithTour = {
+  tours: {
+    id: string;
+    name: string;
+    status: TourStatus;
+    unique_code: string;
+    created_at: string;
+    guide_id: string;
+  } | null;
+};
+
+export async function getRecentTours(deviceId: string): Promise<Tour[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tour_participants')
+      .select(`
+        tours (
+          id,
+          name,
+          status,
+          unique_code,
+          created_at,
+          guide_id
+        )
+      `)
+      .eq('device_id', deviceId)
+      .order('join_time', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error('Error fetching recent tours:', error);
+      throw new TourError('Failed to fetch recent tours', TourErrorCode.NETWORK_ERROR);
+    }
+
+    if (!data) return [];
+
+    // Transform the data to match the Tour type and filter out null values
+    return data
+      .filter((participant: any) => participant.tours !== null)
+      .map((participant: any) => ({
+        id: participant.tours.id,
+        name: participant.tours.name,
+        status: participant.tours.status,
+        unique_code: participant.tours.unique_code,
+        created_at: participant.tours.created_at
+      } as Tour));
+  } catch (error) {
+    console.error('Error in getRecentTours:', error);
+    return []; // Return empty array instead of throwing to handle gracefully
+  }
 } 
