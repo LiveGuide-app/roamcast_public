@@ -1,7 +1,7 @@
-import React from 'react';
-import { ScrollView, StatusBar, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StatusBar, Alert, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/config/theme';
+import { colors, spacing } from '@/config/theme';
 import { useAuth } from '@/components/auth/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
@@ -13,6 +13,7 @@ import { FAQ } from './components/FAQ';
 import { useProfileData } from './hooks/useProfileData';
 import { useProfileImage } from './hooks/useProfileImage';
 import { useStripeIntegration } from './hooks/useStripeIntegration';
+import { ChangeCredentialsModal } from './components/ChangeCredentialsModal';
 
 export default function GuideProfile() {
   const router = useRouter();
@@ -40,6 +41,9 @@ export default function GuideProfile() {
     isLoading: isStripeLoading,
   } = useStripeIntegration({ session });
 
+  const [credentialsModalVisible, setCredentialsModalVisible] = useState(false);
+  const [credentialsModalType, setCredentialsModalType] = useState<'password' | 'email'>('password');
+
   const handleStripePress = async () => {
     const url = await (stripeAccountEnabled ? handleStripeDashboard() : handleStripeOnboarding());
     if (url) {
@@ -62,13 +66,13 @@ export default function GuideProfile() {
   };
 
   const handleChangePassword = () => {
-    // TODO: Implement password change functionality
-    console.log('Change password');
+    setCredentialsModalType('password');
+    setCredentialsModalVisible(true);
   };
 
   const handleChangeEmail = () => {
-    // TODO: Implement email change functionality
-    console.log('Change email');
+    setCredentialsModalType('email');
+    setCredentialsModalVisible(true);
   };
 
   return (
@@ -101,15 +105,29 @@ export default function GuideProfile() {
           onChangeEmail={handleChangeEmail}
         />
 
-        <FAQ />
+        <FAQ faqUrl="https://roamcast.me/faq" />
 
-        <Button 
-          title="Logout"
-          variant="danger-outline"
-          onPress={signOut}
-          style={{ margin: 16, backgroundColor: colors.background.paper }}
-        />
+        <View style={styles.section}>
+          <Button 
+            title="Logout"
+            variant="danger-outline"
+            onPress={signOut}
+          />
+        </View>
       </ScrollView>
+      <ChangeCredentialsModal
+        isVisible={credentialsModalVisible}
+        onClose={() => setCredentialsModalVisible(false)}
+        type={credentialsModalType}
+      />
     </SafeAreaView>
   );
-}; 
+};
+
+const styles = StyleSheet.create({
+  section: {
+    padding: spacing.lg,
+    backgroundColor: colors.background.paper,
+    marginTop: spacing.md,
+  },
+}); 

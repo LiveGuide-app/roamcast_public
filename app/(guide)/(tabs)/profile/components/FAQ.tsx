@@ -1,13 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { colors, spacing } from '@/config/theme';
+import { Ionicons } from '@expo/vector-icons';
 
-export const FAQ: React.FC = () => {
+interface FAQProps {
+  faqUrl?: string;
+}
+
+export const FAQ: React.FC<FAQProps> = ({ faqUrl = 'https://roamcast.me/faq' }) => {
+  const handlePress = () => {
+    Linking.openURL(faqUrl);
+  };
+
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>FAQ</Text>
-      {/* Placeholder for future FAQ content */}
-    </View>
+    <TouchableOpacity onPress={handlePress}>
+      <View style={styles.section}>
+        <View style={styles.content}>
+          <Text style={styles.sectionTitle}>FAQ</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.text.primary} />
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
@@ -17,10 +30,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     marginTop: spacing.md,
   },
+  content: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing.md,
   },
 }); 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AuthState, AuthContextType } from '@/types/auth';
+import type { AuthState, AuthContextType } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -91,12 +91,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const updateEmail = async (newEmail: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail
+      });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   const value = {
     ...state,
     signUp,
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
+    updateEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
