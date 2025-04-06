@@ -16,6 +16,7 @@ export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const router = useRouter();
   const [hasRated, setHasRated] = useState(false);
+  const [isCheckingRating, setIsCheckingRating] = useState(true);
   const [guideInfo, setGuideInfo] = useState<{ name: string; recommendationsLink: string | null } | null>(null);
   
   if (!code) {
@@ -39,11 +40,11 @@ export default function TourCodeScreen() {
       if (!tour?.id) return;
 
       try {
+        setIsCheckingRating(true);
         const deviceId = await getDeviceId();
-        console.log('Checking rating for tour:', tour.id, 'device:', deviceId);
         
         // Check if this device has already rated this tour
-        const { data: rating, error: ratingError } = await supabase
+        const { data: rating } = await supabase
           .from('feedback')
           .select('id')
           .eq('tour_id', tour.id)
@@ -51,28 +52,21 @@ export default function TourCodeScreen() {
           .is('deleted_at', null)
           .single();
 
-        console.log('Rating check result:', { rating, error: ratingError });
-
         if (rating) {
-          console.log('Found existing rating:', rating);
           // Get the guide ID from the tours table
-          const { data: tourData, error: tourError } = await supabase
+          const { data: tourData } = await supabase
             .from('tours')
             .select('guide_id')
             .eq('id', tour.id)
             .single();
 
-          console.log('Tour data:', { tourData, error: tourError });
-
           if (tourData?.guide_id) {
             // If there's a rating, also fetch guide info
-            const { data: guide, error: guideError } = await supabase
+            const { data: guide } = await supabase
               .from('users')
               .select('full_name, recommendations_link')
               .eq('id', tourData.guide_id)
               .single();
-
-            console.log('Guide info:', { guide, error: guideError });
 
             if (guide) {
               setGuideInfo({
@@ -85,14 +79,15 @@ export default function TourCodeScreen() {
         }
       } catch (error) {
         // If no rating found, single() will throw an error, which is fine
-        console.log('Rating check error:', error);
+      } finally {
+        setIsCheckingRating(false);
       }
     }
 
     checkRating();
   }, [tour?.id]);
 
-  if (isLoading) {
+  if (isLoading || (tour?.status === 'completed' && isCheckingRating)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary.main} />
@@ -113,6 +108,7 @@ export default function TourCodeScreen() {
     return (
       <TourThankYouScreen
         guideName={guideInfo.name}
+        tourName={tour.name}
         recommendationsLink={guideInfo.recommendationsLink}
       />
     );

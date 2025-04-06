@@ -7,11 +7,13 @@ import { useRouter } from 'expo-router';
 
 type TourThankYouScreenProps = {
   guideName: string;
+  tourName: string;
   recommendationsLink: string | null;
 };
 
 export const TourThankYouScreen = ({
   guideName,
+  tourName,
   recommendationsLink,
 }: TourThankYouScreenProps) => {
   const router = useRouter();
@@ -55,11 +57,11 @@ export const TourThankYouScreen = ({
       />
       
       <View style={styles.content}>
-        <Text style={styles.title}>Thank you for joining the tour!</Text>
+        <Text style={styles.title}>Thank you for joining {tourName}!</Text>
         
         {recommendationsLink && (
           <Text style={styles.message}>
-            {guideName} has put together some recommendations of things to do. Click
+            Your guide, {guideName}, has put together some recommendations of things to do. Click
             the button below to explore
           </Text>
         )}

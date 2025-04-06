@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, Image, StatusBar, ScrollView } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../config/theme';
 import { useRouter } from 'expo-router';
@@ -97,83 +97,85 @@ export default function LandingScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Image 
-            source={require('../assets/images/logo.png')} 
-            style={styles.logo}
-          />
-          <Text style={styles.title}>Roamcast</Text>
-          <Text style={styles.subtitle}>Immersive Audio Experiences</Text>
-        </View>
-
-        {/* Join Tour Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Join a Tour</Text>
-          <Text style={styles.sectionSubtitle}>Enter the 6-digit code provided by your tour guide</Text>
-          
-          <View style={styles.codeInputContainer}>
-            {tourCode.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={ref => inputRefs.current[index] = ref}
-                style={styles.codeInput}
-                value={digit}
-                onChangeText={(value) => handleCodeChange(index, value)}
-                keyboardType="numeric"
-                maxLength={1}
-                selectTextOnFocus
-              />
-            ))}
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Image 
+              source={require('../assets/images/logo.png')} 
+              style={styles.logo}
+            />
+            <Text style={styles.title}>Roamcast</Text>
+            <Text style={styles.subtitle}>Immersive Audio Experiences</Text>
           </View>
 
-          <TouchableOpacity 
-            style={[
-              styles.button,
-              styles.primaryButton,
-              (!tourCode.every(digit => digit) || isLoading) && styles.disabledButton
-            ]} 
-            onPress={handleJoinTour}
-            disabled={!tourCode.every(digit => digit) || isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Joining...' : 'Join Tour'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Tours Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your recent tours</Text>
-          {recentTours.length > 0 ? (
-            recentTours.map((tour) => (
-              <TouchableOpacity 
-                key={tour.id} 
-                style={styles.tourCard}
-                onPress={() => router.push(`/(tour)/${tour.unique_code}`)}
-              >
-                <View style={styles.tourInfo}>
-                  <Text style={styles.tourName}>{tour.name}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(tour.status) }]}>
-                    <Text style={styles.statusText}>{tour.status}</Text>
-                  </View>
-                </View>
-                <Text style={styles.tourDate}>
-                  {new Date(tour.created_at).toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.noToursText}>
-                Your tours will appear here
-              </Text>
-              <Text style={styles.noToursSubtext}>
-                Join a tour to get started
-              </Text>
+          {/* Join Tour Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Join a Tour</Text>
+            <Text style={styles.sectionSubtitle}>Enter the 6-digit code provided by your tour guide</Text>
+            
+            <View style={styles.codeInputContainer}>
+              {tourCode.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={ref => inputRefs.current[index] = ref}
+                  style={styles.codeInput}
+                  value={digit}
+                  onChangeText={(value) => handleCodeChange(index, value)}
+                  keyboardType="numeric"
+                  maxLength={1}
+                  selectTextOnFocus
+                />
+              ))}
             </View>
-          )}
-        </View>
+
+            <TouchableOpacity 
+              style={[
+                styles.button,
+                styles.primaryButton,
+                (!tourCode.every(digit => digit) || isLoading) && styles.disabledButton
+              ]} 
+              onPress={handleJoinTour}
+              disabled={!tourCode.every(digit => digit) || isLoading}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading ? 'Joining...' : 'Join Tour'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Recent Tours Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Your recent tours</Text>
+            {recentTours.length > 0 ? (
+              recentTours.map((tour) => (
+                <TouchableOpacity 
+                  key={tour.id} 
+                  style={styles.tourCard}
+                  onPress={() => router.push(`/(tour)/${tour.unique_code}`)}
+                >
+                  <View style={styles.tourInfo}>
+                    <Text style={styles.tourName}>{tour.name}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(tour.status) }]}>
+                      <Text style={styles.statusText}>{tour.status}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.tourDate}>
+                    {new Date(tour.created_at).toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <Text style={styles.noToursText}>
+                  Your tours will appear here
+                </Text>
+                <Text style={styles.noToursSubtext}>
+                  Join a tour to get started
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
 
         {/* Guide Login Section */}
         <View style={styles.footer}>
@@ -207,8 +209,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: spacing.xl,
-    justifyContent: 'space-between',
   },
   header: {
     alignItems: 'center',
@@ -339,6 +345,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
+    padding: spacing.xl,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background.default,
     alignItems: 'center',
   },
   footerText: {

@@ -82,7 +82,6 @@ export const TourCompletedScreen = ({
   };
 
   const handleTipAmountChange = (amount: number | null) => {
-    console.log('Tip amount changed:', amount); // Debug log
     setSelectedTipAmount(amount);
   };
 
