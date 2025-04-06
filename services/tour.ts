@@ -57,7 +57,10 @@ export async function createTour(input: CreateTourInput): Promise<Tour> {
 export async function getTour(tourId: string): Promise<Tour> {
   const { data, error } = await supabase
     .from('tours')
-    .select('*')
+    .select(`
+      *,
+      total_participants:tour_participants(count)
+    `)
     .eq('id', tourId)
     .single();
 
@@ -68,7 +71,10 @@ export async function getTour(tourId: string): Promise<Tour> {
     throw new TourError('Failed to fetch tour', TourErrorCode.NETWORK_ERROR);
   }
 
-  return data;
+  return {
+    ...data,
+    total_participants: data.total_participants?.[0]?.count || 0
+  };
 }
 
 export async function updateTourStatus(tourId: string, status: TourStatus): Promise<Tour> {
@@ -229,7 +235,41 @@ export async function createTourParticipant(tourId: string, deviceId: string): P
     tourIdType: typeof tourId,
     deviceIdType: typeof deviceId
   });
-  const { data, error } = await supabase
+
+  // First, check if participant already exists
+  const { data: existingParticipant, error: checkError } = await supabase
+    .from('tour_participants')
+    .select('*')
+    .eq('tour_id', tourId)
+    .eq('device_id', deviceId)
+    .single();
+
+  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+    throw new TourError('Failed to check existing participant', TourErrorCode.NETWORK_ERROR);
+  }
+
+  if (existingParticipant) {
+    // Participant exists, update their record to allow rejoining
+    const { data: updatedParticipant, error: updateError } = await supabase
+      .from('tour_participants')
+      .update({ 
+        leave_time: null,
+        livekit_left_room: null,
+        livekit_joined_room: null
+      })
+      .eq('id', existingParticipant.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new TourError('Failed to update participant record', TourErrorCode.NETWORK_ERROR);
+    }
+
+    return updatedParticipant;
+  }
+
+  // No existing participant, create new record
+  const { data: newParticipant, error: insertError } = await supabase
     .from('tour_participants')
     .insert({
       tour_id: tourId,
@@ -238,14 +278,14 @@ export async function createTourParticipant(tourId: string, deviceId: string): P
     .select()
     .single();
 
-  if (error) {
-    if (error.code === '23503') { // Foreign key violation
+  if (insertError) {
+    if (insertError.code === '23503') { // Foreign key violation
       throw new TourError('Tour not found', TourErrorCode.NOT_FOUND);
     }
     throw new TourError('Failed to join tour', TourErrorCode.NETWORK_ERROR);
   }
 
-  return data;
+  return newParticipant;
 }
 
 export async function updateParticipantLeaveTime(tourId: string, deviceId: string): Promise<void> {

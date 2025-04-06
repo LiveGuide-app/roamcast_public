@@ -15,6 +15,7 @@ import { TourHeader } from '@/components/tour/TourHeader';
 import { useTourDuration } from '@/hooks/tour/useTourDuration';
 import { useTourStatistics } from '@/hooks/tour/useTourStatistics';
 import { useTourActions } from '@/hooks/tour/useTourActions';
+import { supabase } from '@/lib/supabase';
 
 // Extend the base Tour type with the additional fields we need
 interface Tour extends BaseTour {
@@ -28,6 +29,7 @@ export default function LiveTourDetail() {
   const router = useRouter();
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [participantCount, setParticipantCount] = useState(0);
 
   const { 
     isConnected, 
@@ -55,12 +57,46 @@ export default function LiveTourDetail() {
       }
       const tourData = await getTour(tourId);
       setTour(tourData);
+      setParticipantCount(tourData.total_participants);
     } catch (error) {
       Alert.alert('Error', 'Failed to load tour');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Set up real-time subscription for participant count
+  React.useEffect(() => {
+    if (!tourId) return;
+
+    const subscription = supabase
+      .channel(`tour-participants-${tourId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'tour_participants',
+          filter: `tour_id=eq.${tourId}`
+        },
+        async () => {
+          // Fetch the latest count
+          const { data, error } = await supabase
+            .from('tour_participants')
+            .select('count')
+            .eq('tour_id', tourId);
+          
+          if (!error && data) {
+            setParticipantCount(data.length);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [tourId]);
 
   React.useEffect(() => {
     fetchTour();
@@ -108,7 +144,7 @@ export default function LiveTourDetail() {
 
               <TourMetrics
                 metrics={{
-                  guests: remoteParticipants.length
+                  guests: participantCount
                 }}
                 variant="row"
               />
@@ -142,7 +178,7 @@ export default function LiveTourDetail() {
 
               <TourMetrics
                 metrics={{
-                  guests: remoteParticipants.length,
+                  guests: participantCount,
                   duration: duration
                 }}
                 variant="row"

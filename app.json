@@ -62,6 +62,9 @@
           }
         }
       ],
+      ["expo-router", {
+        "origin": "https://roamcast.app"
+      }],
       "@config-plugins/react-native-webrtc",
       "expo-av",
       "expo-image-picker"
