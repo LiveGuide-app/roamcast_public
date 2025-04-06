@@ -7,6 +7,7 @@ import { ConnectedStripeProvider } from '@/app/components/ConnectedStripeProvide
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
+import { useRouter } from 'expo-router';
 
 type GuideInfo = {
   full_name: string;
@@ -24,6 +25,7 @@ export const TourCompletedScreen = ({
   onRatingSubmit,
   onLeaveTour 
 }: TourCompletedScreenProps) => {
+  const router = useRouter();
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [selectedTipAmount, setSelectedTipAmount] = useState<number | null>(null);
@@ -90,13 +92,22 @@ export const TourCompletedScreen = ({
 
   const handlePaymentComplete = async () => {
     try {
-      // Submit rating after successful payment
       await onRatingSubmit(selectedRating);
       setSelectedTipAmount(null);
       setIsPaymentReady(false);
-      Alert.alert('Success', 'Thank you for your rating and tip!', [
-        { text: 'OK', onPress: onLeaveTour }
-      ]);
+      
+      // Get the guide ID from the fetched data
+      const { data: tourData } = await supabase
+        .from('tours')
+        .select('guide_id')
+        .eq('id', tour.id)
+        .single();
+
+      if (tourData?.guide_id) {
+        router.replace(`/(tour)/thank-you?guideId=${tourData.guide_id}`);
+      } else {
+        router.replace('/');
+      }
     } catch (error) {
       console.error('Error submitting rating after payment:', error);
       Alert.alert('Error', 'Payment successful but failed to submit rating.');
@@ -124,14 +135,22 @@ export const TourCompletedScreen = ({
     try {
       setIsSubmitting(true);
       if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
-        // If there's a tip, handle payment first (rating will be submitted in handlePaymentComplete)
         await tipPaymentRef.current.handlePayment();
       } else {
-        // If no tip, just submit rating
         await onRatingSubmit(selectedRating);
-        Alert.alert('Success', 'Thank you for your rating!', [
-          { text: 'OK', onPress: onLeaveTour }
-        ]);
+        
+        // Get the guide ID from the fetched data
+        const { data: tourData } = await supabase
+          .from('tours')
+          .select('guide_id')
+          .eq('id', tour.id)
+          .single();
+
+        if (tourData?.guide_id) {
+          router.replace(`/(tour)/thank-you?guideId=${tourData.guide_id}`);
+        } else {
+          router.replace('/');
+        }
       }
     } catch (error) {
       console.error('Error during submission:', error);
