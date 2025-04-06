@@ -228,6 +228,51 @@ export default function LiveTourDetail() {
                 />
               </View>
             </>
+          ) : tour.status === 'completed' ? (
+            <>
+              <View style={styles.statusContainer}>
+                <View style={[styles.statusBadge, { backgroundColor: colors.success.main }]}>
+                  <Text style={styles.statusText}>Completed</Text>
+                </View>
+              </View>
+
+              <Text style={styles.sectionHeader}>Statistics</Text>
+
+              <View style={styles.statsGrid}>
+                <View style={styles.statsCard}>
+                  <Text style={styles.statsLabel}>Total Guests</Text>
+                  <Text style={styles.statsValue}>12</Text>
+                </View>
+
+                <View style={styles.statsCard}>
+                  <Text style={styles.statsLabel}>Rating</Text>
+                  <View style={styles.ratingContainer}>
+                    <Ionicons name="star" size={20} color={colors.warning.main} />
+                    <Text style={styles.statsValue}>4.7</Text>
+                  </View>
+                  <Text style={styles.statsSubtext}>(5 reviews)</Text>
+                </View>
+
+                <View style={styles.statsCard}>
+                  <Text style={styles.statsLabel}>Earnings</Text>
+                  <Text style={styles.statsValue}>£24</Text>
+                  <Text style={styles.statsSubtext}>(3 tips)</Text>
+                </View>
+
+                <View style={styles.statsCard}>
+                  <Text style={styles.statsLabel}>Duration</Text>
+                  <Text style={styles.statsValue}>02:14</Text>
+                </View>
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Back to tours"
+                  variant="outline"
+                  onPress={() => router.push('/(guide)/(tabs)/tours')}
+                />
+              </View>
+            </>
           ) : null}
         </View>
       </View>
@@ -406,5 +451,46 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  statsGrid: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  statsCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.small,
+  },
+  statsLabel: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  statsValue: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statsSubtext: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
 }); 
