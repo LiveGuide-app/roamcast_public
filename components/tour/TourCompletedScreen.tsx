@@ -2,9 +2,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, StatusBar, Image } fro
 import { colors, spacing, borderRadius, shadows } from '@/config/theme';
 import { Tour } from '@/types/tour';
 import { Ionicons } from '@expo/vector-icons';
-import { TipPayment } from '../../app/components/TipPayment';
+import { TipPayment, TipPaymentHandle } from '../../app/components/TipPayment';
 import { ConnectedStripeProvider } from '@/app/components/ConnectedStripeProvider';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
 
@@ -26,8 +26,11 @@ export const TourCompletedScreen = ({
 }: TourCompletedScreenProps) => {
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
+  const [selectedTipAmount, setSelectedTipAmount] = useState<number | null>(null);
+  const [isPaymentReady, setIsPaymentReady] = useState(false);
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const tipPaymentRef = useRef<TipPaymentHandle>(null);
 
   useEffect(() => {
     const fetchGuideInfo = async () => {
@@ -75,14 +78,50 @@ export const TourCompletedScreen = ({
     setSelectedRating(rating);
   };
 
+  const handleTipAmountChange = (amount: number | null) => {
+    console.log('Tip amount changed:', amount); // Debug log
+    setSelectedTipAmount(amount);
+  };
+
+  const handlePaymentReady = (ready: boolean) => {
+    setIsPaymentReady(ready);
+  };
+
+  const handlePaymentComplete = () => {
+    setSelectedTipAmount(null);
+    setIsPaymentReady(false);
+    onLeaveTour();
+  };
+
+  const formatTipAmount = (amount: number | null) => {
+    if (!amount) return '£0';
+    return `£${(amount / 100).toFixed(2)}`;
+  };
+
+  const getButtonTitle = () => {
+    if (selectedRating === 0) return "Select a Rating";
+    if (!selectedTipAmount) return `Submit Rating`;
+    return `Submit Rating & Tip ${formatTipAmount(selectedTipAmount)}`;
+  };
+
   const handleSubmit = async () => {
     try {
       if (selectedRating === 0) {
         Alert.alert('Error', 'Please select a rating before submitting');
         return;
       }
+
+      // Submit rating first
       await onRatingSubmit(selectedRating);
-      onLeaveTour();
+
+      // If there's a tip amount selected and payment is ready, process the payment
+      if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
+        await tipPaymentRef.current.handlePayment();
+      } else {
+        // If no tip or payment not ready, just leave the tour
+        Alert.alert('Success', 'Thank you for your rating!');
+        onLeaveTour();
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to submit. Please try again.');
     }
@@ -134,9 +173,16 @@ export const TourCompletedScreen = ({
         </View>
 
         <View style={styles.sectionContainer}>
+          <Text style={styles.tipTitle}>Would you like to leave a tip?</Text>
           {tour.participant_id && stripeAccountId ? (
             <ConnectedStripeProvider stripeAccountId={stripeAccountId}>
-              <TipPayment tourParticipantId={tour.participant_id} />
+              <TipPayment 
+                ref={tipPaymentRef}
+                tourParticipantId={tour.participant_id}
+                onAmountChange={handleTipAmountChange}
+                onPaymentReady={handlePaymentReady}
+                onPaymentComplete={handlePaymentComplete}
+              />
             </ConnectedStripeProvider>
           ) : tour.participant_id && !stripeAccountId && !isLoading ? (
             <Text style={styles.messageText}>
@@ -150,10 +196,11 @@ export const TourCompletedScreen = ({
         </View>
 
         <Button
-          title="Submit Rating"
+          title={getButtonTitle()}
           variant="primary"
           onPress={handleSubmit}
           style={styles.submitButton}
+          disabled={selectedRating === 0}
         />
       </View>
     </View>
@@ -250,6 +297,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.text.primary,
     marginBottom: spacing.md,
+    textAlign: 'center',
   },
   messageText: {
     fontSize: 16,
