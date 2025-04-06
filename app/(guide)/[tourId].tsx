@@ -174,48 +174,56 @@ export default function LiveTourDetail() {
             </>
           ) : tour.status === 'active' ? (
             <>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>{tour.status}</Text>
-              </View>
-
-              <View style={styles.infoCard}>
-                <Text style={styles.label}>Tour Name</Text>
-                <Text style={styles.value}>{tour.name}</Text>
-
-                <Text style={styles.label}>Tour Code</Text>
-                <Text style={styles.value}>{tour.unique_code}</Text>
-
-                <Text style={styles.label}>Connection Status</Text>
-                <Text style={[styles.value, isConnected ? styles.connectedText : styles.disconnectedText]}>
-                  {isConnected ? 'Connected' : 'Disconnected'}
-                </Text>
-
-                <Text style={styles.label}>Participants</Text>
-                <Text style={styles.value}>{remoteParticipants.length}</Text>
-              </View>
-
-              {tour.status === 'active' && (
-                <View style={styles.microphoneContainer}>
-                  <TouchableOpacity 
-                    style={[styles.micButton, !isMicrophoneEnabled && styles.micButtonActive]} 
-                    onPress={handleToggleMicrophone}
-                  >
-                    <Ionicons 
-                      name={isMicrophoneEnabled ? "mic" : "mic-off"} 
-                      size={24} 
-                      color={isMicrophoneEnabled ? colors.text.primary : colors.error.main} 
-                    />
-                    <Text style={[styles.micButtonText, !isMicrophoneEnabled && styles.micButtonTextActive]}>
-                      {isMicrophoneEnabled ? 'Microphone On' : 'Microphone Off'}
-                    </Text>
-                  </TouchableOpacity>
+              <View style={styles.statusContainer}>
+                <View style={[styles.statusBadge, styles.statusBadgeLive]}>
+                  <Text style={styles.statusText}>LIVE</Text>
                 </View>
-              )}
+                <View style={[
+                  styles.statusBadge, 
+                  { backgroundColor: isConnected ? colors.success.main : colors.error.main }
+                ]}>
+                  <Text style={styles.statusText}>
+                    {isConnected ? 'Connected' : 'Disconnected'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.codeSection}>
+                <Text style={styles.sectionTitle}>Tour Code</Text>
+                <Text style={styles.codeText}>{tour.unique_code}</Text>
+              </View>
+
+              <View style={styles.metricsContainer}>
+                <View style={styles.metricCard}>
+                  <Text style={styles.sectionTitle}>Guests</Text>
+                  <Text style={styles.metricValue}>{remoteParticipants.length}</Text>
+                </View>
+                <View style={styles.metricCard}>
+                  <Text style={styles.sectionTitle}>Duration</Text>
+                  <Text style={styles.metricValue}>21:04</Text>
+                </View>
+              </View>
+
+              <View style={styles.microphoneContainer}>
+                <TouchableOpacity 
+                  style={[styles.micButton, !isMicrophoneEnabled && styles.micButtonActive]} 
+                  onPress={handleToggleMicrophone}
+                >
+                  <Ionicons 
+                    name={isMicrophoneEnabled ? "mic" : "mic-off"} 
+                    size={24} 
+                    color={isMicrophoneEnabled ? colors.text.primary : colors.error.main} 
+                  />
+                  <Text style={[styles.micButtonText, !isMicrophoneEnabled && styles.micButtonTextActive]}>
+                    {isMicrophoneEnabled ? 'Microphone On' : 'Microphone Off'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.buttonContainer}>
                 <Button
                   title="End Tour"
-                  variant="danger"
+                  variant="danger-outline"
                   onPress={handleEndTour}
                 />
               </View>
@@ -371,5 +379,32 @@ const styles = StyleSheet.create({
     color: colors.error.main,
     fontSize: 14,
     marginBottom: spacing.md,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  statusBadgeLive: {
+    backgroundColor: colors.warning.main,
+  },
+  metricsContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+    marginBottom: spacing.xl,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    ...shadows.small,
+  },
+  metricValue: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: colors.text.primary,
   },
 }); 
