@@ -29,25 +29,56 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
 
   useImperativeHandle(ref, () => ({
     handlePayment: async () => {
-      // If no tip is selected, complete without any Stripe calls
-      if (selectedAmount === null && !customAmount) {
+      const amount = selectedAmount || (customAmount ? parseInt(customAmount, 10) * 100 : null);
+      if (!amount) {
+        // No tip selected, just complete
         onPaymentComplete();
         return;
       }
-      
-      const amount = selectedAmount || (customAmount ? parseInt(customAmount, 10) * 100 : null);
-      if (!amount) {
-        Alert.alert('Error', 'Please select a tip amount');
-        return;
+
+      try {
+        setIsLoading(true);
+        // Initialize payment sheet first
+        const isInitialized = await initializePaymentSheet(amount);
+        if (!isInitialized) {
+          return;
+        }
+
+        // Present payment sheet
+        const { error: presentError } = await presentPaymentSheet();
+        
+        if (presentError) {
+          if (presentError.code === 'Canceled') {
+            return;
+          }
+          throw presentError;
+        }
+
+        // Payment successful
+        onPaymentComplete();
+        
+        // Reset form
+        setSelectedAmount(null);
+        setCustomAmount('');
+        onAmountChange(null);
+      } catch (err) {
+        console.error('Payment error:', err);
+        Alert.alert(
+          'Error',
+          err instanceof Error ? err.message : 'Payment failed'
+        );
+      } finally {
+        setIsLoading(false);
       }
-      await handlePayment(amount);
     }
   }));
 
   const handleAmountSelect = (amount: number | null) => {
     setSelectedAmount(amount);
-    onAmountChange(amount);
     setCustomAmount('');
+    onAmountChange(amount);
+    // Signal payment readiness
+    onPaymentReady(true);
   };
 
   const handleCustomAmountChange = (text: string) => {
@@ -57,6 +88,8 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
     setSelectedAmount(null);
     const amount = numericValue ? parseInt(numericValue, 10) * 100 : null;
     onAmountChange(amount);
+    // Signal payment readiness if there's a valid amount
+    onPaymentReady(!!amount);
   };
 
   const initializePaymentSheet = async (amount: number) => {
@@ -110,48 +143,6 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         err instanceof Error ? err.message : 'Failed to initialize payment'
       );
       return false;
-    }
-  };
-
-  const handlePayment = async (amount: number) => {
-    try {
-      setIsLoading(true);
-      onPaymentReady(false);
-      
-      // Initialize payment sheet first
-      const isInitialized = await initializePaymentSheet(amount);
-      if (!isInitialized) {
-        return;
-      }
-
-      // Present payment sheet
-      const { error: presentError } = await presentPaymentSheet();
-      
-      if (presentError) {
-        console.error('Present payment sheet error:', presentError);
-        if (presentError.code === 'Canceled') {
-          return;
-        }
-        throw presentError;
-      }
-
-      console.log('Payment successful');
-      Alert.alert('Success', 'Thank you for your tip!');
-      onPaymentComplete();
-      
-      // Reset form
-      setSelectedAmount(null);
-      setCustomAmount('');
-      onPaymentReady(false);
-      onAmountChange(null);
-    } catch (err) {
-      console.error('Payment error:', err);
-      Alert.alert(
-        'Error',
-        err instanceof Error ? err.message : 'Payment failed'
-      );
-    } finally {
-      setIsLoading(false);
     }
   };
 

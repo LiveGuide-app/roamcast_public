@@ -31,6 +31,7 @@ export const TourCompletedScreen = ({
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const tipPaymentRef = useRef<TipPaymentHandle>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchGuideInfo = async () => {
@@ -87,10 +88,19 @@ export const TourCompletedScreen = ({
     setIsPaymentReady(ready);
   };
 
-  const handlePaymentComplete = () => {
-    setSelectedTipAmount(null);
-    setIsPaymentReady(false);
-    onLeaveTour();
+  const handlePaymentComplete = async () => {
+    try {
+      // Submit rating after successful payment
+      await onRatingSubmit(selectedRating);
+      setSelectedTipAmount(null);
+      setIsPaymentReady(false);
+      Alert.alert('Success', 'Thank you for your rating and tip!', [
+        { text: 'OK', onPress: onLeaveTour }
+      ]);
+    } catch (error) {
+      console.error('Error submitting rating after payment:', error);
+      Alert.alert('Error', 'Payment successful but failed to submit rating.');
+    }
   };
 
   const formatTipAmount = (amount: number | null) => {
@@ -99,31 +109,35 @@ export const TourCompletedScreen = ({
   };
 
   const getButtonTitle = () => {
+    if (isSubmitting) return "Processing...";
     if (selectedRating === 0) return "Select a Rating";
     if (!selectedTipAmount) return `Submit Rating`;
     return `Submit Rating & Tip ${formatTipAmount(selectedTipAmount)}`;
   };
 
   const handleSubmit = async () => {
+    if (selectedRating === 0) {
+      Alert.alert('Error', 'Please select a rating before submitting');
+      return;
+    }
+
     try {
-      if (selectedRating === 0) {
-        Alert.alert('Error', 'Please select a rating before submitting');
-        return;
-      }
-
-      // Submit rating first
-      await onRatingSubmit(selectedRating);
-
-      // If there's a tip amount selected and payment is ready, process the payment
+      setIsSubmitting(true);
       if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
+        // If there's a tip, handle payment first (rating will be submitted in handlePaymentComplete)
         await tipPaymentRef.current.handlePayment();
       } else {
-        // If no tip or payment not ready, just leave the tour
-        Alert.alert('Success', 'Thank you for your rating!');
-        onLeaveTour();
+        // If no tip, just submit rating
+        await onRatingSubmit(selectedRating);
+        Alert.alert('Success', 'Thank you for your rating!', [
+          { text: 'OK', onPress: onLeaveTour }
+        ]);
       }
     } catch (error) {
+      console.error('Error during submission:', error);
       Alert.alert('Error', 'Failed to submit. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -200,7 +214,7 @@ export const TourCompletedScreen = ({
           variant="primary"
           onPress={handleSubmit}
           style={styles.submitButton}
-          disabled={selectedRating === 0}
+          disabled={selectedRating === 0 || isSubmitting}
         />
       </View>
     </View>
