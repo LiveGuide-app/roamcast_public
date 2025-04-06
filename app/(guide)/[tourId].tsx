@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { Tour as BaseTour, getTour, updateTourStatus, TourError } from '@/services/tour';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -33,6 +33,8 @@ export default function LiveTourDetail() {
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [statistics, setStatistics] = useState<TourStatistics | null>(null);
+  const [duration, setDuration] = useState<string>('00:00');
+  const lastFetchTime = useRef<number>(Date.now());
   const { 
     isConnected, 
     connect, 
@@ -42,56 +44,104 @@ export default function LiveTourDetail() {
     isMicrophoneEnabled 
   } = useGuideLiveKit(tourId || '');
 
+  // Function to format duration
+  const formatDuration = useCallback((durationMs: number): string => {
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, []);
+
+  // Effect to handle duration updates
   useEffect(() => {
-    let subscription: any;
-
-    async function fetchTour() {
-      try {
-        if (!tourId) {
-          throw new Error('Tour ID is required');
-        }
-        console.log('Fetching tour with ID:', tourId);
-        const tourData = await getTour(tourId);
-        setTour(tourData);
-
-        if (tourData.status === 'completed') {
-          // Calculate duration
-          const startTime = tourData.room_started_at ? new Date(tourData.room_started_at) : null;
-          const endTime = tourData.room_finished_at ? new Date(tourData.room_finished_at) : null;
-          const duration = startTime && endTime ? 
-            new Date(endTime.getTime() - startTime.getTime())
-              .toISOString()
-              .substr(11, 5) // Get HH:mm format
-            : null;
-
-          // Get feedback statistics
-          const feedbackResponse = await fetch(`/api/tours/${tourId}/feedback`);
-          const feedbackData = await feedbackResponse.json();
-          
-          // Get earnings statistics
-          const tipsResponse = await fetch(`/api/tours/${tourId}/tips`);
-          const tipsData = await tipsResponse.json();
-
-          setStatistics({
-            totalGuests: tourData.total_participants,
-            rating: feedbackData.averageRating || null,
-            totalReviews: feedbackData.totalReviews || 0,
-            earnings: tipsData.totalAmount || 0,
-            totalTips: tipsData.totalTips || 0,
-            duration
-          });
-        }
-      } catch (error) {
-        if (error instanceof TourError) {
-          Alert.alert('Error', error.message);
-        } else {
-          Alert.alert('Error', 'Failed to load tour');
-        }
-      } finally {
-        setIsLoading(false);
-      }
+    if (!tour || tour.status !== 'active' || !tour.room_started_at) {
+      return;
     }
 
+    const startTime = new Date(tour.room_started_at).getTime();
+    let intervalId: NodeJS.Timeout;
+
+    // If room_finished_at exists, show final duration
+    if (tour.room_finished_at) {
+      const endTime = new Date(tour.room_finished_at).getTime();
+      setDuration(formatDuration(endTime - startTime));
+      return;
+    }
+
+    // Function to update duration
+    const updateDuration = () => {
+      const now = Date.now();
+      setDuration(formatDuration(now - startTime));
+
+      // Refetch tour data every 5 minutes to stay in sync
+      if (now - lastFetchTime.current >= 300000) { // 5 minutes
+        fetchTour();
+        lastFetchTime.current = now;
+      }
+    };
+
+    // Initial update
+    updateDuration();
+
+    // Update every second
+    intervalId = setInterval(updateDuration, 1000);
+
+    // Cleanup interval
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [tour?.room_started_at, tour?.room_finished_at, tour?.status, formatDuration]);
+
+  // Fetch tour data
+  const fetchTour = async () => {
+    try {
+      if (!tourId) {
+        throw new Error('Tour ID is required');
+      }
+      const tourData = await getTour(tourId);
+      setTour(tourData);
+
+      if (tourData.status === 'completed') {
+        // Calculate duration
+        const startTime = tourData.room_started_at ? new Date(tourData.room_started_at) : null;
+        const endTime = tourData.room_finished_at ? new Date(tourData.room_finished_at) : null;
+        const duration = startTime && endTime ? 
+          new Date(endTime.getTime() - startTime.getTime())
+            .toISOString()
+            .substr(11, 5) // Get HH:mm format
+          : null;
+
+        // Get feedback statistics
+        const feedbackResponse = await fetch(`/api/tours/${tourId}/feedback`);
+        const feedbackData = await feedbackResponse.json();
+        
+        // Get earnings statistics
+        const tipsResponse = await fetch(`/api/tours/${tourId}/tips`);
+        const tipsData = await tipsResponse.json();
+
+        setStatistics({
+          totalGuests: tourData.total_participants,
+          rating: feedbackData.averageRating || null,
+          totalReviews: feedbackData.totalReviews || 0,
+          earnings: tipsData.totalAmount || 0,
+          totalTips: tipsData.totalTips || 0,
+          duration
+        });
+      }
+    } catch (error) {
+      if (error instanceof TourError) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'Failed to load tour');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
     fetchTour();
   }, [tourId]);
 
@@ -245,7 +295,7 @@ export default function LiveTourDetail() {
                 </View>
                 <View style={styles.metricCard}>
                   <Text style={styles.sectionTitle}>Duration</Text>
-                  <Text style={styles.metricValue}>21:04</Text>
+                  <Text style={styles.metricValue}>{duration}</Text>
                 </View>
               </View>
 
