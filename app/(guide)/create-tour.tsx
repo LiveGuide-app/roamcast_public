@@ -40,7 +40,7 @@ export default function CreateTour() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.default} />
       <View style={styles.content}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.replace('/(guide)/(tabs)/tours')} style={styles.backButton}>
             <Text style={styles.backButtonText}>{'<'}</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Tour</Text>

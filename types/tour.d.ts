@@ -24,7 +24,10 @@ export type TourParticipant = {
 };
 
 export type TourStatus = 'pending' | 'active' | 'completed' | 'cancelled';
-export type CreateTourInput = Omit<Tour, 'id' | 'created_at' | 'unique_code'>;
+export type CreateTourInput = {
+  name: string;
+  status: TourStatus;
+};
 
 export enum TourErrorCode {
   NOT_FOUND = 'NOT_FOUND',

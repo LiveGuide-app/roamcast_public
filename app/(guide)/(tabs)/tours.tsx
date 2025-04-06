@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Tour, GuideStats, getGuideTours, getGuideStats } from '../../../services/tour';
 import { colors, spacing, borderRadius, shadows } from '../../../config/theme';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ToursOverview() {
   const [loading, setLoading] = useState(true);
@@ -16,12 +17,9 @@ export default function ToursOverview() {
   });
   const router = useRouter();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
+      setLoading(true);
       const [toursData, statsData] = await Promise.all([
         getGuideTours(),
         getGuideStats()
@@ -33,7 +31,13 @@ export default function ToursOverview() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const groupToursByStatus = () => {
     const grouped = {

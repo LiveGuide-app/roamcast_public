@@ -119,6 +119,11 @@ export default function LiveTourDetail() {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Tour not found</Text>
+        <Button
+          title="Back to tours"
+          variant="outline"
+          onPress={() => router.replace('/(guide)/(tabs)/tours')}
+        />
       </View>
     );
   }
@@ -128,7 +133,7 @@ export default function LiveTourDetail() {
       <View style={styles.content}>
         <TourHeader
           title={tour.name}
-          onBack={() => router.back()}
+          onBack={() => router.replace('/(guide)/(tabs)/tours')}
         />
 
         <View style={styles.contentContainer}>
@@ -231,7 +236,7 @@ export default function LiveTourDetail() {
                 <Button
                   title="Back to tours"
                   variant="outline"
-                  onPress={() => router.push('/(guide)/(tabs)/tours')}
+                  onPress={() => router.replace('/(guide)/(tabs)/tours')}
                 />
               </View>
             </>

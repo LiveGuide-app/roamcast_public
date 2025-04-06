@@ -4,6 +4,7 @@ import { colors, spacing, borderRadius, shadows } from '../config/theme';
 import { useRouter } from 'expo-router';
 import { getTourByCode, createTourParticipant, TourError, getRecentTours, Tour } from '../services/tour';
 import { getDeviceId } from '../services/device';
+import { Button } from '@/components/Button';
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -128,19 +129,12 @@ export default function LandingScreen() {
               ))}
             </View>
 
-            <TouchableOpacity 
-              style={[
-                styles.button,
-                styles.primaryButton,
-                (!tourCode.every(digit => digit) || isLoading) && styles.disabledButton
-              ]} 
+            <Button
+              title={isLoading ? 'Joining...' : 'Join Tour'}
               onPress={handleJoinTour}
               disabled={!tourCode.every(digit => digit) || isLoading}
-            >
-              <Text style={styles.buttonText}>
-                {isLoading ? 'Joining...' : 'Join Tour'}
-              </Text>
-            </TouchableOpacity>
+              variant="primary"
+            />
           </View>
 
           {/* Recent Tours Section */}
@@ -270,25 +264,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     backgroundColor: colors.background.paper,
     ...shadows.small,
-  },
-  button: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.small,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary.main,
-  },
-  disabledButton: {
-    backgroundColor: colors.primary.light,
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: colors.text.white,
-    fontSize: 16,
-    fontWeight: '600',
   },
   tourCard: {
     backgroundColor: colors.background.paper,
