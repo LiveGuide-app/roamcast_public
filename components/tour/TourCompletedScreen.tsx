@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, StatusBar, Image } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '@/config/theme';
 import { Tour } from '@/types/tour';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,13 +6,12 @@ import { TipPayment } from '../../app/components/TipPayment';
 import { ConnectedStripeProvider } from '@/app/components/ConnectedStripeProvider';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/Button';
 
-// Define a more precise type for the tour data
-interface TourWithStripe {
-  id: string;
-  guide_id: string;
-  guide_stripe_account_id?: string;
-}
+type GuideInfo = {
+  full_name: string;
+  avatar_url: string | null;
+};
 
 type TourCompletedScreenProps = {
   tour: Tour;
@@ -25,74 +24,98 @@ export const TourCompletedScreen = ({
   onRatingSubmit,
   onLeaveTour 
 }: TourCompletedScreenProps) => {
+  const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
+  const [selectedRating, setSelectedRating] = useState<number>(0);
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch the guide's stripe account ID when component mounts
-    const fetchStripeAccountId = async () => {
+    const fetchGuideInfo = async () => {
       try {
         setIsLoading(true);
-
-        // First get the tour details to get the guide ID
         const { data: tourData, error: tourError } = await supabase
           .from('tours')
           .select('guide_id')
           .eq('id', tour.id)
           .single();
-        
+
         if (tourError) throw tourError;
-        
-        if (!tourData?.guide_id) {
-          console.warn('Could not find guide ID for this tour');
-          return;
-        }
-        
-        // Now get the guide's stripe account ID
+        if (!tourData?.guide_id) throw new Error('No guide found for this tour');
+
+        // Get both guide info and stripe account in one query
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('stripe_account_id')
+          .select('full_name, profile_image_url, stripe_account_id')
           .eq('id', tourData.guide_id)
           .single();
-        
+
         if (userError) throw userError;
         
+        setGuideInfo({
+          full_name: userData.full_name,
+          avatar_url: userData.profile_image_url
+        });
+
         if (userData?.stripe_account_id) {
           setStripeAccountId(userData.stripe_account_id);
         } else {
           console.warn('Guide does not have a Stripe account set up');
         }
       } catch (error) {
-        console.error('Error fetching stripe account ID:', error);
+        console.error('Error fetching guide info:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchStripeAccountId();
+
+    fetchGuideInfo();
   }, [tour.id]);
 
-  const handleRating = async (rating: number) => {
+  const handleRating = (rating: number) => {
+    setSelectedRating(rating);
+  };
+
+  const handleSubmit = async () => {
     try {
-      await onRatingSubmit(rating);
-      Alert.alert('Success', 'Thank you for your rating!');
+      if (selectedRating === 0) {
+        Alert.alert('Error', 'Please select a rating before submitting');
+        return;
+      }
+      await onRatingSubmit(selectedRating);
+      onLeaveTour();
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit rating. Please try again.');
+      Alert.alert('Error', 'Failed to submit. Please try again.');
     }
   };
 
   return (
-    <View style={styles.contentContainer}>
-      <View style={styles.statusBadge}>
-        <Text style={styles.statusText}>Tour Completed</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.default} />
       
-      <View style={styles.infoCard}>
-        <Text style={styles.tourName}>{tour.name}</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Tour Complete</Text>
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.contentContainer}>
+          {guideInfo?.avatar_url ? (
+            <Image 
+              source={{ uri: guideInfo.avatar_url }} 
+              style={styles.guideAvatar} 
+            />
+          ) : (
+            <View style={styles.guideAvatar}>
+              <Ionicons name="person" size={24} color={colors.text.white} />
+            </View>
+          )}
+          <View style={styles.guideInfo}>
+            <Text style={styles.guideName}>{tour.name}</Text>
+            <Text style={styles.guideTitle}>With {guideInfo?.full_name || 'Tour Guide'}</Text>
+          </View>
+        </View>
         
-        {/* Rating Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rate Your Experience</Text>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.ratingTitle}>How was your experience?</Text>
           <View style={styles.ratingContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
               <TouchableOpacity
@@ -101,7 +124,7 @@ export const TourCompletedScreen = ({
                 style={styles.starButton}
               >
                 <Ionicons
-                  name="star"
+                  name={star <= selectedRating ? "star" : "star-outline"}
                   size={32}
                   color={colors.primary.main}
                 />
@@ -110,8 +133,7 @@ export const TourCompletedScreen = ({
           </View>
         </View>
 
-        {/* Tipping Section */}
-        <View style={styles.section}>
+        <View style={styles.sectionContainer}>
           {tour.participant_id && stripeAccountId ? (
             <ConnectedStripeProvider stripeAccountId={stripeAccountId}>
               <TipPayment tourParticipantId={tour.participant_id} />
@@ -126,81 +148,116 @@ export const TourCompletedScreen = ({
             </Text>
           ) : null}
         </View>
-      </View>
 
-      <TouchableOpacity 
-        style={styles.leaveButton}
-        onPress={onLeaveTour}
-      >
-        <Text style={styles.leaveButtonText}>Leave Tour</Text>
-      </TouchableOpacity>
+        <Button
+          title="Submit Rating"
+          variant="primary"
+          onPress={handleSubmit}
+          style={styles.submitButton}
+        />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  contentContainer: {
+  container: {
     flex: 1,
+    backgroundColor: colors.background.default,
     padding: spacing.lg,
   },
-  statusBadge: {
-    backgroundColor: colors.success.light,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary.main,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    alignSelf: 'flex-start',
-    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
   },
-  statusText: {
-    color: colors.text.white,
-    fontSize: 14,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '600',
-  },
-  infoCard: {
-    backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    ...shadows.small,
+    color: colors.text.white,
     flex: 1,
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  content: {
+    flex: 1,
+
   },
   tourName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background.paper,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+    ...shadows.small,
+  },
+  guideAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  guideInfo: {
+    flex: 1,
+  },
+  guideName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  guideTitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  sectionContainer: {
+    backgroundColor: colors.background.paper,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
+    ...shadows.small,
+  },
+  ratingTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
   ratingContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
   },
   starButton: {
     padding: spacing.xs,
   },
-  leaveButton: {
-    backgroundColor: colors.error.main,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  leaveButtonText: {
-    color: colors.text.white,
-    fontSize: 16,
-    fontWeight: '600',
+  tipTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
   messageText: {
     fontSize: 16,
     color: colors.text.secondary,
     textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  submitButton: {
+    marginTop: 'auto',
   },
 }); 
