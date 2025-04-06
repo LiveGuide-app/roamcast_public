@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
 import { useRouter } from 'expo-router';
+import { getDeviceId } from '@/services/device';
 
 type GuideInfo = {
   full_name: string;
@@ -32,27 +33,50 @@ export const TourCompletedScreen = ({
   const [isPaymentReady, setIsPaymentReady] = useState(false);
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [participantId, setParticipantId] = useState<string | null>(null);
   const tipPaymentRef = useRef<TipPaymentHandle>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchGuideInfo = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const { data: tourData, error: tourError } = await supabase
-          .from('tours')
-          .select('guide_id')
-          .eq('id', tour.id)
-          .single();
+        
+        // Import and use getDeviceId
+        const deviceId = await getDeviceId();
+        
+        // Fetch both tour participant and guide info in parallel
+        const [participantResult, tourResult] = await Promise.all([
+          supabase
+            .from('tour_participants')
+            .select('id')
+            .eq('tour_id', tour.id)
+            .eq('device_id', deviceId)
+            .single(),
+          supabase
+            .from('tours')
+            .select('guide_id')
+            .eq('id', tour.id)
+            .single()
+        ]);
 
-        if (tourError) throw tourError;
-        if (!tourData?.guide_id) throw new Error('No guide found for this tour');
+        if (participantResult.error) {
+          if (participantResult.error.code === 'PGRST116') {
+            console.warn('No participant found for this tour');
+            return;
+          }
+          throw participantResult.error;
+        }
+        if (tourResult.error) throw tourResult.error;
+        
+        // Set participant ID
+        setParticipantId(participantResult.data.id);
 
-        // Get both guide info and stripe account in one query
+        // Fetch guide info
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('full_name, profile_image_url, stripe_account_id')
-          .eq('id', tourData.guide_id)
+          .eq('id', tourResult.data.guide_id)
           .single();
 
         if (userError) throw userError;
@@ -64,17 +88,15 @@ export const TourCompletedScreen = ({
 
         if (userData?.stripe_account_id) {
           setStripeAccountId(userData.stripe_account_id);
-        } else {
-          console.warn('Guide does not have a Stripe account set up');
         }
       } catch (error) {
-        console.error('Error fetching guide info:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchGuideInfo();
+    fetchData();
   }, [tour.id]);
 
   const handleRating = (rating: number) => {
@@ -206,21 +228,21 @@ export const TourCompletedScreen = ({
 
         <View style={styles.sectionContainer}>
           <Text style={styles.tipTitle}>Would you like to leave a tip?</Text>
-          {tour.participant_id && stripeAccountId ? (
+          {participantId && stripeAccountId ? (
             <ConnectedStripeProvider stripeAccountId={stripeAccountId}>
               <TipPayment 
                 ref={tipPaymentRef}
-                tourParticipantId={tour.participant_id}
+                tourParticipantId={participantId}
                 onAmountChange={handleTipAmountChange}
                 onPaymentReady={handlePaymentReady}
                 onPaymentComplete={handlePaymentComplete}
               />
             </ConnectedStripeProvider>
-          ) : tour.participant_id && !stripeAccountId && !isLoading ? (
+          ) : participantId && !stripeAccountId && !isLoading ? (
             <Text style={styles.messageText}>
               Tipping is not available for this guide.
             </Text>
-          ) : tour.participant_id && isLoading ? (
+          ) : isLoading ? (
             <Text style={styles.messageText}>
               Loading payment options...
             </Text>
