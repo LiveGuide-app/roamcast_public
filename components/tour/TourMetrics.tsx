@@ -45,6 +45,7 @@ interface TourMetricsProps {
     totalReviews?: number;
     earnings?: number;
     totalTips?: number;
+    completedAt?: string;
   };
   variant?: 'grid' | 'row';
 }
@@ -95,6 +96,18 @@ export const TourMetrics: React.FC<TourMetricsProps> = ({
             undefined}
           icon="cash"
           iconColor={colors.success.main}
+        />
+      )}
+
+      {metrics.completedAt && (
+        <MetricCard
+          label="Completed"
+          value={new Date(metrics.completedAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          })}
+          icon="calendar"
         />
       )}
     </View>

@@ -186,7 +186,8 @@ export default function LiveTourDetail() {
                   rating: statistics.rating,
                   totalReviews: statistics.totalReviews,
                   earnings: statistics.earnings,
-                  totalTips: statistics.totalTips
+                  totalTips: statistics.totalTips,
+                  completedAt: tour.completed_at
                 }}
               />
 
