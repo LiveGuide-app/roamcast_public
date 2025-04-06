@@ -28,6 +28,7 @@ export default function GuideProfile() {
     isLoading,
     updateProfileImageUrl,
     updateRecommendationsLink,
+    fullName,
   } = useProfileData();
 
   const { handleImagePick, isUploading } = useProfileImage({
@@ -86,6 +87,7 @@ export default function GuideProfile() {
           ratingError={ratingError}
           isUploading={isUploading}
           onImagePress={handleImagePick}
+          fullName={fullName}
         />
 
         <PaymentSettings

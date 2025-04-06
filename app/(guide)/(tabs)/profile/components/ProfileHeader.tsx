@@ -12,6 +12,7 @@ interface ProfileHeaderProps {
   ratingError: string | null;
   isUploading: boolean;
   onImagePress: () => void;
+  fullName: string | null;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -21,7 +22,13 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   ratingError,
   isUploading,
   onImagePress,
+  fullName,
 }) => {
+  // Get display name from either full_name in database or display_name in metadata
+  const displayName = fullName || user?.user_metadata?.display_name || user?.email || 'Guide';
+  // Get first letter for avatar
+  const avatarLetter = fullName?.[0] || user?.user_metadata?.display_name?.[0] || user?.email?.[0] || 'G';
+
   return (
     <View style={styles.header}>
       <View style={styles.profileSection}>
@@ -39,14 +46,15 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             />
           ) : (
             <Text style={styles.avatarText}>
-              {user?.email?.[0].toUpperCase() || 'G'}
+              {avatarLetter.toUpperCase()}
             </Text>
           )}
           <View style={styles.editIconContainer}>
             <Ionicons name="pencil" size={12} color="white" />
           </View>
         </TouchableOpacity>
-        <Text style={styles.name}>{user?.email || 'Guide'}</Text>
+        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.email}>{user?.email}</Text>
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={16} color="#4CAF50" />
           {isUploading ? (
@@ -110,6 +118,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  email: {
+    fontSize: 14,
+    color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   ratingContainer: {

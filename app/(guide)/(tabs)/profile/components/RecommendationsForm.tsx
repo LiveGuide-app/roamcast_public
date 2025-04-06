@@ -19,7 +19,7 @@ export const RecommendationsForm: React.FC<RecommendationsFormProps> = ({
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Recommendations</Text>
       <Text style={styles.sectionDescription}>
-        You can add a link to a document such as a google sheet or pdf with recommendations that will be shown to your guests after the tour
+        You can add a link to a document such as a google sheet or pdf with recommendations that will be shown to your guests after the tour. If you leave it blank, the recommendations will not be shown.
       </Text>
       <TextInput
         style={styles.input}

@@ -9,6 +9,7 @@ interface ProfileData {
   stripeAccountEnabled: boolean;
   profileImageUrl: string | null;
   recommendationsLink: string | null;
+  fullName: string | null;
   ratings: GuideRatings;
   isLoading: boolean;
   ratingError: string | null;
@@ -21,6 +22,7 @@ export const useProfileData = () => {
     stripeAccountEnabled: false,
     profileImageUrl: null,
     recommendationsLink: null,
+    fullName: null,
     ratings: { averageRating: 0, totalReviews: 0 },
     isLoading: true,
     ratingError: null,
@@ -35,7 +37,7 @@ export const useProfileData = () => {
       // Fetch stripe account status, profile image, and recommendations link
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('stripe_account_enabled, profile_image_url, recommendations_link')
+        .select('stripe_account_enabled, profile_image_url, recommendations_link, full_name')
         .eq('id', user?.id)
         .single();
 
@@ -52,6 +54,7 @@ export const useProfileData = () => {
           stripeAccountEnabled: userData?.stripe_account_enabled || false,
           profileImageUrl: userData?.profile_image_url || null,
           recommendationsLink: userData?.recommendations_link || null,
+          fullName: userData?.full_name || null,
           ratings: guideRatings,
           isLoading: false,
         }));
@@ -62,6 +65,7 @@ export const useProfileData = () => {
           stripeAccountEnabled: userData?.stripe_account_enabled || false,
           profileImageUrl: userData?.profile_image_url || null,
           recommendationsLink: userData?.recommendations_link || null,
+          fullName: userData?.full_name || null,
           ratingError: 'Failed to load ratings',
           isLoading: false,
         }));
