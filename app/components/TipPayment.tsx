@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 import { supabase } from '@/lib/supabase';
@@ -26,6 +26,12 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   const [customAmount, setCustomAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
+  useEffect(() => {
+    // Signal that no amount is selected initially
+    onAmountChange(null);
+    onPaymentReady(false);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     handlePayment: async () => {
@@ -78,7 +84,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
     setCustomAmount('');
     onAmountChange(amount);
     // Signal payment readiness
-    onPaymentReady(true);
+    onPaymentReady(amount !== null);
   };
 
   const handleCustomAmountChange = (text: string) => {
@@ -194,14 +200,14 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
       <TouchableOpacity
         style={[
           styles.noTipButton,
-          selectedAmount === null && !customAmount && styles.selectedButton,
+          selectedAmount === null && !customAmount && styles.noTipButtonUnselected,
         ]}
         onPress={() => handleAmountSelect(null)}
         disabled={isLoading}
       >
         <Text style={[
           styles.noTipText,
-          selectedAmount === null && !customAmount && styles.selectedText,
+          selectedAmount === null && !customAmount && styles.noTipTextUnselected,
         ]}>
           No tip
         </Text>
@@ -278,9 +284,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     marginBottom: 16,
   },
+  noTipButtonUnselected: {
+    backgroundColor: colors.background.default,
+    borderStyle: 'dashed',
+  },
   noTipText: {
     textAlign: 'center',
     fontSize: 16,
     color: colors.text.primary,
+  },
+  noTipTextUnselected: {
+    color: colors.text.secondary,
   },
 }); 

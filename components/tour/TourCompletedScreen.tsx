@@ -113,6 +113,7 @@ export const TourCompletedScreen = ({
 
   const handlePaymentComplete = async () => {
     try {
+      // Submit the rating first
       await onRatingSubmit(selectedRating);
       setSelectedTipAmount(null);
       setIsPaymentReady(false);
@@ -127,11 +128,12 @@ export const TourCompletedScreen = ({
       if (tourData?.guide_id) {
         router.replace(`/(tour)/thank-you?guideId=${tourData.guide_id}`);
       } else {
+        // Fallback to home if for some reason we can't get the guide ID
         router.replace('/');
       }
     } catch (error) {
-      console.error('Error submitting rating after payment:', error);
-      Alert.alert('Error', 'Payment successful but failed to submit rating.');
+      console.error('Error submitting rating:', error);
+      Alert.alert('Error', 'Failed to submit rating.');
     }
   };
 
