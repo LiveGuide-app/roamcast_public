@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGuideLiveKit } from '@/hooks/useGuideLiveKit';
 import { Linking } from 'react-native';
+import { Button } from '@/components/Button';
 
 export default function LiveTourDetail() {
   const { tourId } = useLocalSearchParams<{ tourId: string }>();
@@ -129,79 +130,96 @@ export default function LiveTourDetail() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, styles.safeArea]}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.push('/(guide)/(tabs)/tours')}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{tour.name}</Text>
-      </View>
-
-      <View style={styles.contentContainer}>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{tour.status}</Text>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{tour.name}</Text>
         </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.label}>Tour Name</Text>
-          <Text style={styles.value}>{tour.name}</Text>
-
-          <Text style={styles.label}>Tour Code</Text>
-          <Text style={styles.value}>{tour.unique_code}</Text>
-
-          <Text style={styles.label}>Connection Status</Text>
-          <Text style={[styles.value, isConnected ? styles.connectedText : styles.disconnectedText]}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Text>
-
-          <Text style={styles.label}>Participants</Text>
-          <Text style={styles.value}>{remoteParticipants.length}</Text>
-        </View>
-
-        {tour.status === 'active' && (
-          <View style={styles.microphoneContainer}>
-            <TouchableOpacity 
-              style={[styles.micButton, !isMicrophoneEnabled && styles.micButtonActive]} 
-              onPress={handleToggleMicrophone}
-            >
-              <Ionicons 
-                name={isMicrophoneEnabled ? "mic" : "mic-off"} 
-                size={24} 
-                color={isMicrophoneEnabled ? colors.text.primary : colors.error.main} 
-              />
-              <Text style={[styles.micButtonText, !isMicrophoneEnabled && styles.micButtonTextActive]}>
-                {isMicrophoneEnabled ? 'Microphone On' : 'Microphone Off'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={styles.buttonContainer}>
+        <View style={styles.contentContainer}>
           {tour.status === 'pending' ? (
             <>
-              <TouchableOpacity 
-                style={[styles.button, styles.startButton]}
-                onPress={handleStartTour}
-              >
-                <Text style={styles.buttonText}>Start Tour</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleCancelTour}
-              >
-                <Text style={styles.buttonText}>Cancel Tour</Text>
-              </TouchableOpacity>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>Pending</Text>
+              </View>
+
+              <View style={styles.codeSection}>
+                <Text style={styles.sectionTitle}>Tour Code</Text>
+                <Text style={styles.codeText}>{tour.unique_code}</Text>
+                <Text style={styles.helperText}>Give this code to your guests so they can join the tour.</Text>
+              </View>
+
+              <View style={styles.guestsSection}>
+                <Text style={styles.sectionTitle}>Guests</Text>
+                <Text style={styles.guestsCount}>{remoteParticipants.length}</Text>
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Start Tour"
+                  onPress={handleStartTour}
+                />
+                <Button
+                  title="Cancel Tour"
+                  variant="danger-outline"
+                  onPress={handleCancelTour}
+                />
+              </View>
             </>
           ) : tour.status === 'active' ? (
-            <TouchableOpacity 
-              style={[styles.button, styles.endButton]}
-              onPress={handleEndTour}
-            >
-              <Text style={styles.buttonText}>End Tour</Text>
-            </TouchableOpacity>
+            <>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>{tour.status}</Text>
+              </View>
+
+              <View style={styles.infoCard}>
+                <Text style={styles.label}>Tour Name</Text>
+                <Text style={styles.value}>{tour.name}</Text>
+
+                <Text style={styles.label}>Tour Code</Text>
+                <Text style={styles.value}>{tour.unique_code}</Text>
+
+                <Text style={styles.label}>Connection Status</Text>
+                <Text style={[styles.value, isConnected ? styles.connectedText : styles.disconnectedText]}>
+                  {isConnected ? 'Connected' : 'Disconnected'}
+                </Text>
+
+                <Text style={styles.label}>Participants</Text>
+                <Text style={styles.value}>{remoteParticipants.length}</Text>
+              </View>
+
+              {tour.status === 'active' && (
+                <View style={styles.microphoneContainer}>
+                  <TouchableOpacity 
+                    style={[styles.micButton, !isMicrophoneEnabled && styles.micButtonActive]} 
+                    onPress={handleToggleMicrophone}
+                  >
+                    <Ionicons 
+                      name={isMicrophoneEnabled ? "mic" : "mic-off"} 
+                      size={24} 
+                      color={isMicrophoneEnabled ? colors.text.primary : colors.error.main} 
+                    />
+                    <Text style={[styles.micButtonText, !isMicrophoneEnabled && styles.micButtonTextActive]}>
+                      {isMicrophoneEnabled ? 'Microphone On' : 'Microphone Off'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="End Tour"
+                  variant="danger"
+                  onPress={handleEndTour}
+                />
+              </View>
+            </>
           ) : null}
         </View>
       </View>
@@ -214,50 +232,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.default,
   },
-  safeArea: {
-    backgroundColor: colors.background.paper,
+  content: {
+    flex: 1,
+    padding: spacing.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.primary.main,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    position: 'relative',
+    borderRadius: borderRadius.lg,
   },
   backButton: {
     padding: spacing.sm,
-    position: 'absolute',
-    left: spacing.md,
-    zIndex: 1,
+    marginRight: spacing.sm,
+    marginLeft: -spacing.sm,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: colors.text.white,
     flex: 1,
-    textAlign: 'center',
+    marginLeft: spacing.sm,
   },
   contentContainer: {
     flex: 1,
     padding: spacing.lg,
     alignItems: 'center',
-    backgroundColor: colors.background.default,
   },
   statusBadge: {
-    backgroundColor: colors.primary.light,
+    backgroundColor: colors.warning.light,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.lg,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.round,
+    marginBottom: spacing.xl,
   },
   statusText: {
     color: colors.text.white,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    textTransform: 'capitalize',
+  },
+  codeSection: {
+    width: '100%',
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    ...shadows.small,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  codeText: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  helperText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  guestsSection: {
+    width: '100%',
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    ...shadows.small,
+  },
+  guestsCount: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  buttonContainer: {
+    width: '100%',
+    marginTop: 'auto',
+    gap: spacing.md,
   },
   infoCard: {
     backgroundColor: colors.background.paper,
@@ -302,30 +360,6 @@ const styles = StyleSheet.create({
   },
   micButtonTextActive: {
     color: colors.text.white,
-  },
-  buttonContainer: {
-    width: '100%',
-    marginTop: spacing.xl,
-    gap: spacing.md,
-  },
-  button: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  startButton: {
-    backgroundColor: colors.primary.main,
-  },
-  endButton: {
-    backgroundColor: colors.error.main,
-  },
-  cancelButton: {
-    backgroundColor: colors.text.secondary,
-  },
-  buttonText: {
-    color: colors.text.white,
-    fontSize: 16,
-    fontWeight: '600',
   },
   connectedText: {
     color: colors.success.main,
