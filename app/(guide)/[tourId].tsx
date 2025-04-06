@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { Tour, getTour, updateTourStatus, TourError } from '@/services/tour';
+import { Tour as BaseTour, getTour, updateTourStatus, TourError } from '@/services/tour';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { colors, spacing, borderRadius, shadows } from '../../config/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,11 +11,28 @@ import { useGuideLiveKit } from '@/hooks/useGuideLiveKit';
 import { Linking } from 'react-native';
 import { Button } from '@/components/Button';
 
+interface TourStatistics {
+  totalGuests: number;
+  rating: number | null;
+  totalReviews: number;
+  earnings: number;
+  totalTips: number;
+  duration: string | null;
+}
+
+// Extend the base Tour type with the additional fields we need
+interface Tour extends BaseTour {
+  room_started_at: string | null;
+  room_finished_at: string | null;
+  total_participants: number;
+}
+
 export default function LiveTourDetail() {
   const { tourId } = useLocalSearchParams<{ tourId: string }>();
   const router = useRouter();
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [statistics, setStatistics] = useState<TourStatistics | null>(null);
   const { 
     isConnected, 
     connect, 
@@ -36,6 +53,34 @@ export default function LiveTourDetail() {
         console.log('Fetching tour with ID:', tourId);
         const tourData = await getTour(tourId);
         setTour(tourData);
+
+        if (tourData.status === 'completed') {
+          // Calculate duration
+          const startTime = tourData.room_started_at ? new Date(tourData.room_started_at) : null;
+          const endTime = tourData.room_finished_at ? new Date(tourData.room_finished_at) : null;
+          const duration = startTime && endTime ? 
+            new Date(endTime.getTime() - startTime.getTime())
+              .toISOString()
+              .substr(11, 5) // Get HH:mm format
+            : null;
+
+          // Get feedback statistics
+          const feedbackResponse = await fetch(`/api/tours/${tourId}/feedback`);
+          const feedbackData = await feedbackResponse.json();
+          
+          // Get earnings statistics
+          const tipsResponse = await fetch(`/api/tours/${tourId}/tips`);
+          const tipsData = await tipsResponse.json();
+
+          setStatistics({
+            totalGuests: tourData.total_participants,
+            rating: feedbackData.averageRating || null,
+            totalReviews: feedbackData.totalReviews || 0,
+            earnings: tipsData.totalAmount || 0,
+            totalTips: tipsData.totalTips || 0,
+            duration
+          });
+        }
       } catch (error) {
         if (error instanceof TourError) {
           Alert.alert('Error', error.message);
@@ -241,27 +286,39 @@ export default function LiveTourDetail() {
               <View style={styles.statsGrid}>
                 <View style={styles.statsCard}>
                   <Text style={styles.statsLabel}>Total Guests</Text>
-                  <Text style={styles.statsValue}>12</Text>
+                  <Text style={styles.statsValue}>{statistics?.totalGuests || 0}</Text>
                 </View>
 
                 <View style={styles.statsCard}>
                   <Text style={styles.statsLabel}>Rating</Text>
-                  <View style={styles.ratingContainer}>
-                    <Ionicons name="star" size={20} color={colors.warning.main} />
-                    <Text style={styles.statsValue}>4.7</Text>
-                  </View>
-                  <Text style={styles.statsSubtext}>(5 reviews)</Text>
+                  {statistics?.rating ? (
+                    <>
+                      <View style={styles.ratingContainer}>
+                        <Ionicons name="star" size={20} color={colors.warning.main} />
+                        <Text style={styles.statsValue}>{statistics.rating.toFixed(1)}</Text>
+                      </View>
+                      <Text style={styles.statsSubtext}>
+                        ({statistics.totalReviews} review{statistics.totalReviews !== 1 ? 's' : ''})
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.statsValue}>N/A</Text>
+                  )}
                 </View>
 
                 <View style={styles.statsCard}>
                   <Text style={styles.statsLabel}>Earnings</Text>
-                  <Text style={styles.statsValue}>£24</Text>
-                  <Text style={styles.statsSubtext}>(3 tips)</Text>
+                  <Text style={styles.statsValue}>£{statistics?.earnings || 0}</Text>
+                  {statistics?.totalTips ? (
+                    <Text style={styles.statsSubtext}>
+                      ({statistics.totalTips} tip{statistics.totalTips !== 1 ? 's' : ''})
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={styles.statsCard}>
                   <Text style={styles.statsLabel}>Duration</Text>
-                  <Text style={styles.statsValue}>02:14</Text>
+                  <Text style={styles.statsValue}>{statistics?.duration || '00:00'}</Text>
                 </View>
               </View>
 
