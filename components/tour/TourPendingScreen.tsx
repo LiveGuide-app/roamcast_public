@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/Button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type GuideInfo = {
   full_name: string;
@@ -82,7 +83,7 @@ export const TourPendingScreen = ({ tour, onLeaveTour }: TourPendingScreenProps)
 
       <View style={styles.contentContainer}>
         <View style={styles.audioIcon}>
-          <Ionicons name="radio" size={48} color={colors.primary.main} />
+          <MaterialIcons name="multitrack-audio" size={48} color={colors.background.paper} />
         </View>
         
         <Text style={styles.waitingText}>Waiting for tour to start</Text>

@@ -1,5 +1,6 @@
-import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, StyleProp, ViewStyle, TextStyle, View } from 'react-native';
 import { colors, spacing, borderRadius } from '@/config/theme';
+import { ReactNode } from 'react';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -8,6 +9,8 @@ interface ButtonProps extends TouchableOpacityProps {
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export function Button({ 
@@ -18,6 +21,8 @@ export function Button({
   style,
   textStyle,
   disabled,
+  leftIcon,
+  rightIcon,
   ...props 
 }: ButtonProps) {
   return (
@@ -33,14 +38,18 @@ export function Button({
       disabled={disabled}
       {...props}
     >
-      <Text style={[
-        styles.text, 
-        (variant === 'outline' || variant === 'danger-outline') && styles.outlineText,
-        variant === 'danger-outline' && styles.dangerText,
-        textStyle
-      ]}>
-        {title}
-      </Text>
+      <View style={styles.content}>
+        {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
+        <Text style={[
+          styles.text, 
+          (variant === 'outline' || variant === 'danger-outline') && styles.outlineText,
+          variant === 'danger-outline' && styles.dangerText,
+          textStyle
+        ]}>
+          {title}
+        </Text>
+        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -51,6 +60,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 100,
     minHeight: 56,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leftIcon: {
+    marginRight: spacing.sm,
+  },
+  rightIcon: {
+    marginLeft: spacing.sm,
   },
   primary: {
     backgroundColor: colors.primary.main,
