@@ -7,8 +7,8 @@ import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 import { AppState, AppStateStatus } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 
-// Set LiveKit logging to warnings and errors only
-setLogLevel(LogLevel.warn);
+// Set LiveKit logging to errors only
+setLogLevel(LogLevel.error);
 
 interface GuideLiveKitState {
   isConnected: boolean;
@@ -37,7 +37,7 @@ export const useGuideLiveKit = (tourId: string) => {
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-        allowsRecordingIOS: true,
+        allowsRecordingIOS: true,  // Guide needs to record
         interruptionModeIOS: InterruptionModeIOS.DuckOthers,
         interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
       });
@@ -74,6 +74,7 @@ export const useGuideLiveKit = (tourId: string) => {
 
   const getToken = useCallback(async () => {
     try {
+      console.log('🔑 Guide requesting token for tour:', tourId);
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: { 
           tourId,
@@ -88,13 +89,14 @@ export const useGuideLiveKit = (tourId: string) => {
       if (error) throw error;
       return data.token;
     } catch (error) {
-      console.error('Error getting LiveKit token:', error);
+      console.error('❌ Guide token error:', error);
       throw error;
     }
   }, [tourId, user?.id, user?.email]);
 
   const connect = useCallback(async () => {
     try {
+      console.log('🔄 Guide attempting to connect to tour:', tourId);
       const token = await getToken();
       const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
@@ -109,6 +111,7 @@ export const useGuideLiveKit = (tourId: string) => {
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
+        console.log('✅ Guide connected to tour:', tourId);
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -116,9 +119,20 @@ export const useGuideLiveKit = (tourId: string) => {
           localParticipant: room.localParticipant,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
         }));
+
+        // Update room start time in tours table
+        supabase
+          .from('tours')
+          .update({ room_started_at: new Date().toISOString() })
+          .eq('id', tourId)
+          .then(
+            () => {},
+            error => console.error('❌ Failed to update room start time:', error)
+          );
       });
 
       room.on(RoomEvent.Disconnected, () => {
+        console.log('🔌 Guide disconnected from tour:', tourId);
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -126,6 +140,16 @@ export const useGuideLiveKit = (tourId: string) => {
           localParticipant: null,
           remoteParticipants: [],
         }));
+
+        // Update room finish time in tours table
+        supabase
+          .from('tours')
+          .update({ room_finished_at: new Date().toISOString() })
+          .eq('id', tourId)
+          .then(
+            () => {},
+            error => console.error('❌ Failed to update room finish time:', error)
+          );
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
@@ -145,10 +169,17 @@ export const useGuideLiveKit = (tourId: string) => {
       await room.connect(wsUrl, token);
       return room;
     } catch (error) {
-      console.error('Error connecting to LiveKit room:', error);
+      console.error('❌ Guide connection error:', error);
+      setState(prev => ({
+        ...prev,
+        isConnected: false,
+        room: null,
+        localParticipant: null,
+        remoteParticipants: [],
+      }));
       throw error;
     }
-  }, [getToken]);
+  }, [getToken, tourId]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -171,16 +202,11 @@ export const useGuideLiveKit = (tourId: string) => {
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
     if (nextAppState === 'background' && state.isConnected) {
-      // App went to background (user switched to another app), disconnect
-      console.log('App went to background, disconnecting');
+      console.log('📱 Guide app to background, disconnecting');
       await disconnect();
-    } else if (nextAppState === 'active') {
-      // App came back to foreground, reconnect if we were previously connected
-      console.log('App came back to foreground');
-      if (state.isMicrophoneEnabled) {
-        console.log('Microphone was enabled, reconnecting');
-        await connect();
-      }
+    } else if (nextAppState === 'active' && state.isMicrophoneEnabled) {
+      console.log('📱 Guide app to foreground, reconnecting');
+      await connect();
     }
   }, [state.isConnected, state.isMicrophoneEnabled, connect, disconnect]);
 
