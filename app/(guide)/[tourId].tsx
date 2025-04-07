@@ -34,7 +34,7 @@ export default function LiveTourDetail() {
   const [isEndingTour, setIsEndingTour] = useState(false);
   
   // Use the new hook for participant count
-  const participantCount = useParticipantCount(tourId || null);
+  const participantCount = useParticipantCount(tourId || null, tour);
   
   // Log participant count changes
   React.useEffect(() => {
