@@ -123,7 +123,7 @@ export default function LoginScreen() {
             <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
               <Text style={styles.link}>Don't have an account? Sign up</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/forgot-password')}>
+            <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/reset-password')}>
               <Text style={styles.link}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: spacing.xxl,
+    marginTop: spacing.lg,
     marginBottom: spacing.xl,
   },
   title: {

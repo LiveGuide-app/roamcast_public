@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { AuthProvider } from '../components/auth/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -20,6 +20,15 @@ const DebugError = ({ error }: { error: Error }) => (
 );
 
 export default function RootLayout() {
+  const pathname = usePathname();
+
+  // Get the current auth screen title
+  const getAuthTitle = () => {
+    if (pathname.includes('signup')) return 'Create Account';
+    if (pathname.includes('reset-password')) return 'Reset Password';
+    return 'Sign In';
+  };
+
   useEffect(() => {
     const initializeLiveKit = async () => {
       try {
@@ -62,11 +71,20 @@ export default function RootLayout() {
             <Stack>
               <Stack.Screen 
                 name="index" 
-                options={{ headerShown: false }} 
+                options={{ 
+                  headerShown: false,
+                  title: "Home"
+                }} 
               />
               <Stack.Screen 
                 name="(auth)" 
-                options={{ headerShown: false }} 
+                options={{
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#fff' },
+                  headerTintColor: '#000',
+                  headerTitleStyle: { fontWeight: 'bold' },
+                  title: getAuthTitle()
+                }} 
               />
               <Stack.Screen 
                 name="(guide)" 
