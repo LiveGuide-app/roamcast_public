@@ -132,6 +132,7 @@ export const getGuideTours = async (): Promise<Tour[]> => {
       )
     `)
     .eq('guide_id', user.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) {

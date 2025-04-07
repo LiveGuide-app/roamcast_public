@@ -42,11 +42,17 @@ export default function LiveTourDetail() {
 
   const { duration } = useTourDuration(tour);
   const { statistics } = useTourStatistics(tour);
-  const { handleStartTour, handleEndTour, handleCancelTour, isUpdating } = useTourActions({
-    tour,
-    connect,
-    disconnect,
-    onTourUpdate: (updatedTour) => setTour(updatedTour)
+  const { 
+    handleStartTour, 
+    handleEndTour, 
+    handleCancelTour, 
+    handleDeleteTour,
+    isUpdating 
+  } = useTourActions({ 
+    tour, 
+    connect: connect, 
+    disconnect: disconnect,
+    onTourUpdate: setTour 
   });
 
   // Fetch tour data
@@ -125,6 +131,49 @@ export default function LiveTourDetail() {
           onPress={() => router.replace('/(guide)/(tabs)/tours')}
         />
       </View>
+    );
+  }
+
+  if (tour?.status === 'cancelled') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.content}>
+          <TourHeader
+            title={tour.name}
+            onBack={() => router.replace('/(guide)/(tabs)/tours')}
+          />
+
+          <View style={styles.contentContainer}>
+            <StatusBadge status={tour.status} variant="large" />
+
+            <View style={styles.codeSection}>
+              <Text style={styles.sectionTitle}>Tour Code</Text>
+              <Text style={styles.codeText}>{tour.unique_code}</Text>
+            </View>
+
+            <TourMetrics
+              metrics={{
+                guests: participantCount
+              }}
+              variant="row"
+            />
+
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Back to tours"
+                variant="outline"
+                onPress={() => router.replace('/(guide)/(tabs)/tours')}
+              />
+              <Button
+                title="Delete Tour"
+                variant="danger-outline"
+                onPress={handleDeleteTour}
+                disabled={isUpdating}
+              />
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -240,30 +289,6 @@ export default function LiveTourDetail() {
                 />
               </View>
             </>
-          ) : tour.status === 'cancelled' ? (
-            <>
-              <StatusBadge status={tour.status} variant="large" />
-
-              <View style={styles.codeSection}>
-                <Text style={styles.sectionTitle}>Tour Code</Text>
-                <Text style={styles.codeText}>{tour.unique_code}</Text>
-              </View>
-
-              <TourMetrics
-                metrics={{
-                  guests: participantCount
-                }}
-                variant="row"
-              />
-
-              <View style={styles.buttonContainer}>
-                <Button
-                  title="Back to tours"
-                  variant="outline"
-                  onPress={() => router.replace('/(guide)/(tabs)/tours')}
-                />
-              </View>
-            </>
           ) : null}
         </View>
       </View>
@@ -352,5 +377,5 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     alignSelf: 'flex-start',
     marginBottom: spacing.md,
-  },
+  }
 });

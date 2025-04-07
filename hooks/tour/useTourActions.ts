@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Tour, updateTourStatus, TourError } from '@/services/tour';
 import { Alert } from 'react-native';
+import { supabase } from '@/lib/supabase';
 
 interface UseTourActionsProps {
   tour: Tour | null;
@@ -18,6 +19,7 @@ export const useTourActions = ({
 }: UseTourActionsProps) => {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleStartTour = async () => {
     if (!tour) return;
@@ -124,10 +126,53 @@ export const useTourActions = ({
     );
   };
 
+  const handleDeleteTour = async () => {
+    if (!tour) return;
+    
+    Alert.alert(
+      'Delete Tour',
+      'Are you sure you want to delete this tour? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              
+              const { error } = await supabase
+                .from('tours')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('id', tour.id);
+              
+              if (error) {
+                throw error;
+              }
+              
+              // Navigate back to tours list
+              router.push('/(guide)/(tabs)/tours');
+            } catch (error) {
+              console.error('Error deleting tour:', error);
+              Alert.alert('Error', 'Failed to delete tour. Please try again.');
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return {
+    isLoading,
     handleStartTour,
     handleEndTour,
     handleCancelTour,
+    handleDeleteTour,
     isUpdating
   };
 }; 
