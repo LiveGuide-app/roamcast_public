@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius } from '@/config/theme';
 
-export type TourStatus = 'active' | 'pending' | 'completed';
+export type TourStatus = 'active' | 'pending' | 'completed' | 'cancelled';
 
 interface StatusBadgeProps {
   status: TourStatus;
@@ -23,6 +23,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         return colors.warning.light;
       case 'completed':
         return colors.success.main;
+      case 'cancelled':
+        return colors.error.main;
       default:
         return colors.text.secondary;
     }
@@ -36,6 +38,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         return 'Pending';
       case 'completed':
         return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
       default:
         return status;
     }

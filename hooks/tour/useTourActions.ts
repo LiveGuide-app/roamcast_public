@@ -84,6 +84,8 @@ export const useTourActions = ({
   };
 
   const handleCancelTour = () => {
+    if (!tour) return;
+    
     Alert.alert(
       'Cancel Tour',
       'Are you sure you want to cancel this tour?',
@@ -94,7 +96,29 @@ export const useTourActions = ({
         },
         {
           text: 'Yes',
-          onPress: () => router.push('/(guide)/(tabs)/tours')
+          onPress: async () => {
+            setIsUpdating(true);
+            try {
+              // Update tour status to cancelled
+              const updatedTour = await updateTourStatus(tour.id, 'cancelled');
+              
+              // Notify parent component of the update
+              if (onTourUpdate) {
+                onTourUpdate(updatedTour);
+              }
+              
+              // Navigate back to tours list
+              router.push('/(guide)/(tabs)/tours');
+            } catch (error) {
+              if (error instanceof TourError) {
+                Alert.alert('Error', error.message);
+              } else {
+                Alert.alert('Error', 'Failed to cancel tour');
+              }
+            } finally {
+              setIsUpdating(false);
+            }
+          }
         }
       ]
     );

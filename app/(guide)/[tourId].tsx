@@ -240,6 +240,30 @@ export default function LiveTourDetail() {
                 />
               </View>
             </>
+          ) : tour.status === 'cancelled' ? (
+            <>
+              <StatusBadge status={tour.status} variant="large" />
+
+              <View style={styles.codeSection}>
+                <Text style={styles.sectionTitle}>Tour Code</Text>
+                <Text style={styles.codeText}>{tour.unique_code}</Text>
+              </View>
+
+              <TourMetrics
+                metrics={{
+                  guests: participantCount
+                }}
+                variant="row"
+              />
+
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Back to tours"
+                  variant="outline"
+                  onPress={() => router.replace('/(guide)/(tabs)/tours')}
+                />
+              </View>
+            </>
           ) : null}
         </View>
       </View>
