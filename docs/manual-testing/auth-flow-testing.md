@@ -54,19 +54,19 @@ This document outlines the manual testing scenarios for the Roamcast authenticat
 ## 3. Login Scenarios
 
 ### Successful Login
-- [ ] Enter valid credentials
+- [x] Enter valid credentials
   - Verify loading spinner appears
   - Verify successful navigation to tours page
   - Verify session persistence (app remembers login)
 
 ### Failed Login Attempts
-- [ ] Wrong password for existing email
+- [x] Wrong password for existing email
   - Expected: Clear error message about invalid credentials
   - Verify can try again immediately
-- [ ] Non-existent email
+- [x] Non-existent email
   - Expected: Same error message (don't reveal if email exists)
   - Verify can try again immediately
-- [ ] Multiple rapid login attempts
+- [x] Multiple rapid login attempts
   - Verify no unexpected behavior or crashes
 
 ### Network Scenarios
@@ -81,19 +81,19 @@ This document outlines the manual testing scenarios for the Roamcast authenticat
 ## 4. Navigation Flow
 
 ### Sign Up Flow
-- [ ] Tap "Don't have an account? Sign up"
+- [x] Tap "Don't have an account? Sign up"
   - Verify navigation to sign up screen
   - Verify can go back to login screen
   - Verify form state is reset when returning
 
 ### Password Recovery Flow
-- [ ] Tap "Forgot password?"
+- [x] Tap "Forgot password?"
   - Verify navigation to password recovery screen
   - Verify can go back to login screen
   - Verify form state is reset when returning
 
 ### Post-Login Navigation
-- [ ] After successful login:
+- [x] After successful login:
   - Verify cannot go back to login screen
   - Verify app state is correct (tours page loads properly)
 

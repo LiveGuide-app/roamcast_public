@@ -24,7 +24,7 @@ export default function RootLayout() {
 
   // Get the current auth screen title
   const getAuthTitle = () => {
-    if (pathname.includes('signup')) return 'Create Account';
+    if (pathname.includes('signup')) return 'Sign Up';
     if (pathname.includes('reset-password')) return 'Reset Password';
     return 'Sign In';
   };

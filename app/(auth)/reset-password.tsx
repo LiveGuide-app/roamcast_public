@@ -1,15 +1,54 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../../config/theme';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../components/auth/AuthContext';
+import { validatePassword, validatePasswordConfirmation, ValidationError } from '../../utils/validation';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { updatePassword } = useAuth();
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const handleResetPassword = () => {
-    // TODO: Implement password reset logic
+  const handleResetPassword = async () => {
+    // Clear previous errors
+    setErrors([]);
+    
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    const confirmPasswordValidation = validatePasswordConfirmation(password, confirmPassword);
+    
+    if (!passwordValidation.isValid || !confirmPasswordValidation.isValid) {
+      setErrors([
+        ...passwordValidation.errors,
+        ...confirmPasswordValidation.errors
+      ]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await updatePassword(password);
+      
+      if (error) {
+        setErrors([{ field: 'general', message: error.message }]);
+      } else {
+        // Password updated successfully, redirect to login
+        router.replace('/(auth)/login');
+      }
+    } catch (error) {
+      setErrors([{ field: 'general', message: 'An unexpected error occurred' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFieldError = (field: string) => {
+    return errors.find(error => error.field === field)?.message;
   };
 
   return (
@@ -27,32 +66,53 @@ export default function ResetPasswordScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>New Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, getFieldError('password') ? styles.inputError : null]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrors(errors.filter(error => error.field !== 'password'));
+              }}
               placeholder="Enter new password"
               placeholderTextColor={colors.text.secondary}
               secureTextEntry
             />
+            {getFieldError('password') && (
+              <Text style={styles.errorText}>{getFieldError('password')}</Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Confirm New Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, getFieldError('confirmPassword') ? styles.inputError : null]}
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                setErrors(errors.filter(error => error.field !== 'confirmPassword'));
+              }}
               placeholder="Confirm new password"
               placeholderTextColor={colors.text.secondary}
               secureTextEntry
             />
+            {getFieldError('confirmPassword') && (
+              <Text style={styles.errorText}>{getFieldError('confirmPassword')}</Text>
+            )}
           </View>
 
+          {getFieldError('general') && (
+            <Text style={styles.generalError}>{getFieldError('general')}</Text>
+          )}
+
           <TouchableOpacity 
-            style={[styles.button, styles.primaryButton]} 
+            style={[styles.button, styles.primaryButton, loading && styles.disabledButton]} 
             onPress={handleResetPassword}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>Reset Password</Text>
+            {loading ? (
+              <ActivityIndicator color={colors.text.white} />
+            ) : (
+              <Text style={styles.buttonText}>Reset Password</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.links}>
@@ -114,6 +174,21 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     ...shadows.small,
   },
+  inputError: {
+    borderWidth: 1,
+    borderColor: colors.error.main,
+  },
+  errorText: {
+    color: colors.error.main,
+    fontSize: 12,
+    marginTop: spacing.xs,
+  },
+  generalError: {
+    color: colors.error.main,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
   button: {
     padding: spacing.lg,
     borderRadius: borderRadius.md,
@@ -124,6 +199,9 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: colors.primary.main,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   buttonText: {
     color: colors.text.white,

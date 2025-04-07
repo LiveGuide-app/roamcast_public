@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { useState } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../../config/theme';
 import { useRouter } from 'expo-router';
@@ -64,113 +64,119 @@ export default function SignupScreen() {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to become a tour guide</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={[styles.input, getFieldError('name') ? styles.inputError : null]}
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setErrors(errors.filter(error => error.field !== 'name'));
-              }}
-              placeholder="Enter your full name"
-              placeholderTextColor={colors.text.secondary}
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
-            {getFieldError('name') && (
-              <Text style={styles.errorText}>{getFieldError('name')}</Text>
-            )}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Sign up to become a tour guide</Text>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, getFieldError('email') ? styles.inputError : null]}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setErrors(errors.filter(error => error.field !== 'email'));
-              }}
-              placeholder="Enter your email"
-              placeholderTextColor={colors.text.secondary}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {getFieldError('email') && (
-              <Text style={styles.errorText}>{getFieldError('email')}</Text>
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={[styles.input, getFieldError('name') ? styles.inputError : null]}
+                value={name}
+                onChangeText={(text) => {
+                  setName(text);
+                  setErrors(errors.filter(error => error.field !== 'name'));
+                }}
+                placeholder="Enter your full name"
+                placeholderTextColor={colors.text.secondary}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              {getFieldError('name') && (
+                <Text style={styles.errorText}>{getFieldError('name')}</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={[styles.input, getFieldError('email') ? styles.inputError : null]}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setErrors(errors.filter(error => error.field !== 'email'));
+                }}
+                placeholder="Enter your email"
+                placeholderTextColor={colors.text.secondary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {getFieldError('email') && (
+                <Text style={styles.errorText}>{getFieldError('email')}</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={[styles.input, getFieldError('password') ? styles.inputError : null]}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors(errors.filter(error => error.field !== 'password'));
+                }}
+                placeholder="Create a password"
+                placeholderTextColor={colors.text.secondary}
+                secureTextEntry
+              />
+              {getFieldError('password') && (
+                <Text style={styles.errorText}>{getFieldError('password')}</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <TextInput
+                style={[styles.input, getFieldError('confirmPassword') ? styles.inputError : null]}
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setErrors(errors.filter(error => error.field !== 'confirmPassword'));
+                }}
+                placeholder="Confirm your password"
+                placeholderTextColor={colors.text.secondary}
+                secureTextEntry
+              />
+              {getFieldError('confirmPassword') && (
+                <Text style={styles.errorText}>{getFieldError('confirmPassword')}</Text>
+              )}
+            </View>
+
+            {getFieldError('general') && (
+              <Text style={styles.generalError}>{getFieldError('general')}</Text>
             )}
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={[styles.input, getFieldError('password') ? styles.inputError : null]}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setErrors(errors.filter(error => error.field !== 'password'));
-              }}
-              placeholder="Create a password"
-              placeholderTextColor={colors.text.secondary}
-              secureTextEntry
-            />
-            {getFieldError('password') && (
-              <Text style={styles.errorText}>{getFieldError('password')}</Text>
-            )}
-          </View>
+            <TouchableOpacity 
+              style={[styles.button, styles.primaryButton, loading && styles.disabledButton]} 
+              onPress={handleSignup}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.text.white} />
+              ) : (
+                <Text style={styles.buttonText}>Create Account</Text>
+              )}
+            </TouchableOpacity>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              style={[styles.input, getFieldError('confirmPassword') ? styles.inputError : null]}
-              value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                setErrors(errors.filter(error => error.field !== 'confirmPassword'));
-              }}
-              placeholder="Confirm your password"
-              placeholderTextColor={colors.text.secondary}
-              secureTextEntry
-            />
-            {getFieldError('confirmPassword') && (
-              <Text style={styles.errorText}>{getFieldError('confirmPassword')}</Text>
-            )}
-          </View>
-
-          {getFieldError('general') && (
-            <Text style={styles.generalError}>{getFieldError('general')}</Text>
-          )}
-
-          <TouchableOpacity 
-            style={[styles.button, styles.primaryButton, loading && styles.disabledButton]} 
-            onPress={handleSignup}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.text.white} />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.links}>
-            <View style={styles.signupContainer}>
-              <Text style={styles.footerText}>Already have an account?{' '}</Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-                <Text style={styles.link}>Sign in</Text>
-              </TouchableOpacity>
+            <View style={styles.links}>
+              <View style={styles.signupContainer}>
+                <Text style={styles.footerText}>Already have an account?{' '}</Text>
+                <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+                  <Text style={styles.link}>Sign in</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -183,6 +189,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     padding: spacing.xl,
   },
   loadingContainer: {
