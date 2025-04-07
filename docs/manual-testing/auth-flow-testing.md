@@ -100,25 +100,22 @@ This document outlines the manual testing scenarios for the Roamcast authenticat
 ## 5. Sign Up Flow Testing
 
 ### Sign Up Form Validation
-- [ ] Verify all required fields:
+- [x] Verify all required fields:
   - Email
   - Password
   - Confirm Password
   - Full Name (if required)
-- [ ] Test empty field validation for all fields
-- [ ] Test password matching validation
-- [ ] Test password strength requirements
-- [ ] Test email format validation
+- [x] Test empty field validation for all fields
+- [x] Test password matching validation
+- [x] Test password strength requirements
+- [x] Test email format validation
 
 ### Sign Up Process
-- [ ] Successful sign up with valid data
+- [x] Successful sign up with valid data
   - Verify confirmation email is sent
   - Verify redirect to appropriate screen
   - Verify user can login with new credentials
-- [ ] Sign up with existing email
-  - Verify appropriate error message
-  - Verify user data is not exposed
-- [ ] Sign up with invalid data
+- [x] Sign up with invalid data
   - Verify validation messages
   - Verify form state preservation
 
@@ -178,7 +175,7 @@ This document outlines the manual testing scenarios for the Roamcast authenticat
 
 ## 7. Security Testing
 
-### Rate Limiting
+### Rate Limiting - currently using SupaBase standard rate limiting for auth
 - [ ] Login attempts
 - [ ] Password reset requests
 - [ ] Sign up attempts

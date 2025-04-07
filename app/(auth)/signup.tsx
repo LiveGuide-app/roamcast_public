@@ -85,7 +85,7 @@ export default function SignupScreen() {
                   setName(text);
                   setErrors(errors.filter(error => error.field !== 'name'));
                 }}
-                placeholder="Enter your full name"
+                placeholder="Enter your name"
                 placeholderTextColor={colors.text.secondary}
                 autoCapitalize="words"
                 autoCorrect={false}
