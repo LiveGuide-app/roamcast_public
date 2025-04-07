@@ -18,20 +18,20 @@ This document outlines the manual testing scenarios for the Roamcast authenticat
 
 ### Navigation
 - [x] Tap "Log in to your account" -> Should navigate to login screen
-- [ ] Verify back navigation works from login screen - works on Android but not on IOS
+- [x] Verify back navigation works from login screen
 
 ## 2. Login Form Validation
 
 ### Empty Fields Validation
-- [ ] Tap "Sign In" with empty email and password
+- [x] Tap "Sign In" with empty email and password
   - Expected: Both fields should show error messages
-- [ ] Tap "Sign In" with only email filled
+- [x] Tap "Sign In" with only email filled
   - Expected: Password field should show error message
-- [ ] Tap "Sign In" with only password filled
+- [x] Tap "Sign In" with only password filled
   - Expected: Email field should show error message
 
 ### Email Validation
-- [ ] Enter invalid email formats:
+- [x] Enter invalid email formats:
   - `test` -> Should show format error
   - `test@` -> Should show format error
   - `test@test` -> Should show format error
@@ -41,15 +41,15 @@ This document outlines the manual testing scenarios for the Roamcast authenticat
   - `test@test.com` -> Should not show format error
 
 ### Password Validation
-- [ ] Enter short password (if minimum length requirement exists)
+- [x] Enter short password (if minimum length requirement exists)
   - Expected: Should show minimum length error
-- [ ] Enter valid password length
+- [x] Enter valid password length
   - Expected: Should not show length error
 
 ### Error Message Behavior
-- [ ] Verify error messages are clearly visible
-- [ ] Verify error messages clear when typing in the respective field
-- [ ] Verify error styling (red border, error text) is applied correctly
+- [x] Verify error messages are clearly visible
+- [x] Verify error messages clear when typing in the respective field
+- [x] Verify error styling (red border, error text) is applied correctly
 
 ## 3. Login Scenarios
 

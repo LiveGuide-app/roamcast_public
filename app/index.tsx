@@ -5,9 +5,11 @@ import { useRouter } from 'expo-router';
 import { getTourByCode, createTourParticipant, TourError, getRecentTours, Tour } from '../services/tour';
 import { getDeviceId } from '../services/device';
 import { Button } from '@/components/Button';
+import { useAuth } from '../components/auth/AuthContext';
 
 export default function LandingScreen() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [tourCode, setTourCode] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [recentTours, setRecentTours] = useState<Tour[]>([]);
@@ -89,7 +91,12 @@ export default function LandingScreen() {
   };
 
   const handleGuideLogin = () => {
-    router.push('/(auth)/login');
+    if (authLoading) return; // Don't navigate while auth is loading
+    if (user) {
+      router.push('/(tabs)/tours');
+    } else {
+      router.push('/(auth)/login');
+    }
   };
 
   return (

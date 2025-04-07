@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
   },
   signupContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   footerText: {
     fontSize: 14,

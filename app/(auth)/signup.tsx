@@ -7,7 +7,7 @@ import { validateSignupForm, ValidationError } from '../../utils/validation';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { signUp } = useAuth();
+  const { signUp, loading: authLoading } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -47,6 +47,18 @@ export default function SignupScreen() {
     return errors.find(error => error.field === field)?.message;
   };
 
+  // Show loading indicator while authentication state is being determined
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary.main} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
@@ -62,7 +74,7 @@ export default function SignupScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Name</Text>
             <TextInput
-              style={[styles.input, getFieldError('name') && styles.inputError]}
+              style={[styles.input, getFieldError('name') ? styles.inputError : null]}
               value={name}
               onChangeText={(text) => {
                 setName(text);
@@ -81,7 +93,7 @@ export default function SignupScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={[styles.input, getFieldError('email') && styles.inputError]}
+              style={[styles.input, getFieldError('email') ? styles.inputError : null]}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -101,7 +113,7 @@ export default function SignupScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password</Text>
             <TextInput
-              style={[styles.input, getFieldError('password') && styles.inputError]}
+              style={[styles.input, getFieldError('password') ? styles.inputError : null]}
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
@@ -119,7 +131,7 @@ export default function SignupScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Confirm Password</Text>
             <TextInput
-              style={[styles.input, getFieldError('confirmPassword') && styles.inputError]}
+              style={[styles.input, getFieldError('confirmPassword') ? styles.inputError : null]}
               value={confirmPassword}
               onChangeText={(text) => {
                 setConfirmPassword(text);
@@ -172,6 +184,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: spacing.xl,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    color: colors.text.secondary,
   },
   header: {
     alignItems: 'center',
@@ -255,6 +277,7 @@ const styles = StyleSheet.create({
   },
   signupContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   footerText: {
     fontSize: 14,
