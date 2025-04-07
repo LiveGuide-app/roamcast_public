@@ -23,8 +23,8 @@ This document provides detailed step-by-step instructions for manually testing t
 ### 1.2 Tour Management
 1. Access "My Tours" section
 2. Test Cases:
-   - [ ] Edit existing tour details
-   - [ ] Delete tour
+   - [x] Edit existing tour details - currently not possible
+   - [x] Delete tour
 
 ## 2. Live Tour Execution
 
@@ -34,7 +34,6 @@ This document provides detailed step-by-step instructions for manually testing t
    - [ ] Verify audio device selection
    - [ ] Check microphone permissions
    - [ ] Test audio quality
-   - [ ] Verify GPS location accuracy
    - [ ] Check battery optimization settings
 
 ### 2.2 Starting the Tour

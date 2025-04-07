@@ -168,47 +168,26 @@ export const getGuideStats = async (): Promise<GuideStats> => {
     throw new TourError('User must be authenticated to fetch stats', TourErrorCode.UNAUTHORIZED);
   }
 
-  // Get all tours with their participants and tips
-  const { data: tourData, error: tourError } = await supabase
-    .from('tours')
-    .select(`
-      id,
-      tour_participants(
-        id,
-        tour_tips(
-          amount,
-          status
-        )
-      )
-    `)
-    .eq('guide_id', user.id);
+  console.log('Fetching stats for guide:', user.id);
+
+  // Get all completed tours for this guide
+  const { data: tourStats, error: tourError } = await supabase
+    .rpc('calculate_guide_stats', { guide_id: user.id });
 
   if (tourError) {
     console.error('Error fetching guide stats:', tourError);
     throw new TourError('Failed to fetch guide stats', TourErrorCode.NETWORK_ERROR);
   }
 
-  let totalGuests = 0;
-  let totalEarnings = 0;
+  console.log('Guide stats response:', tourStats);
 
-  tourData.forEach(tour => {
-    // Count total guests
-    totalGuests += tour.tour_participants?.length || 0;
-
-    // Sum up all completed tips
-    tour.tour_participants?.forEach(participant => {
-      participant.tour_tips?.forEach(tip => {
-        if (tip.status === 'succeeded') {
-          totalEarnings += tip.amount || 0;
-        }
-      });
-    });
-  });
+  // Handle the array response by getting the first row
+  const stats = Array.isArray(tourStats) ? tourStats[0] : tourStats;
 
   return {
-    totalTours: tourData.length || 0,
-    totalGuests,
-    totalEarnings
+    totalTours: stats.total_tours || 0,
+    totalGuests: stats.total_guests || 0,
+    totalEarnings: stats.total_earnings || 0
   };
 };
 

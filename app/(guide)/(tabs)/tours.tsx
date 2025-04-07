@@ -43,8 +43,7 @@ export default function ToursOverview() {
     const grouped = {
       live: tours.filter(t => t.status === 'active'),
       upcoming: tours.filter(t => t.status === 'pending'),
-      completed: tours.filter(t => t.status === 'completed'),
-      cancelled: tours.filter(t => t.status === 'cancelled')
+      completed: tours.filter(t => t.status === 'completed')
     };
     return grouped;
   };
@@ -126,13 +125,6 @@ export default function ToursOverview() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Completed Tours</Text>
             {groupedTours.completed.map(renderTourCard)}
-          </View>
-        )}
-
-        {groupedTours.cancelled.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Cancelled Tours</Text>
-            {groupedTours.cancelled.map(renderTourCard)}
           </View>
         )}
       </ScrollView>
@@ -248,8 +240,6 @@ function getStatusBadgeColor(status: string) {
       return colors.warning.main; // Yellow for Pending
     case 'completed':
       return colors.success.main; // Green for Completed
-    case 'cancelled':
-      return colors.error.light; // Light red for Cancelled
     default:
       return colors.text.secondary;
   }
@@ -263,8 +253,6 @@ function getStatusText(status: string) {
       return 'Pending';
     case 'completed':
       return 'Completed';
-    case 'cancelled':
-      return 'Cancelled';
     default:
       return status;
   }
