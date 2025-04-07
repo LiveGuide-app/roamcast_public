@@ -8,9 +8,10 @@ import { TourCompletedScreen } from '@/components/tour/TourCompletedScreen';
 import { TourErrorScreen } from '@/components/tour/TourErrorScreen';
 import { useTourManagement } from '@/hooks/useTourManagement';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getDeviceId } from '@/services/device';
 import { TourThankYouScreen } from '@/components/tour/TourThankYouScreen';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -34,6 +35,30 @@ export default function TourCodeScreen() {
     onLeaveTour,
     onRatingSubmit
   } = useTourManagement(code);
+
+  // Handle navigation state changes
+  useFocusEffect(
+    useCallback(() => {
+      // Component is focused (user navigated to this screen)
+      console.log('Tour screen focused');
+      
+      // Reconnect if tour is active and not connected
+      if (tour?.status === 'active' && !isConnected) {
+        console.log('Returned to active tour, reconnecting to LiveKit');
+        // The useTourManagement hook should handle reconnection
+        // We don't need to do anything here as it will automatically reconnect
+      }
+      
+      return () => {
+        // Component is unfocused (user navigated away from this screen)
+        console.log('Tour screen unfocused');
+        if (tour?.status === 'active' && isConnected) {
+          console.log('Navigated away from active tour, disconnecting');
+          onLeaveTour().catch(console.error);
+        }
+      };
+    }, [tour?.status, isConnected, onLeaveTour])
+  );
 
   useEffect(() => {
     async function checkRating() {

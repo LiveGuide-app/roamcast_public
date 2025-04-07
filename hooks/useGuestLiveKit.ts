@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
+import { AppState, AppStateStatus } from 'react-native';
 
 // Set LiveKit logging to warnings and errors only
 setLogLevel(LogLevel.warn);
@@ -120,6 +121,30 @@ export const useGuestLiveKit = (tourId: string) => {
       throw error;
     }
   }, [state.room]);
+
+  // Handle app state changes
+  const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
+    if (nextAppState === 'background' && state.isConnected) {
+      // App went to background (user switched to another app), disconnect
+      console.log('App went to background, disconnecting');
+      await disconnect();
+    } else if (nextAppState === 'active') {
+      // App came back to foreground, reconnect if we were previously connected
+      console.log('App came back to foreground');
+      if (state.isConnected === false) {
+        console.log('Was previously connected, reconnecting');
+        await connect();
+      }
+    }
+  }, [state.isConnected, connect, disconnect]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+    };
+  }, [handleAppStateChange]);
 
   // Cleanup on unmount
   useEffect(() => {

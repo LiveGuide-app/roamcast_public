@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
+import { AppState, AppStateStatus } from 'react-native';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 
 // Set LiveKit logging to warnings and errors only
 setLogLevel(LogLevel.warn);
@@ -29,6 +31,18 @@ export const useGuideLiveKit = (tourId: string) => {
   // Initialize audio session
   const initializeAudio = useCallback(async () => {
     try {
+      // Configure audio session for background playback during screen lock
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: true,
+        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+      });
+
+      // Start LiveKit audio session
       await AudioSession.startAudioSession();
     } catch (error) {
       console.error('Failed to start audio session:', error);
@@ -39,7 +53,19 @@ export const useGuideLiveKit = (tourId: string) => {
   // Clean up audio session
   const cleanupAudio = useCallback(async () => {
     try {
+      // Stop LiveKit audio session
       await AudioSession.stopAudioSession();
+
+      // Reset audio mode
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: false,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+      });
     } catch (error) {
       console.error('Failed to stop audio session:', error);
       throw error;
@@ -142,16 +168,44 @@ export const useGuideLiveKit = (tourId: string) => {
     }
   }, [state.room]);
 
+  // Handle app state changes
+  const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
+    if (nextAppState === 'background' && state.isConnected) {
+      // App went to background (user switched to another app), disconnect
+      console.log('App went to background, disconnecting');
+      await disconnect();
+    } else if (nextAppState === 'active') {
+      // App came back to foreground, reconnect if we were previously connected
+      console.log('App came back to foreground');
+      if (state.isMicrophoneEnabled) {
+        console.log('Microphone was enabled, reconnecting');
+        await connect();
+      }
+    }
+  }, [state.isConnected, state.isMicrophoneEnabled, connect, disconnect]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+    };
+  }, [handleAppStateChange]);
+
   const toggleMicrophone = useCallback(async (enabled: boolean) => {
     try {
       if (state.room?.localParticipant) {
         if (enabled) {
+          // Initialize audio session first
           await initializeAudio();
-        }
-        
-        await state.room.localParticipant.setMicrophoneEnabled(enabled);
-        
-        if (!enabled) {
+          
+          // Then enable microphone
+          await state.room.localParticipant.setMicrophoneEnabled(enabled);
+        } else {
+          // Disable microphone first
+          await state.room.localParticipant.setMicrophoneEnabled(enabled);
+          
+          // Then clean up audio session
           await cleanupAudio();
         }
         

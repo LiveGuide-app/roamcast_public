@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { Tour as BaseTour, getTour } from '@/services/tour';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -16,6 +16,7 @@ import { useTourDuration } from '@/hooks/tour/useTourDuration';
 import { useTourStatistics } from '@/hooks/tour/useTourStatistics';
 import { useTourActions } from '@/hooks/tour/useTourActions';
 import { supabase } from '@/lib/supabase';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Extend the base Tour type with the additional fields we need
 interface Tour extends BaseTour {
@@ -30,6 +31,7 @@ export default function LiveTourDetail() {
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [participantCount, setParticipantCount] = useState(0);
+  const [isEndingTour, setIsEndingTour] = useState(false);
 
   const { 
     isConnected, 
@@ -44,7 +46,7 @@ export default function LiveTourDetail() {
   const { statistics } = useTourStatistics(tour);
   const { 
     handleStartTour, 
-    handleEndTour, 
+    handleEndTour: originalHandleEndTour, 
     handleCancelTour, 
     handleDeleteTour,
     isUpdating 
@@ -54,6 +56,41 @@ export default function LiveTourDetail() {
     disconnect: disconnect,
     onTourUpdate: setTour 
   });
+
+  // Wrap handleEndTour to set isEndingTour state
+  const handleEndTour = useCallback(async () => {
+    setIsEndingTour(true);
+    try {
+      await originalHandleEndTour();
+    } finally {
+      setIsEndingTour(false);
+    }
+  }, [originalHandleEndTour]);
+
+  // Handle navigation state changes
+  useFocusEffect(
+    useCallback(() => {
+      // Component is focused (user navigated to this screen)
+      console.log('Guide tour screen focused');
+      
+      // Reconnect if tour is active, not connected, and not ending
+      if (tour?.status === 'active' && !isConnected && !isEndingTour) {
+        console.log('Returned to active tour, reconnecting to LiveKit');
+        connect().catch(error => {
+          console.error('Failed to reconnect to LiveKit:', error);
+        });
+      }
+      
+      return () => {
+        // Component is unfocused (user navigated away from this screen)
+        console.log('Guide tour screen unfocused');
+        if (tour?.status === 'active' && isConnected && !isEndingTour) {
+          console.log('Navigated away from active tour, disconnecting');
+          disconnect().catch(console.error);
+        }
+      };
+    }, [tour?.status, isConnected, connect, disconnect, isEndingTour])
+  );
 
   // Fetch tour data
   const fetchTour = async () => {

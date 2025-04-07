@@ -66,7 +66,12 @@
         "origin": "https://roamcast.app"
       }],
       "@config-plugins/react-native-webrtc",
-      "expo-av",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Roamcast needs access to your microphone to enable audio streaming during tours"
+        }
+      ],
       "expo-image-picker"
     ]
   }
