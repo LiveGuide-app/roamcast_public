@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tour } from '@/services/tour';
+import { supabase } from '@/lib/supabase';
 
 interface TourStatistics {
   totalGuests: number;
@@ -10,7 +11,7 @@ interface TourStatistics {
   duration: string | null;
 }
 
-export const useTourStatistics = (tour: Tour | null) => {
+export const useTourStatistics = (tour: Tour | null, participantCount?: number) => {
   const [statistics, setStatistics] = useState<TourStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -40,7 +41,7 @@ export const useTourStatistics = (tour: Tour | null) => {
         const tipsData = await tipsResponse.json();
 
         setStatistics({
-          totalGuests: tour.total_participants,
+          totalGuests: participantCount !== undefined ? participantCount : tour.total_participants,
           rating: feedbackData.averageRating || null,
           totalReviews: feedbackData.totalReviews || 0,
           earnings: tipsData.totalAmount || 0,
@@ -55,7 +56,7 @@ export const useTourStatistics = (tour: Tour | null) => {
     };
 
     fetchStatistics();
-  }, [tour?.id, tour?.status]);
+  }, [tour?.id, tour?.status, participantCount]);
 
   // Helper function to format duration in MM:SS format
   const formatDuration = (durationMs: number): string => {

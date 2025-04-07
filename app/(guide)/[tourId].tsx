@@ -15,6 +15,7 @@ import { TourHeader } from '@/components/tour/TourHeader';
 import { useTourDuration } from '@/hooks/tour/useTourDuration';
 import { useTourStatistics } from '@/hooks/tour/useTourStatistics';
 import { useTourActions } from '@/hooks/tour/useTourActions';
+import { useParticipantCount } from '@/hooks/tour/useParticipantCount';
 import { supabase } from '@/lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -30,8 +31,15 @@ export default function LiveTourDetail() {
   const router = useRouter();
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [participantCount, setParticipantCount] = useState(0);
   const [isEndingTour, setIsEndingTour] = useState(false);
+  
+  // Use the new hook for participant count
+  const participantCount = useParticipantCount(tourId || null);
+  
+  // Log participant count changes
+  React.useEffect(() => {
+    console.log('Participant count in UI:', participantCount);
+  }, [participantCount]);
 
   const { 
     isConnected, 
@@ -43,7 +51,7 @@ export default function LiveTourDetail() {
   } = useGuideLiveKit(tourId || '');
 
   const { duration } = useTourDuration(tour);
-  const { statistics } = useTourStatistics(tour);
+  const { statistics } = useTourStatistics(tour, participantCount);
   const { 
     handleStartTour, 
     handleEndTour: originalHandleEndTour, 
@@ -100,46 +108,12 @@ export default function LiveTourDetail() {
       }
       const tourData = await getTour(tourId);
       setTour(tourData);
-      setParticipantCount(tourData.total_participants);
     } catch (error) {
       Alert.alert('Error', 'Failed to load tour');
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Set up real-time subscription for participant count
-  React.useEffect(() => {
-    if (!tourId) return;
-
-    const subscription = supabase
-      .channel(`tour-participants-${tourId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'tour_participants',
-          filter: `tour_id=eq.${tourId}`
-        },
-        async () => {
-          // Fetch the latest count
-          const { data, error } = await supabase
-            .from('tour_participants')
-            .select('count')
-            .eq('tour_id', tourId);
-          
-          if (!error && data) {
-            setParticipantCount(data.length);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [tourId]);
 
   React.useEffect(() => {
     fetchTour();
@@ -308,12 +282,12 @@ export default function LiveTourDetail() {
 
               <TourMetrics
                 metrics={{
-                  guests: statistics.totalGuests,
-                  duration: statistics.duration || '00:00',
-                  rating: statistics.rating,
-                  totalReviews: statistics.totalReviews,
-                  earnings: statistics.earnings,
-                  totalTips: statistics.totalTips,
+                  guests: statistics?.totalGuests || participantCount,
+                  duration: statistics?.duration || '00:00',
+                  rating: statistics?.rating,
+                  totalReviews: statistics?.totalReviews,
+                  earnings: statistics?.earnings,
+                  totalTips: statistics?.totalTips,
                   completedAt: tour.completed_at
                 }}
               />

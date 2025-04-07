@@ -71,9 +71,19 @@ export async function getTour(tourId: string): Promise<Tour> {
     throw new TourError('Failed to fetch tour', TourErrorCode.NETWORK_ERROR);
   }
 
+  // Get the actual participant count
+  const { data: participants, error: participantsError } = await supabase
+    .from('tour_participants')
+    .select('*')
+    .eq('tour_id', tourId);
+
+  if (participantsError) {
+    console.error('Error fetching participants:', participantsError);
+  }
+
   return {
     ...data,
-    total_participants: data.total_participants?.[0]?.count || 0
+    total_participants: participants?.length || 0
   };
 }
 
