@@ -66,12 +66,14 @@ export const useTourActions = ({
         await disconnect(isGuide);
       }
 
-      await updateTourStatus(tour.id, 'completed');
-      router.push('/(guide)/(tabs)/tours');
+      const updatedTour = await updateTourStatus(tour.id, 'completed');
+      if (onTourUpdate) {
+        onTourUpdate(updatedTour);
+      }
     } catch (error) {
       console.error('Error ending tour:', error);
     }
-  }, [isGuide, disconnect, tour?.id, updateTourStatus, router]);
+  }, [isGuide, disconnect, tour?.id, onTourUpdate]);
 
   const handleCancelTour = () => {
     if (!tour) return;
