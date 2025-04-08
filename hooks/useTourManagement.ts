@@ -22,14 +22,15 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<TourError | null>(null);
   const [tourParticipantId, setTourParticipantId] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
   const [hasLeft, setHasLeft] = useState(false);
 
   const { 
     isConnected, 
     connect, 
     disconnect, 
-    remoteParticipants 
+    remoteParticipants,
+    isMuted,
+    toggleMute
   } = useGuestLiveKit(tour?.id || '', tour?.status === 'active', hasLeft);
 
   // Calculate participant count from remote participants
@@ -121,10 +122,6 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
     fetchTour();
   }, [fetchTour]);
 
-  const onToggleMute = useCallback(() => {
-    setIsMuted(prev => !prev);
-  }, []);
-
   const onLeaveTour = useCallback(async () => {
     if (!tour) return;
     
@@ -167,7 +164,7 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
     participantCount,
     isConnected,
     isMuted,
-    onToggleMute,
+    onToggleMute: toggleMute,
     onLeaveTour,
     onRatingSubmit,
   };

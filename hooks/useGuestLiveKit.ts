@@ -1,4 +1,4 @@
-import { Room, RoomEvent, RemoteParticipant, LocalParticipant, setLogLevel, LogLevel } from 'livekit-client';
+import { Room, RoomEvent, RemoteParticipant, LocalParticipant, setLogLevel, LogLevel, Track, TrackPublication, RemoteTrackPublication } from 'livekit-client';
 import { AudioSession } from '@livekit/react-native';
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +28,25 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
     remoteParticipants: [],
     isDisconnecting: false
   });
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Function to mute/unmute all audio tracks
+  const toggleMute = useCallback(() => {
+    if (!state.room) return;
+
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+
+    // Mute/unmute all audio tracks from remote participants
+    state.room.remoteParticipants.forEach(participant => {
+      participant.getTrackPublications().forEach(publication => {
+        if (publication.kind === Track.Kind.Audio) {
+          const remotePublication = publication as RemoteTrackPublication;
+          remotePublication.setSubscribed(!newMuted);
+        }
+      });
+    });
+  }, [isMuted, state.room]);
 
   // Initialize audio session
   const initializeAudio = useCallback(async () => {
@@ -123,6 +142,18 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
           localParticipant: room.localParticipant,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
         }));
+
+        // Apply mute state to any existing tracks
+        if (isMuted) {
+          room.remoteParticipants.forEach(participant => {
+            participant.getTrackPublications().forEach(publication => {
+              if (publication.kind === Track.Kind.Audio) {
+                const remotePublication = publication as RemoteTrackPublication;
+                remotePublication.setSubscribed(false);
+              }
+            });
+          });
+        }
       });
 
       room.on(RoomEvent.Disconnected, () => {
@@ -137,6 +168,14 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+        // Apply current mute state to new participant's tracks
+        participant.getTrackPublications().forEach(publication => {
+          if (publication.kind === Track.Kind.Audio) {
+            const remotePublication = publication as RemoteTrackPublication;
+            remotePublication.setSubscribed(!isMuted);
+          }
+        });
+
         setState(prev => ({
           ...prev,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
@@ -163,7 +202,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
       await cleanupAudio();
       throw error;
     }
-  }, [getToken, tourId, initializeAudio, cleanupAudio, state.isConnected]);
+  }, [getToken, tourId, initializeAudio, cleanupAudio, state.isConnected, isMuted]);
 
   const disconnect = useCallback(async () => {
     if (!state.isConnected || state.isDisconnecting) {
@@ -237,5 +276,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
     ...state,
     connect,
     disconnect,
+    isMuted,
+    toggleMute
   };
 }; 

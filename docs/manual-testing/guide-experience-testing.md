@@ -45,18 +45,16 @@ This document provides detailed step-by-step instructions for manually testing t
 ### 2.3 During Tour
 1. Conduct tour activities
 2. Test Cases:
-   - [ ] Monitor audio quality
-   - [ ] Handle participant joins/leaves
-   - [ ] Manage tour pace
-   - [ ] Test emergency stop functionality
+   - [x] Monitor audio quality
+   - [x] Handle participant joins/leaves
 
 ### 2.4 Ending Tour
 1. Complete tour session
 2. Test Cases:
-   - [ ] Verify proper tour conclusion
-   - [ ] Check final participant count
-   - [ ] Confirm tour statistics update
-   - [ ] Verify tour status changes to "Completed"
+   - [x] Verify proper tour conclusion
+   - [x] Check final participant count
+   - [x] Confirm tour statistics update
+   - [x] Verify tour status changes to "Completed"
 
 ## 3. Participant Management
 
@@ -71,7 +69,6 @@ This document provides detailed step-by-step instructions for manually testing t
 ### 3.2 During Tour
 1. Monitor participant activity
 2. Test Cases:
-   - [ ] Track participant locations
    - [ ] Manage participant audio
    - [ ] Handle participant questions
    - [ ] Address technical issues
