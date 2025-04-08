@@ -4,6 +4,7 @@ export type Tour = {
   status: 'pending' | 'active' | 'completed' | 'cancelled';
   unique_code: string;
   created_at: string;
+  updated_at: string;
   participant_id?: string;
   guide_name?: string;
   total_participants: number;

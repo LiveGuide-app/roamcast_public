@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { Tour } from '@/services/tour';
 import { colors } from '@/config/theme';
 
 interface LiveDurationProps {
-  tour: Tour | null;
+  tour: Tour;
 }
 
 export const LiveDuration: React.FC<LiveDurationProps> = ({ tour }) => {
   const [duration, setDuration] = useState<string>('00:00');
+  const startTimeRef = useRef<number>(Date.now());
 
   // Function to format duration
   const formatDuration = useCallback((durationMs: number): string => {
@@ -19,32 +20,23 @@ export const LiveDuration: React.FC<LiveDurationProps> = ({ tour }) => {
 
   // Effect to handle duration updates
   useEffect(() => {
-    // If tour is not active or doesn't have a start time, return
-    if (!tour || tour.status !== 'active' || !tour.room_started_at) {
-      return;
-    }
 
-    const startTime = new Date(tour.room_started_at).getTime();
-    let intervalId: NodeJS.Timeout;
+    // Use room_started_at if available, otherwise use the time when component first mounted
+    const startTime = tour.room_started_at 
+      ? new Date(tour.room_started_at).getTime()
+      : startTimeRef.current;
 
-    // If room_finished_at exists, show final duration
-    if (tour.room_finished_at) {
-      const endTime = new Date(tour.room_finished_at).getTime();
-      setDuration(formatDuration(endTime - startTime));
-      return;
-    }
-
-    // Function to update duration
     const updateDuration = () => {
       const now = Date.now();
-      setDuration(formatDuration(now - startTime));
+      const elapsed = now - startTime;
+      setDuration(formatDuration(elapsed));
     };
 
     // Initial update
     updateDuration();
 
     // Update every second
-    intervalId = setInterval(updateDuration, 1000);
+    const intervalId = setInterval(updateDuration, 1000);
 
     // Cleanup interval
     return () => {
@@ -52,7 +44,7 @@ export const LiveDuration: React.FC<LiveDurationProps> = ({ tour }) => {
         clearInterval(intervalId);
       }
     };
-  }, [tour?.room_started_at, tour?.room_finished_at, tour?.status, formatDuration]);
+  }, [tour.room_started_at, formatDuration]);
 
   return <Text style={styles.durationText}>{duration}</Text>;
 };

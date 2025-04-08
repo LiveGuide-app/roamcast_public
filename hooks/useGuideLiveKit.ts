@@ -119,16 +119,6 @@ export const useGuideLiveKit = (tourId: string) => {
           localParticipant: room.localParticipant,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
         }));
-
-        // Update room start time in tours table
-        supabase
-          .from('tours')
-          .update({ room_started_at: new Date().toISOString() })
-          .eq('id', tourId)
-          .then(
-            () => {},
-            error => console.error('❌ Failed to update room start time:', error)
-          );
       });
 
       room.on(RoomEvent.Disconnected, () => {
@@ -140,16 +130,6 @@ export const useGuideLiveKit = (tourId: string) => {
           localParticipant: null,
           remoteParticipants: [],
         }));
-
-        // Update room finish time in tours table
-        supabase
-          .from('tours')
-          .update({ room_finished_at: new Date().toISOString() })
-          .eq('id', tourId)
-          .then(
-            () => {},
-            error => console.error('❌ Failed to update room finish time:', error)
-          );
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {

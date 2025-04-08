@@ -62,24 +62,6 @@ export const TourMetrics: React.FC<TourMetricsProps> = ({
   tour,
   variant = 'grid'
 }) => {
-  // Add a state to force re-renders
-  const [updateCounter, setUpdateCounter] = useState(0);
-  
-  // Set up an interval to force re-renders every second
-  useEffect(() => {
-    if (!tour || tour.status !== 'active' || !tour.room_started_at || tour.room_finished_at) {
-      return;
-    }
-    
-    const intervalId = setInterval(() => {
-      setUpdateCounter(prev => prev + 1);
-    }, 1000);
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [tour?.status, tour?.room_started_at, tour?.room_finished_at]);
-
   return (
     <View style={[
       styles.container,
@@ -93,9 +75,8 @@ export const TourMetrics: React.FC<TourMetricsProps> = ({
         />
       )}
       
-      {metrics.duration && tour?.status === 'active' && tour?.room_started_at && !tour?.room_finished_at ? (
+      {metrics.duration && tour?.status === 'active' && !tour?.room_finished_at ? (
         <MetricCard
-          key={`duration-${updateCounter}`}
           label="Duration"
           value={<LiveDuration tour={tour} />}
           icon="time"

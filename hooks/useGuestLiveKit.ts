@@ -16,6 +16,7 @@ interface GuestLiveKitState {
   room: Room | null;
   localParticipant: LocalParticipant | null;
   remoteParticipants: RemoteParticipant[];
+  isDisconnecting: boolean;
 }
 
 export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
@@ -25,6 +26,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
     room: null,
     localParticipant: null,
     remoteParticipants: [],
+    isDisconnecting: false
   });
 
   // Initialize audio session
@@ -164,12 +166,13 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
   }, [getToken, tourId, initializeAudio, cleanupAudio, state.isConnected]);
 
   const disconnect = useCallback(async () => {
-    if (!state.isConnected) {
-      console.log('Already disconnected, skipping disconnection');
+    if (!state.isConnected || state.isDisconnecting) {
+      console.log('Already disconnected or disconnecting, skipping disconnection');
       return;
     }
 
     try {
+      setState(prev => ({ ...prev, isDisconnecting: true }));
       if (state.room) {
         console.log('🔌 Guest disconnecting from tour:', tourId);
         await state.room.disconnect();
@@ -179,24 +182,37 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
           room: null,
           localParticipant: null,
           remoteParticipants: [],
+          isDisconnecting: false
         });
       }
     } catch (error) {
       console.error('Error disconnecting from LiveKit room:', error);
+      setState(prev => ({ ...prev, isDisconnecting: false }));
       throw error;
     }
-  }, [state.room, state.isConnected, cleanupAudio, tourId]);
+  }, [state.room, state.isConnected, state.isDisconnecting, cleanupAudio, tourId]);
+
+  // Handle tour state changes
+  useEffect(() => {
+    if (isActiveTour && !state.isConnected && !state.isDisconnecting) {
+      console.log('Tour is active, connecting guest');
+      connect().catch(console.error);
+    } else if (!isActiveTour && state.isConnected && !state.isDisconnecting) {
+      console.log('Tour is not active, disconnecting guest');
+      disconnect().catch(console.error);
+    }
+  }, [isActiveTour, state.isConnected, state.isDisconnecting, connect, disconnect]);
 
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
-    if (nextAppState === 'background' && state.isConnected) {
+    if (nextAppState === 'background' && state.isConnected && !state.isDisconnecting) {
       console.log('📱 Guest app to background, disconnecting');
       await disconnect();
-    } else if (nextAppState === 'active' && isActiveTour && !state.isConnected) {
+    } else if (nextAppState === 'active' && isActiveTour && !state.isConnected && !state.isDisconnecting) {
       console.log('📱 Guest app to foreground, reconnecting to active tour');
       await connect();
     }
-  }, [state.isConnected, isActiveTour, connect, disconnect]);
+  }, [state.isConnected, state.isDisconnecting, isActiveTour, connect, disconnect]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', handleAppStateChange);
@@ -205,25 +221,14 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
     };
   }, [handleAppStateChange]);
 
-  // Handle tour state changes
-  useEffect(() => {
-    if (isActiveTour && !state.isConnected) {
-      console.log('Tour is active, connecting guest');
-      connect().catch(console.error);
-    } else if (!isActiveTour && state.isConnected) {
-      console.log('Tour is not active, disconnecting guest');
-      disconnect().catch(console.error);
-    }
-  }, [isActiveTour, state.isConnected, connect, disconnect]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (state.isConnected) {
+      if (state.isConnected && !state.isDisconnecting) {
         disconnect().catch(console.error);
       }
     };
-  }, [disconnect, state.isConnected]);
+  }, [disconnect, state.isConnected, state.isDisconnecting]);
 
   return {
     ...state,

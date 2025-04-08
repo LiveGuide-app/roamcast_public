@@ -26,8 +26,12 @@ export const useTourActions = ({
     
     setIsUpdating(true);
     try {
-      // Update tour status and connect to room
+      // Update tour status and set room start time
       const updatedTour = await updateTourStatus(tour.id, 'active');
+      await supabase
+        .from('tours')
+        .update({ room_started_at: new Date().toISOString() })
+        .eq('id', tour.id);
       
       // Connect to LiveKit room if provided
       if (connect) {
@@ -64,8 +68,12 @@ export const useTourActions = ({
         await disconnect();
       }
       
-      // Then update tour status
+      // Update tour status and set room finish time
       const updatedTour = await updateTourStatus(tour.id, 'completed');
+      await supabase
+        .from('tours')
+        .update({ room_finished_at: new Date().toISOString() })
+        .eq('id', tour.id);
       
       // Notify parent component of the update
       if (onTourUpdate) {
