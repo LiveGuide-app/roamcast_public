@@ -86,7 +86,7 @@ export default function ToursOverview() {
           })}
         </Text>
         <Text style={styles.tourDetails}>
-          Code: {tour.unique_code} • ★ {ratingDisplay} • Tips: £{(tour.total_tips || 0) / 100}
+          Guests: {tour.total_participants} • ★ {ratingDisplay} • Tips: £{(tour.total_tips || 0) / 100}
         </Text>
       </TouchableOpacity>
     );
