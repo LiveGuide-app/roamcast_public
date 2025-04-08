@@ -321,6 +321,12 @@ export default function LiveTourDetail() {
                   variant="outline"
                   onPress={() => router.replace('/(guide)/(tabs)/tours')}
                 />
+                <Button
+                  title="Delete Tour"
+                  variant="danger-outline"
+                  onPress={handleDeleteTour}
+                  disabled={isUpdating}
+                />
               </View>
             </>
           ) : null}
