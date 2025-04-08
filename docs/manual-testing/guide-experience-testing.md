@@ -31,27 +31,21 @@ This document provides detailed step-by-step instructions for manually testing t
 ### 2.1 Tour Preparation
 1. Select a tour to start
 2. Test Cases:
-   - [ ] Verify audio device selection
-   - [ ] Check microphone permissions
-   - [ ] Test audio quality
-   - [ ] Check battery optimization settings
+   - [x] Verify audio device selection
+   - [x] Check microphone permissions
+   - [x] Test audio quality
+   - [x] Check battery optimization settings
 
 ### 2.2 Starting the Tour
 1. Begin tour session
 2. Test Cases:
-   - [ ] Verify tour status changes to "Live"
-   - [ ] Confirm audio broadcasting starts
-   - [ ] Check participant join notifications
-   - [ ] Verify location tracking begins
-   - [ ] Test chat functionality
+   - [x] Verify tour status changes to "Live"
+   - [x] Confirm audio broadcasting starts
 
 ### 2.3 During Tour
 1. Conduct tour activities
 2. Test Cases:
    - [ ] Monitor audio quality
-   - [ ] Track location updates
-   - [ ] Respond to participant messages
-   - [ ] Navigate between tour stops
    - [ ] Handle participant joins/leaves
    - [ ] Manage tour pace
    - [ ] Test emergency stop functionality

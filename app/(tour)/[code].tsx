@@ -36,6 +36,18 @@ export default function TourCodeScreen() {
     onRatingSubmit
   } = useTourManagement(code);
 
+  // Handle leaving tour and navigation
+  const handleLeaveTour = useCallback(async () => {
+    try {
+      await onLeaveTour();
+      router.replace('/');
+    } catch (error) {
+      console.error('Error leaving tour:', error);
+      // Even if there's an error updating the leave time, we still want to let them leave
+      router.replace('/');
+    }
+  }, [onLeaveTour, router]);
+
   // Handle navigation state changes
   useFocusEffect(
     useCallback(() => {
@@ -133,7 +145,7 @@ export default function TourCodeScreen() {
       {tour.status === 'pending' && (
         <TourPendingScreen
           tour={tour}
-          onLeaveTour={onLeaveTour}
+          onLeaveTour={handleLeaveTour}
         />
       )}
 
@@ -143,7 +155,7 @@ export default function TourCodeScreen() {
           isConnected={isConnected}
           isMuted={isMuted}
           onToggleMute={onToggleMute}
-          onLeaveTour={onLeaveTour}
+          onLeaveTour={handleLeaveTour}
         />
       )}
 
@@ -151,7 +163,7 @@ export default function TourCodeScreen() {
         <TourCompletedScreen
           tour={tour}
           onRatingSubmit={onRatingSubmit}
-          onLeaveTour={onLeaveTour}
+          onLeaveTour={handleLeaveTour}
         />
       )}
     </SafeAreaView>
