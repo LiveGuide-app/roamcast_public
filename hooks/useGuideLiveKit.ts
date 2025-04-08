@@ -161,10 +161,13 @@ export const useGuideLiveKit = (tourId: string) => {
     }
   }, [getToken, tourId]);
 
-  const disconnect = useCallback(async () => {
+  const disconnect = useCallback(async (shouldCleanup: boolean = false) => {
     try {
       if (state.room) {
         await state.room.disconnect();
+        if (shouldCleanup) {
+          await cleanupAudio();
+        }
         setState({
           isConnected: false,
           room: null,
@@ -177,13 +180,13 @@ export const useGuideLiveKit = (tourId: string) => {
       console.error('Error disconnecting from LiveKit room:', error);
       throw error;
     }
-  }, [state.room]);
+  }, [state.room, cleanupAudio]);
 
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
     if (nextAppState === 'background' && state.isConnected) {
-      console.log('📱 Guide app to background, disconnecting');
-      await disconnect();
+      console.log('📱 Guide app to background, disconnecting (no cleanup)');
+      await disconnect(false);
     } else if (nextAppState === 'active' && state.isMicrophoneEnabled) {
       console.log('📱 Guide app to foreground, reconnecting');
       await connect();
@@ -201,19 +204,13 @@ export const useGuideLiveKit = (tourId: string) => {
   const toggleMicrophone = useCallback(async (enabled: boolean) => {
     try {
       if (state.room?.localParticipant) {
-        if (enabled) {
-          // Initialize audio session first
+        if (enabled && !state.isMicrophoneEnabled) {
+          // Only initialize audio session if it hasn't been initialized yet
           await initializeAudio();
-          
-          // Then enable microphone
-          await state.room.localParticipant.setMicrophoneEnabled(enabled);
-        } else {
-          // Disable microphone first
-          await state.room.localParticipant.setMicrophoneEnabled(enabled);
-          
-          // Then clean up audio session
-          await cleanupAudio();
         }
+        
+        // Toggle microphone state without affecting audio session
+        await state.room.localParticipant.setMicrophoneEnabled(enabled);
         
         setState(prev => ({
           ...prev,
@@ -224,15 +221,16 @@ export const useGuideLiveKit = (tourId: string) => {
       console.error('Error toggling microphone:', error);
       throw error;
     }
-  }, [state.room?.localParticipant, initializeAudio, cleanupAudio]);
+  }, [state.room?.localParticipant, state.isMicrophoneEnabled, initializeAudio]);
 
-  // Cleanup on unmount
+  // Cleanup only on unmount if we're still connected
   useEffect(() => {
     return () => {
-      cleanupAudio().catch(console.error);
-      disconnect();
+      if (state.isConnected) {
+        disconnect(false).catch(console.error);
+      }
     };
-  }, [disconnect, cleanupAudio]);
+  }, [state.isConnected, disconnect]);
 
   return {
     ...state,

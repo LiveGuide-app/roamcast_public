@@ -1,21 +1,21 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { Tour, updateTourStatus, TourError } from '@/services/tour';
 import { Alert } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
 interface UseTourActionsProps {
-  tour: Tour | null;
-  connect?: () => Promise<any>;
-  disconnect?: () => Promise<void>;
+  tour?: Tour;
   onTourUpdate?: (tour: Tour) => void;
+  disconnect?: (shouldCleanup?: boolean) => Promise<void>;
+  isGuide?: boolean;
 }
 
-export const useTourActions = ({ 
-  tour, 
-  connect, 
+export const useTourActions = ({
+  tour,
+  onTourUpdate,
   disconnect,
-  onTourUpdate 
+  isGuide = false,
 }: UseTourActionsProps) => {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -34,8 +34,8 @@ export const useTourActions = ({
         .eq('id', tour.id);
       
       // Connect to LiveKit room if provided
-      if (connect) {
-        await connect();
+      if (disconnect) {
+        await disconnect();
       }
 
       // Notify parent component of the update
@@ -58,40 +58,20 @@ export const useTourActions = ({
     }
   };
 
-  const handleEndTour = async () => {
-    if (!tour) return;
-    
-    setIsUpdating(true);
+  const handleEndTour = useCallback(async () => {
     try {
-      // First disconnect from LiveKit room if provided
+      if (!tour?.id) return;
+
       if (disconnect) {
-        await disconnect();
-      }
-      
-      // Update tour status and set room finish time
-      const updatedTour = await updateTourStatus(tour.id, 'completed');
-      await supabase
-        .from('tours')
-        .update({ room_finished_at: new Date().toISOString() })
-        .eq('id', tour.id);
-      
-      // Notify parent component of the update
-      if (onTourUpdate) {
-        onTourUpdate(updatedTour);
+        await disconnect(isGuide);
       }
 
-      return updatedTour;
+      await updateTourStatus(tour.id, 'completed');
+      router.push('/(guide)/(tabs)/tours');
     } catch (error) {
-      if (error instanceof TourError) {
-        Alert.alert('Error', error.message);
-      } else {
-        Alert.alert('Error', 'Failed to end tour');
-      }
-      return null;
-    } finally {
-      setIsUpdating(false);
+      console.error('Error ending tour:', error);
     }
-  };
+  }, [isGuide, disconnect, tour?.id, updateTourStatus, router]);
 
   const handleCancelTour = () => {
     if (!tour) return;
