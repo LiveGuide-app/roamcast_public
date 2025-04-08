@@ -19,7 +19,7 @@ interface GuestLiveKitState {
   isDisconnecting: boolean;
 }
 
-export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
+export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: boolean = false) => {
   const { user } = useAuth();
   const [state, setState] = useState<GuestLiveKitState>({
     isConnected: false,
@@ -194,25 +194,28 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
 
   // Handle tour state changes
   useEffect(() => {
-    if (isActiveTour && !state.isConnected && !state.isDisconnecting) {
-      console.log('Tour is active, connecting guest');
+    const shouldConnect = isActiveTour && !hasLeft && !state.isConnected && !state.isDisconnecting;
+    const shouldDisconnect = (!isActiveTour || hasLeft) && state.isConnected && !state.isDisconnecting;
+
+    if (shouldConnect) {
+      console.log('Tour is active and not left, connecting guest');
       connect().catch(console.error);
-    } else if (!isActiveTour && state.isConnected && !state.isDisconnecting) {
-      console.log('Tour is not active, disconnecting guest');
+    } else if (shouldDisconnect) {
+      console.log('Tour is not active or left, disconnecting guest');
       disconnect().catch(console.error);
     }
-  }, [isActiveTour, state.isConnected, state.isDisconnecting, connect, disconnect]);
+  }, [isActiveTour, hasLeft, state.isConnected, state.isDisconnecting, connect, disconnect]);
 
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
     if (nextAppState === 'background' && state.isConnected && !state.isDisconnecting) {
       console.log('📱 Guest app to background, disconnecting');
       await disconnect();
-    } else if (nextAppState === 'active' && isActiveTour && !state.isConnected && !state.isDisconnecting) {
+    } else if (nextAppState === 'active' && isActiveTour && !hasLeft && !state.isConnected && !state.isDisconnecting) {
       console.log('📱 Guest app to foreground, reconnecting to active tour');
       await connect();
     }
-  }, [state.isConnected, state.isDisconnecting, isActiveTour, connect, disconnect]);
+  }, [state.isConnected, state.isDisconnecting, isActiveTour, hasLeft, connect, disconnect]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', handleAppStateChange);

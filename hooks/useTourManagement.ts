@@ -23,13 +23,14 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
   const [error, setError] = useState<TourError | null>(null);
   const [tourParticipantId, setTourParticipantId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [hasLeft, setHasLeft] = useState(false);
 
   const { 
     isConnected, 
     connect, 
     disconnect, 
     remoteParticipants 
-  } = useGuestLiveKit(tour?.id || '', tour?.status === 'active');
+  } = useGuestLiveKit(tour?.id || '', tour?.status === 'active', hasLeft);
 
   // Calculate participant count from remote participants
   const participantCount = remoteParticipants.length;
@@ -128,10 +129,12 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
     if (!tour) return;
     
     try {
+      setHasLeft(true); // Set hasLeft BEFORE disconnecting
       await disconnect();
       const deviceId = await getDeviceId();
       await updateParticipantLeaveTime(tour.id, deviceId);
     } catch (error) {
+      setHasLeft(false); // Reset hasLeft if there was an error
       if (error instanceof TourError) {
         setError(error);
       } else {
