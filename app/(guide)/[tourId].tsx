@@ -12,7 +12,6 @@ import { Button } from '@/components/Button';
 import { StatusBadge } from '@/components/tour/StatusBadge';
 import { TourMetrics } from '@/components/tour/TourMetrics';
 import { TourHeader } from '@/components/tour/TourHeader';
-import { useTourDuration } from '@/hooks/tour/useTourDuration';
 import { useTourStatistics } from '@/hooks/tour/useTourStatistics';
 import { useTourActions } from '@/hooks/tour/useTourActions';
 import { useParticipantCount } from '@/hooks/tour/useParticipantCount';
@@ -25,6 +24,13 @@ interface Tour extends BaseTour {
   room_finished_at: string | null;
   total_participants: number;
 }
+
+// Function to format duration
+const formatDuration = (durationMs: number): string => {
+  const minutes = Math.floor(durationMs / 60000);
+  const seconds = Math.floor((durationMs % 60000) / 1000);
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
 
 export default function LiveTourDetail() {
   const { tourId } = useLocalSearchParams<{ tourId: string }>();
@@ -50,7 +56,6 @@ export default function LiveTourDetail() {
     isMicrophoneEnabled 
   } = useGuideLiveKit(tourId || '');
 
-  const { duration } = useTourDuration(tour);
   const { statistics } = useTourStatistics(tour, participantCount);
   const { 
     handleStartTour, 
@@ -244,8 +249,11 @@ export default function LiveTourDetail() {
               <TourMetrics
                 metrics={{
                   guests: participantCount,
-                  duration: duration
+                  duration: tour.room_finished_at ? 
+                    formatDuration(new Date(tour.room_finished_at).getTime() - new Date(tour.room_started_at!).getTime()) : 
+                    '00:00'
                 }}
+                tour={tour}
                 variant="row"
               />
 
@@ -290,6 +298,7 @@ export default function LiveTourDetail() {
                   totalTips: statistics?.totalTips,
                   completedAt: tour.completed_at
                 }}
+                tour={tour}
               />
 
               <View style={styles.buttonContainer}>

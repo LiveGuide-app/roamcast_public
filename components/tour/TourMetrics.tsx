@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '@/config/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { Tour } from '@/services/tour';
+import { LiveDuration } from './LiveDuration';
 
 interface MetricCardProps {
   label: string;
-  value: string | number;
+  value: string | number | React.ReactNode;
   subtext?: string;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
@@ -29,7 +31,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
           style={styles.metricIcon}
         />
       )}
-      <Text style={styles.metricValue}>{value}</Text>
+      {typeof value === 'string' || typeof value === 'number' ? (
+        <Text style={styles.metricValue}>{value}</Text>
+      ) : (
+        value
+      )}
     </View>
     {subtext && (
       <Text style={styles.metricSubtext}>{subtext}</Text>
@@ -47,13 +53,33 @@ interface TourMetricsProps {
     totalTips?: number;
     completedAt?: string;
   };
+  tour?: Tour | null;
   variant?: 'grid' | 'row';
 }
 
 export const TourMetrics: React.FC<TourMetricsProps> = ({ 
   metrics,
+  tour,
   variant = 'grid'
 }) => {
+  // Add a state to force re-renders
+  const [updateCounter, setUpdateCounter] = useState(0);
+  
+  // Set up an interval to force re-renders every second
+  useEffect(() => {
+    if (!tour || tour.status !== 'active' || !tour.room_started_at || tour.room_finished_at) {
+      return;
+    }
+    
+    const intervalId = setInterval(() => {
+      setUpdateCounter(prev => prev + 1);
+    }, 1000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [tour?.status, tour?.room_started_at, tour?.room_finished_at]);
+
   return (
     <View style={[
       styles.container,
@@ -67,7 +93,14 @@ export const TourMetrics: React.FC<TourMetricsProps> = ({
         />
       )}
       
-      {metrics.duration && (
+      {metrics.duration && tour?.status === 'active' && tour?.room_started_at && !tour?.room_finished_at ? (
+        <MetricCard
+          key={`duration-${updateCounter}`}
+          label="Duration"
+          value={<LiveDuration tour={tour} />}
+          icon="time"
+        />
+      ) : metrics.duration && (
         <MetricCard
           label="Duration"
           value={metrics.duration}

@@ -1,9 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Text, StyleSheet } from 'react-native';
 import { Tour } from '@/services/tour';
+import { colors } from '@/config/theme';
 
-export const useTourDuration = (tour: Tour | null) => {
+interface LiveDurationProps {
+  tour: Tour | null;
+}
+
+export const LiveDuration: React.FC<LiveDurationProps> = ({ tour }) => {
   const [duration, setDuration] = useState<string>('00:00');
-  const lastFetchTime = useRef<number>(Date.now());
 
   // Function to format duration
   const formatDuration = useCallback((durationMs: number): string => {
@@ -14,6 +19,7 @@ export const useTourDuration = (tour: Tour | null) => {
 
   // Effect to handle duration updates
   useEffect(() => {
+    // If tour is not active or doesn't have a start time, return
     if (!tour || tour.status !== 'active' || !tour.room_started_at) {
       return;
     }
@@ -48,8 +54,13 @@ export const useTourDuration = (tour: Tour | null) => {
     };
   }, [tour?.room_started_at, tour?.room_finished_at, tour?.status, formatDuration]);
 
-  return {
-    duration,
-    lastFetchTime: lastFetchTime.current
-  };
-}; 
+  return <Text style={styles.durationText}>{duration}</Text>;
+};
+
+const styles = StyleSheet.create({
+  durationText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text.primary,
+  }
+}); 

@@ -145,7 +145,7 @@ export default function LandingScreen() {
           </View>
 
           {/* Recent Tours Section */}
-          <View style={styles.section}>
+          {/*<View style={styles.section}>
             <Text style={styles.sectionTitle}>Your recent tours</Text>
             {recentTours.length > 0 ? (
               recentTours.map((tour) => (
@@ -175,7 +175,7 @@ export default function LandingScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </View>*/}
         </ScrollView>
 
         {/* Guide Login Section */}
