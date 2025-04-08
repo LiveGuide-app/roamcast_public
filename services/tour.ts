@@ -411,4 +411,27 @@ export const getGuideRatings = async (): Promise<GuideRatings> => {
     averageRating: Number(ratingsData?.average_rating) || 0,
     totalReviews: Number(ratingsData?.total_reviews) || 0
   };
-}; 
+};
+
+export async function getTourAverageRating(tourId: string): Promise<{ averageRating: number | null; totalReviews: number }> {
+  const { data, error } = await supabase
+    .from('feedback')
+    .select('rating')
+    .eq('tour_id', tourId)
+    .is('deleted_at', null);
+
+  if (error) {
+    console.error('Error fetching tour ratings:', error);
+    return { averageRating: null, totalReviews: 0 };
+  }
+
+  if (!data || data.length === 0) {
+    return { averageRating: null, totalReviews: 0 };
+  }
+
+  const totalReviews = data.length;
+  const sum = data.reduce((acc, curr) => acc + curr.rating, 0);
+  const average = Number((sum / totalReviews).toFixed(1));
+
+  return { averageRating: average, totalReviews };
+} 

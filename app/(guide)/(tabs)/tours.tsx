@@ -1,15 +1,20 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { Tour, GuideStats, getGuideTours, getGuideStats } from '../../../services/tour';
+import { Tour, GuideStats, getGuideTours, getGuideStats, getTourAverageRating } from '../../../services/tour';
 import { colors, spacing, borderRadius, shadows } from '../../../config/theme';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
+interface TourRatings {
+  [key: string]: { averageRating: number | null; totalReviews: number };
+}
+
 export default function ToursOverview() {
   const [loading, setLoading] = useState(true);
   const [tours, setTours] = useState<Tour[]>([]);
+  const [tourRatings, setTourRatings] = useState<TourRatings>({});
   const [stats, setStats] = useState<GuideStats>({
     totalTours: 0,
     totalGuests: 0,
@@ -26,6 +31,15 @@ export default function ToursOverview() {
       ]);
       setTours(toursData);
       setStats(statsData);
+
+      // Load ratings for all tours
+      const ratingsPromises = toursData.map(tour => getTourAverageRating(tour.id));
+      const ratings = await Promise.all(ratingsPromises);
+      const ratingsMap: TourRatings = {};
+      toursData.forEach((tour, index) => {
+        ratingsMap[tour.id] = ratings[index];
+      });
+      setTourRatings(ratingsMap);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -48,30 +62,35 @@ export default function ToursOverview() {
     return grouped;
   };
 
-  const renderTourCard = (tour: Tour) => (
-    <TouchableOpacity
-      key={tour.id}
-      style={styles.tourCard}
-      onPress={() => router.push(`/(guide)/${tour.id}`)}
-    >
-      <View style={styles.tourHeader}>
-        <Text style={styles.tourName}>{tour.name}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusBadgeColor(tour.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(tour.status)}</Text>
+  const renderTourCard = (tour: Tour) => {
+    const rating = tourRatings[tour.id];
+    const ratingDisplay = rating?.averageRating ? `${rating.averageRating} ★` : 'N/A';
+    
+    return (
+      <TouchableOpacity
+        key={tour.id}
+        style={styles.tourCard}
+        onPress={() => router.push(`/(guide)/${tour.id}`)}
+      >
+        <View style={styles.tourHeader}>
+          <Text style={styles.tourName}>{tour.name}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusBadgeColor(tour.status) }]}>
+            <Text style={styles.statusText}>{getStatusText(tour.status)}</Text>
+          </View>
         </View>
-      </View>
-      <Text style={styles.tourDate}>
-        {new Date(tour.created_at).toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        })}
-      </Text>
-      <Text style={styles.tourDetails}>
-        Code: {tour.unique_code} • Guests: {tour.total_participants} • Tips: £{(tour.total_tips || 0) / 100}
-      </Text>
-    </TouchableOpacity>
-  );
+        <Text style={styles.tourDate}>
+          {new Date(tour.created_at).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })}
+        </Text>
+        <Text style={styles.tourDetails}>
+          Code: {tour.unique_code} • ★ {ratingDisplay} • Tips: £{(tour.total_tips || 0) / 100}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return <LoadingScreen />;
