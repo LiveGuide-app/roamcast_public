@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '@/config/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,7 +75,7 @@ export const TourMetrics: React.FC<TourMetricsProps> = ({
         />
       )}
       
-      {metrics.duration && tour?.status === 'active' && !tour?.room_finished_at ? (
+      {tour?.status === 'active' && !tour?.room_finished_at ? (
         <MetricCard
           label="Duration"
           value={<LiveDuration tour={tour} />}

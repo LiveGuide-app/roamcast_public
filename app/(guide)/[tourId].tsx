@@ -282,16 +282,30 @@ export default function LiveTourDetail() {
                 />
               </View>
             </>
-          ) : tour.status === 'completed' && statistics ? (
+          ) : tour.status === 'completed' ? (
             <>
               <StatusBadge status={tour.status} variant="large" />
 
               <Text style={styles.sectionHeader}>Statistics</Text>
 
+              {/* Debug timing info */}
+              {(() => {
+                console.log('Tour timing:', {
+                  room_started_at: tour.room_started_at,
+                  room_finished_at: tour.room_finished_at,
+                  completed_at: tour.completed_at,
+                  hasStatsDuration: !!statistics?.duration
+                });
+                return null;
+              })()}
+
               <TourMetrics
                 metrics={{
                   guests: statistics?.totalGuests || participantCount,
-                  duration: statistics?.duration || '00:00',
+                  duration: formatDuration(
+                    new Date(tour.room_finished_at || tour.completed_at || Date.now()).getTime() - 
+                    new Date(tour.room_started_at || tour.created_at || Date.now()).getTime()
+                  ),
                   rating: statistics?.rating,
                   totalReviews: statistics?.totalReviews,
                   earnings: statistics?.earnings,
