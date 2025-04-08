@@ -1,6 +1,6 @@
 import { Room, RoomEvent, RemoteParticipant, LocalParticipant, setLogLevel, LogLevel } from 'livekit-client';
 import { AudioSession } from '@livekit/react-native';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
@@ -13,26 +13,57 @@ setLogLevel(LogLevel.error);
 
 interface GuestLiveKitState {
   isConnected: boolean;
-  isConnecting: boolean;
-  isDisconnecting: boolean;
   room: Room | null;
   localParticipant: LocalParticipant | null;
   remoteParticipants: RemoteParticipant[];
 }
 
-export const useGuestLiveKit = (tourId: string) => {
+export const useGuestLiveKit = (tourId: string, isActiveTour: boolean) => {
   const { user } = useAuth();
   const [state, setState] = useState<GuestLiveKitState>({
     isConnected: false,
-    isConnecting: false,
-    isDisconnecting: false,
     room: null,
     localParticipant: null,
     remoteParticipants: [],
   });
-  
-  const connectingRef = useRef(false);
-  const disconnectingRef = useRef(false);
+
+  // Initialize audio session
+  const initializeAudio = useCallback(async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: false,  // Guest doesn't need to record
+        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+      });
+      await AudioSession.startAudioSession();
+    } catch (error) {
+      console.error('Failed to start audio session:', error);
+      throw error;
+    }
+  }, []);
+
+  // Clean up audio session
+  const cleanupAudio = useCallback(async () => {
+    try {
+      await AudioSession.stopAudioSession();
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: false,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+      });
+    } catch (error) {
+      console.error('Failed to stop audio session:', error);
+      throw error;
+    }
+  }, []);
 
   const getToken = useCallback(async () => {
     try {
@@ -58,75 +89,14 @@ export const useGuestLiveKit = (tourId: string) => {
     }
   }, [tourId, user?.id, user?.email]);
 
-  const disconnect = useCallback(async () => {
-    // Prevent multiple simultaneous disconnections
-    if (disconnectingRef.current || !state.room || state.isDisconnecting) {
-      console.log('⏭️ Disconnect already in progress or not connected, skipping');
-      return;
-    }
-
-    try {
-      disconnectingRef.current = true;
-      setState(prev => ({ ...prev, isDisconnecting: true }));
-      
-      console.log('🔌 Guest disconnecting from tour:', tourId);
-      const room = state.room; // Store reference to avoid state changes during disconnect
-
-      // Reset state first to prevent multiple disconnect events
-      setState(prev => ({
-        ...prev,
-        isConnected: false,
-        isConnecting: false,
-        isDisconnecting: true,
-        room: null,
-        localParticipant: null,
-        remoteParticipants: [],
-      }));
-
-      // Then disconnect and cleanup
-      await room.disconnect(true);
-      await AudioSession.stopAudioSession();
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: false,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
-        allowsRecordingIOS: false,
-        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-      });
-    } catch (error) {
-      console.error('❌ Error disconnecting from LiveKit room:', error);
-    } finally {
-      // Always reset flags
-      disconnectingRef.current = false;
-      connectingRef.current = false;
-      setState(prev => ({ ...prev, isDisconnecting: false }));
-    }
-  }, [state.room, state.isDisconnecting, tourId]);
-
   const connect = useCallback(async () => {
-    // Prevent multiple simultaneous connection attempts
-    if (connectingRef.current || state.isConnected || state.isDisconnecting) {
-      console.log('⏭️ Connection already in progress or wrong state, skipping');
+    if (state.isConnected) {
+      console.log('Already connected, skipping connection');
       return;
     }
 
     try {
-      connectingRef.current = true;
-      setState(prev => ({ ...prev, isConnecting: true }));
-      
-      // Initialize audio session before connecting
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-        allowsRecordingIOS: false,  // Guest doesn't need to record
-        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-      });
-      await AudioSession.startAudioSession();
+      await initializeAudio();
       
       console.log('🔄 Guest attempting to connect to tour:', tourId);
       const token = await getToken();
@@ -143,115 +113,117 @@ export const useGuestLiveKit = (tourId: string) => {
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
-        if (!state.isDisconnecting) {
-          console.log('✅ Guest connected to tour:', tourId);
-          setState(prev => ({
-            ...prev,
-            isConnected: true,
-            isConnecting: false,
-            room,
-            localParticipant: room.localParticipant,
-            remoteParticipants: Array.from(room.remoteParticipants.values()),
-          }));
-          connectingRef.current = false;
-        }
+        console.log('✅ Guest connected to tour:', tourId);
+        setState(prev => ({
+          ...prev,
+          isConnected: true,
+          room,
+          localParticipant: room.localParticipant,
+          remoteParticipants: Array.from(room.remoteParticipants.values()),
+        }));
       });
 
       room.on(RoomEvent.Disconnected, () => {
-        // Only handle disconnect if this is still the current room and we're not already disconnecting
-        if (room === state.room && !state.isDisconnecting) {
-          console.log('🔌 Guest disconnected from tour:', tourId);
-          setState(prev => ({
-            ...prev,
-            isConnected: false,
-            isConnecting: false,
-            room: null,
-            localParticipant: null,
-            remoteParticipants: [],
-          }));
-          connectingRef.current = false;
-        }
+        console.log('🔌 Guest disconnected from tour:', tourId);
+        setState(prev => ({
+          ...prev,
+          isConnected: false,
+          room: null,
+          localParticipant: null,
+          remoteParticipants: [],
+        }));
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-        if (!state.isDisconnecting) {
-          setState(prev => ({
-            ...prev,
-            remoteParticipants: Array.from(room.remoteParticipants.values()),
-          }));
-        }
+        setState(prev => ({
+          ...prev,
+          remoteParticipants: Array.from(room.remoteParticipants.values()),
+        }));
       });
 
       room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-        if (!state.isDisconnecting) {
-          setState(prev => ({
-            ...prev,
-            remoteParticipants: Array.from(room.remoteParticipants.values()),
-          }));
-        }
+        setState(prev => ({
+          ...prev,
+          remoteParticipants: Array.from(room.remoteParticipants.values()),
+        }));
       });
 
       await room.connect(wsUrl, token);
-      return room;
     } catch (error) {
       console.error('❌ Guest connection error:', error);
       setState(prev => ({
         ...prev,
         isConnected: false,
-        isConnecting: false,
         room: null,
         localParticipant: null,
         remoteParticipants: [],
       }));
-      connectingRef.current = false;
-      
-      // Clean up audio session on error
-      try {
-        await AudioSession.stopAudioSession();
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: false,
-          staysActiveInBackground: false,
-          shouldDuckAndroid: false,
-          playThroughEarpieceAndroid: false,
-          allowsRecordingIOS: false,
-          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-          interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-        });
-      } catch (audioError) {
-        console.error('❌ Error cleaning up audio session:', audioError);
-      }
-      
+      await cleanupAudio();
       throw error;
     }
-  }, [getToken, tourId, state.isConnected, state.isDisconnecting]);
+  }, [getToken, tourId, initializeAudio, cleanupAudio, state.isConnected]);
+
+  const disconnect = useCallback(async () => {
+    if (!state.isConnected) {
+      console.log('Already disconnected, skipping disconnection');
+      return;
+    }
+
+    try {
+      if (state.room) {
+        console.log('🔌 Guest disconnecting from tour:', tourId);
+        await state.room.disconnect();
+        await cleanupAudio();
+        setState({
+          isConnected: false,
+          room: null,
+          localParticipant: null,
+          remoteParticipants: [],
+        });
+      }
+    } catch (error) {
+      console.error('Error disconnecting from LiveKit room:', error);
+      throw error;
+    }
+  }, [state.room, state.isConnected, cleanupAudio, tourId]);
 
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
-    if (nextAppState === 'background' && state.isConnected && !state.isDisconnecting) {
+    if (nextAppState === 'background' && state.isConnected) {
       console.log('📱 Guest app to background, disconnecting');
       await disconnect();
-    } else if (nextAppState === 'active' && !state.isConnected && !state.isConnecting && !state.isDisconnecting) {
-      console.log('📱 Guest app to foreground, attempting reconnect');
+    } else if (nextAppState === 'active' && isActiveTour && !state.isConnected) {
+      console.log('📱 Guest app to foreground, reconnecting to active tour');
       await connect();
     }
-  }, [state.isConnected, state.isConnecting, state.isDisconnecting, connect, disconnect]);
+  }, [state.isConnected, isActiveTour, connect, disconnect]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
     return () => {
       subscription.remove();
     };
   }, [handleAppStateChange]);
 
+  // Handle tour state changes
+  useEffect(() => {
+    if (isActiveTour && !state.isConnected) {
+      console.log('Tour is active, connecting guest');
+      connect().catch(console.error);
+    } else if (!isActiveTour && state.isConnected) {
+      console.log('Tour is not active, disconnecting guest');
+      disconnect().catch(console.error);
+    }
+  }, [isActiveTour, state.isConnected, connect, disconnect]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (state.isConnected && !state.isDisconnecting) {
-        disconnect();
+      if (state.isConnected) {
+        disconnect().catch(console.error);
       }
     };
-  }, [disconnect, state.isConnected, state.isDisconnecting]);
+  }, [disconnect, state.isConnected]);
 
   return {
     ...state,

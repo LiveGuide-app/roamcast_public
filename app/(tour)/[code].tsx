@@ -42,22 +42,11 @@ export default function TourCodeScreen() {
       // Component is focused (user navigated to this screen)
       console.log('Tour screen focused');
       
-      // Reconnect if tour is active and not connected
-      if (tour?.status === 'active' && !isConnected) {
-        console.log('Returned to active tour, reconnecting to LiveKit');
-        // The useTourManagement hook should handle reconnection
-        // We don't need to do anything here as it will automatically reconnect
-      }
-      
       return () => {
         // Component is unfocused (user navigated away from this screen)
         console.log('Tour screen unfocused');
-        if (tour?.status === 'active' && isConnected) {
-          console.log('Navigated away from active tour, disconnecting');
-          onLeaveTour().catch(console.error);
-        }
       };
-    }, [tour?.status, isConnected, onLeaveTour])
+    }, [])
   );
 
   useEffect(() => {

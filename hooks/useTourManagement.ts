@@ -29,7 +29,7 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
     connect, 
     disconnect, 
     remoteParticipants 
-  } = useGuestLiveKit(tour?.id || '');
+  } = useGuestLiveKit(tour?.id || '', tour?.status === 'active');
 
   // Calculate participant count from remote participants
   const participantCount = remoteParticipants.length;
@@ -101,25 +101,9 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
           async (payload) => {
             const updatedTour = payload.new as Tour;
             setTour(updatedTour);
-
-            // Only connect if we're not already connected and tour is active
-            if (updatedTour.status === 'active' && updatedTour.id && !isConnected) {
-              console.log('Tour became active, connecting to LiveKit');
-              await connect();
-            } else if (updatedTour.status !== 'active' && isConnected) {
-              // Only disconnect if we're currently connected
-              console.log('Tour no longer active, disconnecting');
-              await disconnect();
-            }
           }
         )
         .subscribe();
-
-      // If tour is already active and we're not connected, connect immediately
-      if (tour.status === 'active' && tour.id && !isConnected) {
-        console.log('Tour is already active, connecting to LiveKit');
-        await connect();
-      }
     }
 
     setupSubscription();
@@ -128,9 +112,8 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
       if (subscription) {
         subscription.unsubscribe();
       }
-      disconnect();
     };
-  }, [tour?.id, connect, disconnect, isConnected]);
+  }, [tour?.id]);
 
   // Initial tour fetch
   useEffect(() => {
