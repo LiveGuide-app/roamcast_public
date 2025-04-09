@@ -23,6 +23,10 @@ export const ConnectedStripeProvider: React.FC<ConnectedStripeProviderProps> = (
       urlScheme={EXPO_PUBLIC_APP_URL_SCHEME}
       stripeAccountId={stripeAccountId}
       merchantIdentifier="merchant.com.roamcast"
+      googlePay={{
+        merchantCountryCode: 'GB',
+        testEnv: true
+      }}
     >
       {children}
     </StripeProvider>

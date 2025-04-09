@@ -3,6 +3,11 @@ declare module '@stripe/stripe-react-native' {
     publishableKey: string;
     urlScheme: string;
     stripeAccountId?: string;
+    merchantIdentifier?: string;
+    googlePay?: {
+      merchantCountryCode: string;
+      testEnv?: boolean;
+    };
     children: React.ReactNode;
   }
 

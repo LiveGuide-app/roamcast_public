@@ -140,6 +140,10 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         applePay: {
           merchantCountryCode: 'GB',
         },
+        googlePay: {
+          merchantCountryCode: 'GB',
+          testEnv: true,
+        },
       });
 
       if (initError) {
