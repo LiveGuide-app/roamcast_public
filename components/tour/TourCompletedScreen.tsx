@@ -9,10 +9,12 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
 import { useRouter } from 'expo-router';
 import { getDeviceId } from '@/services/device';
+import { formatCurrency } from '@/utils/currency';
 
 type GuideInfo = {
   full_name: string;
   avatar_url: string | null;
+  stripe_default_currency: string | null;
 };
 
 type TourCompletedScreenProps = {
@@ -75,7 +77,7 @@ export const TourCompletedScreen = ({
         // Fetch guide info
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('full_name, profile_image_url, stripe_account_id')
+          .select('full_name, profile_image_url, stripe_account_id, stripe_default_currency')
           .eq('id', tourResult.data.guide_id)
           .single();
 
@@ -83,7 +85,8 @@ export const TourCompletedScreen = ({
         
         setGuideInfo({
           full_name: userData.full_name,
-          avatar_url: userData.profile_image_url
+          avatar_url: userData.profile_image_url,
+          stripe_default_currency: userData.stripe_default_currency
         });
 
         if (userData?.stripe_account_id) {
@@ -124,8 +127,8 @@ export const TourCompletedScreen = ({
   };
 
   const formatTipAmount = (amount: number | null) => {
-    if (!amount) return '£0';
-    return `£${(amount / 100).toFixed(2)}`;
+    if (!amount) return formatCurrency(0, guideInfo?.stripe_default_currency || 'gbp');
+    return formatCurrency(amount, guideInfo?.stripe_default_currency || 'gbp');
   };
 
   const getButtonTitle = () => {
@@ -211,6 +214,7 @@ export const TourCompletedScreen = ({
                 onAmountChange={handleTipAmountChange}
                 onPaymentReady={handlePaymentReady}
                 onPaymentComplete={handlePaymentComplete}
+                currency={guideInfo?.stripe_default_currency || 'gbp'}
               />
             </ConnectedStripeProvider>
           ) : participantId && !stripeAccountId && !isLoading ? (

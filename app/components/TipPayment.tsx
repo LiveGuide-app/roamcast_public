@@ -4,6 +4,7 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { supabase } from '@/lib/supabase';
 import { getDeviceId } from '@/services/device';
 import { colors, borderRadius } from '@/config/theme';
+import { formatCurrency } from '@/utils/currency';
 
 export type TipPaymentHandle = {
   handlePayment: () => Promise<void>;
@@ -14,13 +15,15 @@ type TipPaymentProps = {
   onAmountChange: (amount: number | null) => void;
   onPaymentReady: (isReady: boolean) => void;
   onPaymentComplete: () => void;
+  currency?: string;
 };
 
 export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({ 
   tourParticipantId,
   onAmountChange,
   onPaymentReady,
-  onPaymentComplete
+  onPaymentComplete,
+  currency = 'gbp'
 }, ref) => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
@@ -107,7 +110,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         body: {
           tourParticipantId,
           amount,
-          currency: 'gbp',
+          currency,
           deviceId,
         },
       });
@@ -153,10 +156,14 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   };
 
   const formatAmount = (amount: number) => {
-    return `£${(amount / 100).toFixed(0)}`;
+    return formatCurrency(amount, currency);
   };
 
-  const predefinedAmounts = [200, 500, 1000]; // £2, £5, £10
+  const getCurrencySymbol = () => {
+    return formatCurrency(0, currency).replace(/[\d,]/g, '');
+  };
+
+  const predefinedAmounts = [200, 500, 1000]; // £2, £5, £10 or $2, $5, $10
 
   return (
     <View style={styles.container}>
@@ -184,7 +191,9 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
       <View style={styles.customAmountContainer}>
         <Text style={styles.label}>Custom Amount</Text>
         <View style={styles.inputContainer}>
-          <Text style={styles.currencySymbol}>£</Text>
+          <Text style={styles.currencySymbol}>
+            {getCurrencySymbol()}
+          </Text>
           <TextInput
             style={styles.input}
             value={customAmount}

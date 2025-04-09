@@ -6,6 +6,8 @@ import { colors, spacing, borderRadius, shadows } from '../../../config/theme';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from '@/lib/supabase';
+import { formatCurrency } from '@/utils/currency';
 
 interface TourRatings {
   [key: string]: { averageRating: number | null; totalReviews: number };
@@ -20,6 +22,7 @@ export default function ToursOverview() {
     totalGuests: 0,
     totalEarnings: 0
   });
+  const [guideCurrency, setGuideCurrency] = useState<string>('gbp');
   const router = useRouter();
 
   const loadData = useCallback(async () => {
@@ -40,6 +43,25 @@ export default function ToursOverview() {
         ratingsMap[tour.id] = ratings[index];
       });
       setTourRatings(ratingsMap);
+
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Fetch user's currency preference
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('stripe_default_currency')
+        .eq('id', user.id)
+        .single();
+        
+      if (userError) throw userError;
+      
+      if (userData?.stripe_default_currency) {
+        setGuideCurrency(userData.stripe_default_currency);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -86,7 +108,7 @@ export default function ToursOverview() {
           })}
         </Text>
         <Text style={styles.tourDetails}>
-          Guests: {tour.total_participants} • ★ {ratingDisplay} • Tips: £{(tour.total_tips || 0) / 100}
+          Guests: {tour.total_participants} • ★ {ratingDisplay} • Tips: {formatCurrency(tour.total_tips || 0, guideCurrency)}
         </Text>
       </TouchableOpacity>
     );
@@ -115,7 +137,7 @@ export default function ToursOverview() {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Earnings</Text>
-            <Text style={styles.statValue}>£{(stats.totalEarnings || 0) / 100}</Text>
+            <Text style={styles.statValue}>{formatCurrency(stats.totalEarnings || 0, guideCurrency)}</Text>
           </View>
         </View>
 

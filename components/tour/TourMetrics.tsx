@@ -4,6 +4,7 @@ import { colors, spacing, borderRadius, shadows } from '@/config/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tour } from '@/services/tour';
 import { LiveDuration } from './LiveDuration';
+import { formatCurrency } from '@/utils/currency';
 
 interface MetricCardProps {
   label: string;
@@ -55,12 +56,14 @@ interface TourMetricsProps {
   };
   tour?: Tour | null;
   variant?: 'grid' | 'row';
+  currency?: string;
 }
 
 export const TourMetrics: React.FC<TourMetricsProps> = ({ 
   metrics,
   tour,
-  variant = 'grid'
+  variant = 'grid',
+  currency = 'gbp'
 }) => {
   return (
     <View style={[
@@ -104,7 +107,7 @@ export const TourMetrics: React.FC<TourMetricsProps> = ({
       {metrics.earnings !== undefined && (
         <MetricCard
           label="Earnings"
-          value={`£${metrics.earnings}`}
+          value={formatCurrency(metrics.earnings, currency)}
           subtext={metrics.totalTips ? 
             `(${metrics.totalTips} tip${metrics.totalTips !== 1 ? 's' : ''})` : 
             undefined}
