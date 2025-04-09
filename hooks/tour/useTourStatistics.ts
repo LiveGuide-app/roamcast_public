@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Tour } from '@/services/tour';
+import { Tour, getTourAverageRating } from '@/services/tour';
 import { supabase } from '@/lib/supabase';
 
 interface TourStatistics {
@@ -32,20 +32,19 @@ export const useTourStatistics = (tour: Tour | null, participantCount?: number) 
         const duration = startTime && endTime ? 
           formatDuration(endTime - startTime) : null;
 
-        // Get feedback statistics
-        const feedbackResponse = await fetch(`/api/tours/${tour.id}/feedback`);
-        const feedbackData = await feedbackResponse.json();
-        
-        // Get earnings statistics
-        const tipsResponse = await fetch(`/api/tours/${tour.id}/tips`);
-        const tipsData = await tipsResponse.json();
+        // Get feedback statistics using getTourAverageRating
+        const { averageRating, totalReviews } = await getTourAverageRating(tour.id);
+
+        // Get tips data directly from the tour object
+        const totalTips = tour.total_tips || 0;
+        const earnings = totalTips; // For now, earnings are just tips
 
         setStatistics({
           totalGuests: participantCount !== undefined ? participantCount : tour.total_participants,
-          rating: feedbackData.averageRating || null,
-          totalReviews: feedbackData.totalReviews || 0,
-          earnings: tipsData.totalAmount || 0,
-          totalTips: tipsData.totalTips || 0,
+          rating: averageRating,
+          totalReviews: totalReviews,
+          earnings: earnings,
+          totalTips: totalTips,
           duration
         });
       } catch (err) {

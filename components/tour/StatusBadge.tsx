@@ -65,7 +65,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
           { backgroundColor: isConnected ? colors.success.main : colors.error.main }
         ]}>
           <Text style={styles.statusText}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? 'Connected' : 'Connecting...'}
           </Text>
         </View>
       )}

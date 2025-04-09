@@ -1,21 +1,26 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@14.17.0/deno/stripe.mjs'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 })
 
+// This is needed in order to use the Web Crypto API in Deno.
+const cryptoProvider = Stripe.createSubtleCryptoProvider()
+
 serve(async (req) => {
   const signature = req.headers.get('stripe-signature')!
 
   try {
     const body = await req.text()
-    const event = stripe.webhooks.constructEvent(
+    const event = await stripe.webhooks.constructEventAsync(
       body,
       signature,
-      Deno.env.get('STRIPE_TIP_WEBHOOK_SECRET')!
+      Deno.env.get('STRIPE_TIP_WEBHOOK_SECRET')!,
+      undefined,
+      cryptoProvider
     )
 
     // Check if this is a Connect account event

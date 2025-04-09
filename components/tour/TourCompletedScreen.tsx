@@ -117,20 +117,6 @@ export const TourCompletedScreen = ({
       await onRatingSubmit(selectedRating);
       setSelectedTipAmount(null);
       setIsPaymentReady(false);
-      
-      // Get the guide ID from the fetched data
-      const { data: tourData } = await supabase
-        .from('tours')
-        .select('guide_id')
-        .eq('id', tour.id)
-        .single();
-
-      if (tourData?.guide_id) {
-        router.replace(`/(tour)/thank-you?guideId=${tourData.guide_id}`);
-      } else {
-        // Fallback to home if for some reason we can't get the guide ID
-        router.replace('/');
-      }
     } catch (error) {
       console.error('Error submitting rating:', error);
       Alert.alert('Error', 'Failed to submit rating.');
@@ -216,7 +202,7 @@ export const TourCompletedScreen = ({
         </View>
 
         <View style={styles.sectionContainer}>
-          <Text style={styles.tipTitle}>Would you like to leave a tip?</Text>
+          <Text style={styles.tipTitle}>Would you like to leave a tip for {guideInfo?.full_name || 'Your Guide'}?</Text>
           {participantId && stripeAccountId ? (
             <ConnectedStripeProvider stripeAccountId={stripeAccountId}>
               <TipPayment 
