@@ -5,7 +5,7 @@ import { Alert } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
 interface UseTourActionsProps {
-  tour?: Tour;
+  tour?: Tour | null;
   onTourUpdate?: (tour: Tour) => void;
   disconnect?: (shouldCleanup?: boolean) => Promise<void>;
   isGuide?: boolean;

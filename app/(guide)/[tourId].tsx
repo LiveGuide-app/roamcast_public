@@ -65,7 +65,6 @@ export default function LiveTourDetail() {
     isUpdating 
   } = useTourActions({ 
     tour, 
-    connect: connect, 
     disconnect: disconnect,
     onTourUpdate: setTour 
   });
@@ -246,16 +245,18 @@ export default function LiveTourDetail() {
                 <Text style={styles.codeText}>{tour.unique_code}</Text>
               </View>
 
-              <TourMetrics
-                metrics={{
-                  guests: participantCount,
-                  duration: tour.room_finished_at ? 
-                    formatDuration(new Date(tour.room_finished_at).getTime() - new Date(tour.room_started_at!).getTime()) : 
-                    '00:00'
-                }}
-                tour={tour}
-                variant="row"
-              />
+              <View style={styles.metricsContainer}>
+                <TourMetrics
+                  metrics={{
+                    guests: participantCount,
+                    duration: tour.room_finished_at ? 
+                      formatDuration(new Date(tour.room_finished_at).getTime() - new Date(tour.room_started_at!).getTime()) : 
+                      '00:00'
+                  }}
+                  tour={tour}
+                  variant="row"
+                />
+              </View>
 
               <View style={styles.microphoneContainer}>
                 <TouchableOpacity 
@@ -271,6 +272,12 @@ export default function LiveTourDetail() {
                     {isMicrophoneEnabled ? 'Microphone On' : 'Microphone Off'}
                   </Text>
                 </TouchableOpacity>
+              </View>
+
+              <View style={styles.infoContainer}>
+                <Text style={styles.infoText}>
+                  Your audio will stream as long as you remain on this screen. You can lock your device, but navigating away will pause the audio stream. It will automatically reconnect when you return.
+                </Text>
               </View>
 
               <View style={styles.buttonContainer}>
@@ -347,28 +354,28 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    padding: spacing.lg,
+    padding: spacing.md,
     alignItems: 'center',
   },
   codeSection: {
     width: '100%',
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
     ...shadows.small,
   },
   sectionTitle: {
     fontSize: 14,
     color: colors.text.secondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   codeText: {
     fontSize: 32,
     fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   helperText: {
     fontSize: 14,
@@ -386,7 +393,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     padding: spacing.xs,
     width: '100%',
-    marginTop: spacing.md,
+    marginBottom: spacing.md,
     ...shadows.small,
   },
   micButton: {
@@ -417,5 +424,23 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     alignSelf: 'flex-start',
     marginBottom: spacing.md,
+  },
+  metricsContainer: {
+    width: '100%',
+    marginBottom: spacing.lg,
+  },
+  infoContainer: {
+    width: '100%',
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.small,
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
   }
 });

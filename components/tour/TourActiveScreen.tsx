@@ -122,7 +122,12 @@ export const TourActiveScreen = ({
         />
       </View>
 
-
+      {/* Info Text */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoText}>
+          Your audio will stream as long as you remain on this screen. You can lock your device, but navigating away will pause the audio stream. It will automatically reconnect when you return.
+        </Text>
+      </View>
 
       {/* Leave Button */}
       <Button
@@ -247,5 +252,19 @@ const styles = StyleSheet.create({
   guideTitle: {
     fontSize: 14,
     color: colors.text.secondary,
-  }
+  },
+  infoContainer: {
+    width: '100%',
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.small,
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
 }); 
