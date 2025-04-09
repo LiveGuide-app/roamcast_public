@@ -29,7 +29,8 @@
       "bitcode": false,
       "entitlements": {
         "com.apple.developer.in-app-payments": ["merchant.com.roamcast"]
-      }
+      },
+      "associatedDomains": ["applinks:roamcast.app"]
     },
     "android": {
       "adaptiveIcon": {
@@ -51,7 +52,20 @@
         "googlePay": {
           "enabled": true
         }
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "roamcast",
+              "host": "*"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

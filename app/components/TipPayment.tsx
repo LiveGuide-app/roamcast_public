@@ -133,7 +133,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         customerEphemeralKeySecret: ephemeralKey,
         customerId: customer,
         allowsDelayedPaymentMethods: true,
-        returnURL: 'roamcastv7://',
+        returnURL: 'roamcast://stripe/return',
         defaultBillingDetails: {
           name: 'Guest',
         },
