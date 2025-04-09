@@ -14,7 +14,8 @@ export enum TourErrorCode {
   UNAUTHORIZED = 'UNAUTHORIZED',
   RATE_LIMITED = 'RATE_LIMITED',
   INVALID_STATUS = 'INVALID_STATUS',
-  NETWORK_ERROR = 'NETWORK_ERROR'
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  TOUR_LIMIT_EXCEEDED = 'TOUR_LIMIT_EXCEEDED'
 }
 
 export class TourError extends Error {
@@ -48,6 +49,20 @@ export async function createTour(input: CreateTourInput): Promise<Tour> {
 
   if (error) {
     console.error('Tour creation error:', error);
+    
+    // Handle the tour limit error
+    if (error.message?.includes('Maximum of 2 tours within 7 days')) {
+      throw new TourError(
+        'You can create a maximum of 2 tours within 7 days until you complete Stripe onboarding.',
+        TourErrorCode.TOUR_LIMIT_EXCEEDED
+      );
+    }
+
+    // Handle other errors
+    if (error.code === '23505') { // Unique violation
+      throw new TourError('Tour name already exists', TourErrorCode.INVALID_STATUS);
+    }
+    
     throw new TourError('Failed to create tour', TourErrorCode.NETWORK_ERROR);
   }
 

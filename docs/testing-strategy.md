@@ -52,7 +52,6 @@ Tests that verify the interaction between different components and services.
    - Supabase real-time subscriptions
    - Stripe payment processing
    - LiveKit audio streaming
-   - Map services
 
 2. **Data Flow Testing**
    - Database operations
