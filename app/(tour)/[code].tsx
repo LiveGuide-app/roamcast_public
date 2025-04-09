@@ -7,18 +7,13 @@ import { TourActiveScreen } from '@/components/tour/TourActiveScreen';
 import { TourCompletedScreen } from '@/components/tour/TourCompletedScreen';
 import { TourErrorScreen } from '@/components/tour/TourErrorScreen';
 import { useTourManagement } from '@/hooks/useTourManagement';
-import { supabase } from '@/lib/supabase';
-import { useEffect, useState, useCallback } from 'react';
-import { getDeviceId } from '@/services/device';
+import { useCallback } from 'react';
 import { TourThankYouScreen } from '@/components/tour/TourThankYouScreen';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const router = useRouter();
-  const [hasRated, setHasRated] = useState(false);
-  const [isCheckingRating, setIsCheckingRating] = useState(true);
-  const [guideInfo, setGuideInfo] = useState<{ name: string; recommendationsLink: string | null } | null>(null);
   
   if (!code) {
     router.replace('/');
@@ -33,7 +28,9 @@ export default function TourCodeScreen() {
     isMuted,
     onToggleMute,
     onLeaveTour,
-    onRatingSubmit
+    onRatingSubmit,
+    guideInfo,
+    hasRated
   } = useTourManagement(code);
 
   // Handle leaving tour and navigation
@@ -61,59 +58,7 @@ export default function TourCodeScreen() {
     }, [])
   );
 
-  useEffect(() => {
-    async function checkRating() {
-      if (!tour?.id) return;
-
-      try {
-        setIsCheckingRating(true);
-        const deviceId = await getDeviceId();
-        
-        // Check if this device has already rated this tour
-        const { data: rating } = await supabase
-          .from('feedback')
-          .select('id')
-          .eq('tour_id', tour.id)
-          .eq('device_id', deviceId)
-          .is('deleted_at', null)
-          .single();
-
-        if (rating) {
-          // Get the guide ID from the tours table
-          const { data: tourData } = await supabase
-            .from('tours')
-            .select('guide_id')
-            .eq('id', tour.id)
-            .single();
-
-          if (tourData?.guide_id) {
-            // If there's a rating, also fetch guide info
-            const { data: guide } = await supabase
-              .from('users')
-              .select('full_name, recommendations_link')
-              .eq('id', tourData.guide_id)
-              .single();
-
-            if (guide) {
-              setGuideInfo({
-                name: guide.full_name,
-                recommendationsLink: guide.recommendations_link
-              });
-            }
-          }
-          setHasRated(true);
-        }
-      } catch (error) {
-        // If no rating found, single() will throw an error, which is fine
-      } finally {
-        setIsCheckingRating(false);
-      }
-    }
-
-    checkRating();
-  }, [tour?.id]);
-
-  if (isLoading || (tour?.status === 'completed' && isCheckingRating)) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary.main} />

@@ -161,19 +161,6 @@ export const TourCompletedScreen = ({
         await tipPaymentRef.current.handlePayment();
       } else {
         await onRatingSubmit(selectedRating);
-        
-        // Get the guide ID from the fetched data
-        const { data: tourData } = await supabase
-          .from('tours')
-          .select('guide_id')
-          .eq('id', tour.id)
-          .single();
-
-        if (tourData?.guide_id) {
-          router.replace(`/(tour)/thank-you?guideId=${tourData.guide_id}`);
-        } else {
-          router.replace('/');
-        }
       }
     } catch (error) {
       console.error('Error during submission:', error);

@@ -15,6 +15,8 @@ export type UseTourManagementReturn = {
   onToggleMute: () => void;
   onLeaveTour: () => Promise<void>;
   onRatingSubmit: (rating: number) => Promise<void>;
+  guideInfo: { name: string; recommendationsLink: string | null } | null;
+  hasRated: boolean;
 };
 
 export const useTourManagement = (code: string): UseTourManagementReturn => {
@@ -23,6 +25,8 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
   const [error, setError] = useState<TourError | null>(null);
   const [tourParticipantId, setTourParticipantId] = useState<string | null>(null);
   const [hasLeft, setHasLeft] = useState(false);
+  const [guideInfo, setGuideInfo] = useState<{ name: string; recommendationsLink: string | null } | null>(null);
+  const [hasRated, setHasRated] = useState(false);
 
   const { 
     isConnected, 
@@ -147,6 +151,29 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
     try {
       const deviceId = await getDeviceId();
       await submitTourRating(tour.id, deviceId, rating);
+      
+      // After successful rating submission, fetch guide info
+      const { data: tourData } = await supabase
+        .from('tours')
+        .select('guide_id')
+        .eq('id', tour.id)
+        .single();
+
+      if (tourData?.guide_id) {
+        const { data: guide } = await supabase
+          .from('users')
+          .select('full_name, recommendations_link')
+          .eq('id', tourData.guide_id)
+          .single();
+
+        if (guide) {
+          setGuideInfo({
+            name: guide.full_name,
+            recommendationsLink: guide.recommendations_link
+          });
+          setHasRated(true);
+        }
+      }
     } catch (error) {
       if (error instanceof TourError) {
         setError(error);
@@ -167,5 +194,7 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
     onToggleMute: toggleMute,
     onLeaveTour,
     onRatingSubmit,
+    guideInfo,
+    hasRated,
   };
 }; 

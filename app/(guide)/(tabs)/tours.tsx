@@ -64,7 +64,7 @@ export default function ToursOverview() {
 
   const renderTourCard = (tour: Tour) => {
     const rating = tourRatings[tour.id];
-    const ratingDisplay = rating?.averageRating ? `${rating.averageRating} ★` : 'N/A';
+    const ratingDisplay = rating?.averageRating ? `${rating.averageRating}` : 'N/A';
     
     return (
       <TouchableOpacity
