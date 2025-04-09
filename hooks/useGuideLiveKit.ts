@@ -1,6 +1,6 @@
 import { Room, RoomEvent, RemoteParticipant, LocalParticipant, RoomOptions, setLogLevel, LogLevel } from 'livekit-client';
 import { AudioSession } from '@livekit/react-native';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
@@ -27,6 +27,7 @@ export const useGuideLiveKit = (tourId: string) => {
     remoteParticipants: [],
     isMicrophoneEnabled: false,
   });
+  const autoEndTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize audio session
   const initializeAudio = useCallback(async () => {
@@ -119,6 +120,30 @@ export const useGuideLiveKit = (tourId: string) => {
           localParticipant: room.localParticipant,
           remoteParticipants: Array.from(room.remoteParticipants.values()),
         }));
+
+        // Set up auto-end timer when connected
+        if (autoEndTimerRef.current) {
+          clearTimeout(autoEndTimerRef.current);
+        }
+        // Set new timer for 6 hours (21600000 ms)
+        autoEndTimerRef.current = setTimeout(async () => {
+          console.log('🕒 Auto-ending tour after 6 hours');
+          try {
+            // Update tour status to completed
+            await supabase
+              .from('tours')
+              .update({ 
+                status: 'completed',
+                room_finished_at: new Date().toISOString()
+              })
+              .eq('id', tourId);
+            
+            // Disconnect from LiveKit
+            await disconnect(true);
+          } catch (error) {
+            console.error('Error auto-ending tour:', error);
+          }
+        }, 21600000);
       });
 
       room.on(RoomEvent.Disconnected, () => {
@@ -130,6 +155,12 @@ export const useGuideLiveKit = (tourId: string) => {
           localParticipant: null,
           remoteParticipants: [],
         }));
+
+        // Clear auto-end timer when disconnected
+        if (autoEndTimerRef.current) {
+          clearTimeout(autoEndTimerRef.current);
+          autoEndTimerRef.current = null;
+        }
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
@@ -228,6 +259,11 @@ export const useGuideLiveKit = (tourId: string) => {
     return () => {
       if (state.isConnected) {
         disconnect(false).catch(console.error);
+      }
+      // Clear auto-end timer on unmount
+      if (autoEndTimerRef.current) {
+        clearTimeout(autoEndTimerRef.current);
+        autoEndTimerRef.current = null;
       }
     };
   }, [state.isConnected, disconnect]);

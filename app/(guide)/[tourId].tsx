@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { Tour as BaseTour, getTour } from '@/services/tour';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -47,6 +47,8 @@ export default function LiveTourDetail() {
     console.log('Participant count in UI:', participantCount);
   }, [participantCount]);
 
+  const { statistics } = useTourStatistics(tour, participantCount);
+  
   const { 
     isConnected, 
     connect, 
@@ -56,7 +58,6 @@ export default function LiveTourDetail() {
     isMicrophoneEnabled 
   } = useGuideLiveKit(tourId || '');
 
-  const { statistics } = useTourStatistics(tour, participantCount);
   const { 
     handleStartTour, 
     handleEndTour: originalHandleEndTour, 
@@ -65,7 +66,7 @@ export default function LiveTourDetail() {
     isUpdating 
   } = useTourActions({ 
     tour, 
-    disconnect: disconnect,
+    disconnect,
     onTourUpdate: setTour 
   });
 
