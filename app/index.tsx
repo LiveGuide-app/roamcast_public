@@ -1,4 +1,5 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, Image, StatusBar, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, Image, StatusBar, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../config/theme';
 import { useRouter } from 'expo-router';
@@ -100,7 +101,7 @@ export default function LandingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.primary.main }]} edges={['top']}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
@@ -145,10 +146,10 @@ export default function LandingScreen() {
           </View>
 
           {/* Recent Tours Section */}
-          {/*<View style={styles.section}>
-            <Text style={styles.sectionTitle}>Your recent tours</Text>
-            {recentTours.length > 0 ? (
-              recentTours.map((tour) => (
+          {recentTours.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your Active Tours</Text>
+              {recentTours.map((tour) => (
                 <TouchableOpacity 
                   key={tour.id} 
                   style={styles.tourCard}
@@ -160,22 +161,11 @@ export default function LandingScreen() {
                       <Text style={styles.statusText}>{tour.status}</Text>
                     </View>
                   </View>
-                  <Text style={styles.tourDate}>
-                    {new Date(tour.created_at).toLocaleDateString()}
-                  </Text>
+ 
                 </TouchableOpacity>
-              ))
-            ) : (
-              <View style={styles.emptyStateContainer}>
-                <Text style={styles.noToursText}>
-                  Your tours will appear here
-                </Text>
-                <Text style={styles.noToursSubtext}>
-                  Join a tour to get started
-                </Text>
-              </View>
-            )}
-          </View>*/}
+              ))}
+            </View>
+          )}
         </ScrollView>
 
         {/* Guide Login Section */}
@@ -206,16 +196,17 @@ const getStatusColor = (status: string) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.default,
   },
   content: {
     flex: 1,
+    backgroundColor: colors.background.default,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   header: {
     alignItems: 'center',
@@ -249,11 +240,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   sectionSubtitle: {
     fontSize: 14,
     color: colors.text.secondary,
     marginBottom: spacing.lg,
+    textAlign: 'center',
   },
   codeInputContainer: {
     flexDirection: 'row',
@@ -306,25 +299,6 @@ const styles = StyleSheet.create({
   tourDate: {
     fontSize: 14,
     color: colors.text.secondary,
-  },
-  emptyStateContainer: {
-    backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    ...shadows.small,
-  },
-  noToursText: {
-    fontSize: 16,
-    color: colors.text.primary,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  noToursSubtext: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: 'center',
   },
   footer: {
     padding: spacing.xl,

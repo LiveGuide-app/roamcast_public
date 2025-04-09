@@ -10,7 +10,7 @@ export const colors = {
     dark: '#2D3436',
   },
   background: {
-    default: '#F8F9FA',
+    default: '#FFFFFF',
     paper: '#FFFFFF',
     gradient: ['#FF6B6B', '#FF8E8E'],
   },

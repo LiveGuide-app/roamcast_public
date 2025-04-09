@@ -377,6 +377,7 @@ export async function getRecentTours(deviceId: string): Promise<Tour[]> {
         )
       `)
       .eq('device_id', deviceId)
+      .eq('tours.status', 'active')
       .order('join_time', { ascending: false })
       .limit(5);
 
