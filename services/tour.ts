@@ -74,7 +74,10 @@ export async function getTour(tourId: string): Promise<Tour> {
     .from('tours')
     .select(`
       *,
-      total_participants:tour_participants(count)
+      total_participants:tour_participants(count),
+      users!tours_guide_id_fkey (
+        stripe_default_currency
+      )
     `)
     .eq('id', tourId)
     .single();
@@ -98,7 +101,8 @@ export async function getTour(tourId: string): Promise<Tour> {
 
   return {
     ...data,
-    total_participants: participants?.length || 0
+    total_participants: participants?.length || 0,
+    guide_currency: data.users?.stripe_default_currency || 'gbp'
   };
 }
 

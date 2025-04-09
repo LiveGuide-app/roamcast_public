@@ -16,7 +16,22 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
 }) => {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Payment Settings</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.sectionTitle}>Tip Payment Settings</Text>
+        {!isLoading && (
+          <View style={[
+            styles.statusBadge, 
+            { backgroundColor: stripeAccountEnabled ? colors.success.light : colors.warning.light }
+          ]}>
+            <Text style={[
+              styles.statusText, 
+              { color: stripeAccountEnabled ? colors.background.paper : colors.background.paper }
+            ]}>
+              {stripeAccountEnabled ? 'Stripe Connected' : 'Stripe Not Connected'}
+            </Text>
+          </View>
+        )}
+      </View>
       <Text style={styles.sectionDescription}>
         Roamcast helps you earn tips from guests after each tour. They'll be prompted to leave a review and send an optional tip. Securely set up or link your Stripe account below to receive payments directly. A small processing fee applies.
       </Text>
@@ -24,7 +39,7 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
         <ActivityIndicator color={colors.primary.main} />
       ) : (
         <Button
-          title={stripeAccountEnabled ? 'Open Stripe Dashboard' : 'Set up payments'}
+          title={stripeAccountEnabled ? 'Open Stripe Dashboard' : 'Set up tip payments'}
           variant="primary"
           onPress={onStripePress}
         />
@@ -39,11 +54,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     marginTop: spacing.md,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing.md,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   sectionDescription: {
     fontSize: 14,

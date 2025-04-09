@@ -321,6 +321,7 @@ export default function LiveTourDetail() {
                   completedAt: tour.completed_at
                 }}
                 tour={tour}
+                currency={tour.guide_currency}
               />
 
               <View style={styles.buttonContainer}>

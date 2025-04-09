@@ -65,16 +65,11 @@ export const useTourStatistics = (tour: Tour | null, participantCount?: number) 
         });
       });
 
-
-
-      // Convert from cents to currency units for display
-      const earningsInCurrency = totalTipsAmount / 100;
-
       setStatistics({
         totalGuests: participantCount !== undefined ? participantCount : tour.total_participants,
         rating: averageRating,
         totalReviews: totalReviews,
-        earnings: earningsInCurrency,
+        earnings: totalTipsAmount,
         totalTips: totalTipsCount,
         duration
       });

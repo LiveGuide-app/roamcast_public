@@ -12,6 +12,7 @@ export type Tour = {
   room_started_at: string | null;
   room_finished_at: string | null;
   completed_at?: string;
+  guide_currency?: string;
 };
 
 export type TourParticipant = {
