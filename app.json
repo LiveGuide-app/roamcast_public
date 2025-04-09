@@ -19,13 +19,17 @@
         "NSMicrophoneUsageDescription": "Roamcast needs access to your microphone to enable audio streaming during tours",
         "NSCameraUsageDescription": "Roamcast needs access to your camera to allow you to upload a profile picture",
         "NSPhotoLibraryUsageDescription": "Roamcast needs access to your photo library to allow you to select a profile picture",
+        "NSApplePayUsageDescription": "Roamcast uses Apple Pay to process tips for tour guides",
         "UIBackgroundModes": [
           "audio",
           "voip"
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bitcode": false
+      "bitcode": false,
+      "entitlements": {
+        "com.apple.developer.in-app-payments": ["merchant.com.roamcast"]
+      }
     },
     "android": {
       "adaptiveIcon": {

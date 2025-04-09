@@ -160,7 +160,7 @@ serve(async (req) => {
         amount,
         currency: guideCurrency,
         customer: customerId,
-        payment_method_types: ['card'],
+        payment_method_types: ['card', 'apple_pay'],
         application_fee_amount: applicationFeeAmount,
         metadata: {
           tourParticipantId,

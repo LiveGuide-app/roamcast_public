@@ -22,6 +22,7 @@ export const ConnectedStripeProvider: React.FC<ConnectedStripeProviderProps> = (
       publishableKey={EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}
       urlScheme={EXPO_PUBLIC_APP_URL_SCHEME}
       stripeAccountId={stripeAccountId}
+      merchantIdentifier="merchant.com.roamcast"
     >
       {children}
     </StripeProvider>

@@ -137,6 +137,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         defaultBillingDetails: {
           name: 'Guest',
         },
+        applePay: true,
       });
 
       if (initError) {
