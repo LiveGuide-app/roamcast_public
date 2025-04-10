@@ -146,6 +146,8 @@ export class LiveKitService {
   disconnect(): void {
     if (this.room) {
       console.log('Disconnecting from room');
+      // Remove event listeners before disconnecting
+      this.room.removeAllListeners();
       this.room.disconnect();
     }
     this.cleanup();
@@ -155,7 +157,14 @@ export class LiveKitService {
     if (this.room) {
       // Remove any attached audio elements
       const audioElements = document.querySelectorAll('audio');
-      audioElements.forEach(el => el.remove());
+      audioElements.forEach(el => {
+        // Stop the audio track before removing
+        if (el.srcObject) {
+          const tracks = (el.srcObject as MediaStream).getTracks();
+          tracks.forEach(track => track.stop());
+        }
+        el.remove();
+      });
       this.room = null;
     }
   }

@@ -9,32 +9,20 @@ interface AudioPlayerProps {
   onToggleMute: () => void;
 }
 
-export function AudioPlayer({ isConnected, onDisconnect, isMuted, onToggleMute }: AudioPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(true);
+export function AudioPlayer({ 
+  isConnected, 
+  onDisconnect, 
+  isMuted, 
+  onToggleMute
+}: AudioPlayerProps) {
+  const [isIOS, setIsIOS] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
-  // Handle visibility change to ensure audio continues in background
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Page is hidden, ensure audio continues
-        if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
-          navigator.mediaSession.playbackState = 'playing';
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    // Detect platform
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
+    setIsSafari(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
   }, []);
-
-  const togglePlayback = () => {
-    setIsPlaying(!isPlaying);
-    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = !isPlaying ? 'playing' : 'paused';
-    }
-  };
 
   if (!isConnected) return null;
 
@@ -42,22 +30,6 @@ export function AudioPlayer({ isConnected, onDisconnect, isMuted, onToggleMute }
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 border-t border-gray-200">
       <div className="max-w-md mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={togglePlayback}
-            className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-          >
-            {isPlaying ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-          </button>
           <button
             onClick={onToggleMute}
             className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
@@ -77,6 +49,11 @@ export function AudioPlayer({ isConnected, onDisconnect, isMuted, onToggleMute }
           <div>
             <h3 className="font-medium">Roamcast Tour</h3>
             <p className="text-sm text-gray-500">Live audio streaming</p>
+            {(isIOS && isSafari) && (
+              <p className="text-xs text-blue-600 mt-1">
+                Keep Safari open to continue listening
+              </p>
+            )}
           </div>
         </div>
         <button

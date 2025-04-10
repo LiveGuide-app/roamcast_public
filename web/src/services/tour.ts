@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { DeviceIdService } from '@/services/deviceId';
 
 export type TourParticipant = {
   id: string;
@@ -57,24 +58,6 @@ export async function getTourByCode(code: string): Promise<Tour> {
   }
 }
 
-// Get device ID from local storage or generate a new one
-export async function getDeviceId(): Promise<string> {
-  const deviceIdKey = 'device_id';
-  let deviceId = localStorage.getItem(deviceIdKey);
-  
-  if (!deviceId) {
-    // Generate a UUID v4 using a more compatible method
-    deviceId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-    localStorage.setItem(deviceIdKey, deviceId);
-  }
-  
-  return deviceId;
-}
-
 export async function createTourParticipant(tourId: string, deviceId: string): Promise<TourParticipant> {
   console.log('Input values:', {
     tourId: tourId,
@@ -89,9 +72,9 @@ export async function createTourParticipant(tourId: string, deviceId: string): P
     .select('*')
     .eq('tour_id', tourId)
     .eq('device_id', deviceId)
-    .single();
+    .maybeSingle();
 
-  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+  if (checkError) {
     throw new TourError('Failed to check existing participant', TourErrorCode.NETWORK_ERROR);
   }
 

@@ -9,8 +9,9 @@ import { getTourByCode } from '@/services/tour';
 import { TourActiveScreen } from '@/components/TourActiveScreen';
 import { TourPendingScreen } from '@/components/TourPendingScreen';
 import { TourCompletedScreen } from '@/components/TourCompletedScreen';
-import { Tour, createTourParticipant, getDeviceId, updateParticipantLeaveTime } from '@/services/tour';
+import { Tour, createTourParticipant, updateParticipantLeaveTime } from '@/services/tour';
 import { supabase } from '@/lib/supabase';
+import { DeviceIdService } from '@/services/deviceId';
 
 export default function Home() {
   const [tourCode, setTourCode] = useState('');
@@ -26,6 +27,8 @@ export default function Home() {
   } = useLiveKit();
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [currentParticipantId, setCurrentParticipantId] = useState<string | null>(null);
 
   // Subscribe to tour changes when a tour is loaded
   useEffect(() => {
@@ -48,12 +51,12 @@ export default function Home() {
 
           // Handle tour status changes
           if (updatedTour.status !== currentTour.status) {
-            // If tour is no longer active, disconnect first
+            // If tour is no longer active
             if (updatedTour.status !== 'active' && isConnected) {
               console.log('Tour is no longer active, disconnecting');
               disconnectFromTour();
             }
-            // If tour becomes active, connect after a small delay
+            // If tour becomes active
             else if (updatedTour.status === 'active' && !isConnected) {
               console.log('Tour became active, connecting after delay');
               // Add a small delay to ensure clean state
@@ -82,24 +85,23 @@ export default function Home() {
 
     try {
       const tour = await getTourByCode(tourCode);
-      setCurrentTour(tour);
       
-      // Create tour participant record for all tour statuses
-      const deviceId = await getDeviceId();
-      await createTourParticipant(tour.id, deviceId);
-
       if (tour.status === 'cancelled') {
         setDismissedError('This tour has been cancelled by the guide.');
         return;
       }
 
-      if (tour.status === 'pending') {
+      if (tour.status === 'completed') {
+        setCurrentTour(tour);
         return;
       }
 
-      if (tour.status === 'completed') {
-        return;
-      }
+      // Only create participant for non-completed tours
+      const deviceId = await DeviceIdService.getDatabaseId();
+      const participant = await createTourParticipant(tour.id, deviceId);
+      setCurrentParticipantId(participant.id);
+      
+      setCurrentTour(tour);
 
       // Only connect to LiveKit if the tour is active
       if (tour.status === 'active') {
@@ -118,21 +120,39 @@ export default function Home() {
 
   const handleLeaveTour = async () => {
     if (currentTour) {
-      const deviceId = await getDeviceId();
+      const deviceId = await DeviceIdService.getDatabaseId();
       await updateParticipantLeaveTime(currentTour.id, deviceId);
     }
     setCurrentTour(null);
     setTourCode('');
+    setCurrentParticipantId(null);
     disconnectFromTour();
   };
 
+  const handleRatingSubmit = async (rating: number) => {
+    if (!currentTour) return;
+    const deviceId = await DeviceIdService.getDatabaseId();
+    await supabase
+      .from('tour_participants')
+      .update({ rating })
+      .eq('tour_id', currentTour.id)
+      .eq('device_id', deviceId);
+  };
+
   const showError = error && error.message !== dismissedError;
+
+  // Reset disconnecting state when connection state changes
+  useEffect(() => {
+    if (!isConnected) {
+      setIsDisconnecting(false);
+    }
+  }, [isConnected]);
 
   return (
     <main className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-center mb-6">
-          Join Roamcast Tour
+          Join Roamcast Tourr
         </h1>
         
         {showError && (
@@ -175,6 +195,7 @@ export default function Home() {
               <TourCompletedScreen
                 tour={currentTour}
                 onLeaveTour={handleLeaveTour}
+                onRatingSubmit={handleRatingSubmit}
               />
             )}
           </>

@@ -31,7 +31,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+      </body>
     </html>
   );
 }
