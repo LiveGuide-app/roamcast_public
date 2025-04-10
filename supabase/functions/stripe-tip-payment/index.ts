@@ -4,6 +4,7 @@ import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
 import { tipPaymentSchema } from '../_shared/schemas.ts'
 import { validateRequest } from '../_shared/validation.ts'
 import { sanitizeObject } from '../_shared/sanitization.ts'
+import { rateLimit } from '../_shared/rate-limiting.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
@@ -20,6 +21,27 @@ console.log('Stripe client initialized with:', {
 
 serve(async (req) => {
   try {
+    // Only allow POST requests
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Apply rate limiting
+    const rateLimitResult = rateLimit(req, {
+      maxRequests: 30, // 30 requests per minute
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimitResult.success) {
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.error }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

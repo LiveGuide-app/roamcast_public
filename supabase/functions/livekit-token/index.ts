@@ -3,6 +3,7 @@ import { create, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts"
 import { liveKitTokenSchema } from '../_shared/schemas.ts'
 import { validateRequest } from '../_shared/validation.ts'
 import { sanitizeObject } from '../_shared/sanitization.ts'
+import { rateLimit } from '../_shared/rate-limiting.ts'
 
 const apiKey = Deno.env.get('LIVEKIT_API_KEY')
 const apiSecret = Deno.env.get('LIVEKIT_API_SECRET')
@@ -19,6 +20,19 @@ serve(async (req) => {
         status: 405,
         headers: { 'Content-Type': 'application/json' }
       })
+    }
+
+    // Apply rate limiting
+    const rateLimitResult = rateLimit(req, {
+      maxRequests: 60, // 60 requests per minute
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimitResult.success) {
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.error }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     // Parse and sanitize request body
