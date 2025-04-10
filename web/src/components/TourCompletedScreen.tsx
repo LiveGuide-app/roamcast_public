@@ -1,10 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import { Tour } from '@/types/tour';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/utils/currency';
-import { ConnectedStripeProvider } from '@/components/ConnectedStripeProvider';
 import { TipPayment } from '@/components/TipPayment';
 import { DeviceIdService } from '@/services/deviceId';
+
+// Initialize Stripe outside of component to avoid recreating it
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface GuideInfo {
   full_name: string;
@@ -18,7 +21,10 @@ type TourCompletedScreenProps = {
   onLeaveTour: () => void;
 };
 
-export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourCompletedScreenProps) => {
+export const TourCompletedScreen = forwardRef<{
+  handlePayment: () => Promise<void>;
+  handlePaymentComplete: (rating: number) => Promise<void>;
+}, TourCompletedScreenProps>(({ tour, onRatingSubmit, onLeaveTour }, ref) => {
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [selectedTipAmount, setSelectedTipAmount] = useState<number | null>(null);
@@ -26,7 +32,10 @@ export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourC
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [participantId, setParticipantId] = useState<string | null>(null);
-  const tipPaymentRef = useRef<any>(null);
+  const tipPaymentRef = useRef<{
+    handlePayment: () => Promise<void>;
+    handlePaymentComplete: (rating: number) => Promise<void>;
+  }>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -93,6 +102,55 @@ export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourC
     fetchData();
   }, [tour.id]);
 
+  useImperativeHandle(ref, () => ({
+    handlePayment: async () => {
+      if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
+        await tipPaymentRef.current.handlePayment();
+      }
+    },
+    handlePaymentComplete: async (rating: number) => {
+      try {
+        await onRatingSubmit(rating);
+        setSelectedTipAmount(null);
+        setIsPaymentReady(false);
+      } catch (error) {
+        console.error('Error submitting rating:', error);
+        alert('Failed to submit rating.');
+      }
+    }
+  }), [selectedTipAmount, isPaymentReady, tipPaymentRef, onRatingSubmit]);
+
+  // Check for return from Stripe Checkout and handle rating submission
+  useEffect(() => {
+    const submitStoredRating = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const sessionId = searchParams.get('session_id');
+      
+      if (sessionId) {
+        // Clear the URL parameters
+        window.history.replaceState({}, '', window.location.pathname);
+        
+        // Get stored rating and submit it
+        const storedRating = localStorage.getItem('pendingTourRating');
+        if (storedRating) {
+          const rating = parseInt(storedRating, 10);
+          try {
+            await onRatingSubmit(rating);
+            setSelectedTipAmount(null);
+            setIsPaymentReady(false);
+            // Clear stored rating
+            localStorage.removeItem('pendingTourRating');
+          } catch (error) {
+            console.error('Error submitting rating:', error);
+            alert('Failed to submit rating.');
+          }
+        }
+      }
+    };
+
+    submitStoredRating();
+  }, [onRatingSubmit]);
+
   const handleRating = (rating: number) => {
     setSelectedRating(rating);
   };
@@ -105,14 +163,26 @@ export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourC
     setIsPaymentReady(ready);
   };
 
-  const handlePaymentComplete = async () => {
+  const handleSubmit = async () => {
+    if (selectedRating === 0) {
+      alert('Please select a rating before submitting');
+      return;
+    }
+
     try {
-      await onRatingSubmit(selectedRating);
-      setSelectedTipAmount(null);
-      setIsPaymentReady(false);
+      setIsSubmitting(true);
+      if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
+        // Store rating before redirecting to Stripe
+        localStorage.setItem('pendingTourRating', selectedRating.toString());
+        await tipPaymentRef.current.handlePayment();
+      } else {
+        await onRatingSubmit(selectedRating);
+      }
     } catch (error) {
-      console.error('Error submitting rating:', error);
-      alert('Failed to submit rating.');
+      console.error('Error during submission:', error);
+      alert('Failed to submit. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -128,66 +198,25 @@ export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourC
     return `Submit Rating & Tip ${formatTipAmount(selectedTipAmount)}`;
   };
 
-  const handleSubmit = async () => {
-    if (selectedRating === 0) {
-      alert('Please select a rating before submitting');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
-        await tipPaymentRef.current.handlePayment();
-      } else {
-        await onRatingSubmit(selectedRating);
-      }
-    } catch (error) {
-      console.error('Error during submission:', error);
-      alert('Failed to submit. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-        <div className="bg-blue-600 text-white p-4 rounded-lg mb-6">
-          <h1 className="text-xl font-semibold">Tour Complete</h1>
-        </div>
-
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-md mx-auto">
         <div className="space-y-6">
-          <div className="flex items-center bg-white p-4 rounded-lg shadow">
-            {guideInfo?.avatar_url ? (
-              <img 
-                src={guideInfo.avatar_url} 
-                alt={guideInfo.full_name}
-                className="w-10 h-10 rounded-full mr-4 object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-            )}
-            <div>
-              <h2 className="font-semibold text-gray-900">{tour.name}</h2>
-              <p className="text-gray-600">With {guideInfo?.full_name || 'Tour Guide'}</p>
-            </div>
-          </div>
-
           <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-center mb-4">How was your experience?</h3>
-            <div className="flex justify-center space-x-2">
+            <h3 className="text-lg font-medium text-center mb-4">
+              How was your experience?
+            </h3>
+            <div className="flex justify-center space-x-2 mb-8">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   onClick={() => handleRating(star)}
-                  className="p-2 focus:outline-none transition-colors duration-200"
+                  className="p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
                 >
                   <svg
-                    className={`w-8 h-8 ${star <= selectedRating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400`}
+                    className={`w-8 h-8 ${
+                      star <= selectedRating ? 'text-yellow-400' : 'text-gray-300'
+                    }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -202,17 +231,30 @@ export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourC
             <h3 className="text-lg font-medium text-center mb-4">
               Would you like to leave a tip for {guideInfo?.full_name || 'Your Guide'}?
             </h3>
-            {participantId && stripeAccountId ? (
-              <ConnectedStripeProvider stripeAccountId={stripeAccountId}>
-                <TipPayment 
-                  ref={tipPaymentRef}
-                  tourParticipantId={participantId}
-                  onAmountChange={handleTipAmountChange}
-                  onPaymentReady={handlePaymentReady}
-                  onPaymentComplete={handlePaymentComplete}
-                  currency={guideInfo?.stripe_default_currency || 'gbp'}
-                />
-              </ConnectedStripeProvider>
+            {participantId && stripeAccountId && !isLoading ? (
+              <TipPayment 
+                ref={tipPaymentRef}
+                tourParticipantId={participantId}
+                onAmountChange={handleTipAmountChange}
+                onPaymentReady={handlePaymentReady}
+                onPaymentComplete={async () => {
+                  const storedRating = localStorage.getItem('pendingTourRating');
+                  if (storedRating) {
+                    const rating = parseInt(storedRating, 10);
+                    try {
+                      await onRatingSubmit(rating);
+                      setSelectedTipAmount(null);
+                      setIsPaymentReady(false);
+                      localStorage.removeItem('pendingTourRating');
+                    } catch (error) {
+                      console.error('Error submitting rating:', error);
+                      alert('Failed to submit rating.');
+                    }
+                  }
+                }}
+                currency={guideInfo?.stripe_default_currency || 'gbp'}
+                stripePromise={stripePromise}
+              />
             ) : participantId && !stripeAccountId && !isLoading ? (
               <p className="text-center text-gray-600">
                 Tipping is not available for this guide.
@@ -238,4 +280,4 @@ export const TourCompletedScreen = ({ tour, onRatingSubmit, onLeaveTour }: TourC
       </div>
     </div>
   );
-}; 
+}); 

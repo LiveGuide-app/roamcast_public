@@ -12,13 +12,28 @@ if (!apiKey || !apiSecret) {
   throw new Error('Missing LiveKit credentials')
 }
 
+// CORS headers for all responses
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
     // Only allow POST requests
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       })
     }
 
@@ -31,7 +46,13 @@ serve(async (req) => {
     if (!rateLimitResult.success) {
       return new Response(
         JSON.stringify({ error: rateLimitResult.error }),
-        { status: 429, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 429, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          } 
+        }
       );
     }
 
@@ -46,7 +67,13 @@ serve(async (req) => {
       console.error('Validation error:', validationResult.error);
       return new Response(
         JSON.stringify({ error: validationResult.error }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          } 
+        }
       );
     }
     
@@ -97,13 +124,19 @@ serve(async (req) => {
     const token = await create({ alg: 'HS256', typ: 'JWT' }, payload, key)
 
     return new Response(JSON.stringify({ token }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     })
   } catch (error) {
     console.error('Error generating token:', error)
     return new Response(JSON.stringify({ error: 'An error occurred generating your token' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     })
   }
 }) 

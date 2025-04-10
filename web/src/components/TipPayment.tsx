@@ -1,6 +1,8 @@
-import { useState, forwardRef, useImperativeHandle } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
+import { DeviceIdService } from '@/services/deviceId';
 
 interface TipPaymentProps {
   tourParticipantId: string;
@@ -8,204 +10,191 @@ interface TipPaymentProps {
   onPaymentReady: (ready: boolean) => void;
   onPaymentComplete: () => void;
   currency: string;
+  stripePromise: Promise<Stripe | null>;
 }
 
-export interface TipPaymentHandle {
-  handlePayment: () => Promise<void>;
-}
-
-const tipAmounts = [5, 10, 20];
+// Amounts in currency units (not cents)
+const tipAmounts = [5, 10, 20, 50];
 const MIN_AMOUNT = 1;
 const MAX_AMOUNT = 1000;
 
-export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(
-  ({ tourParticipantId, onAmountChange, onPaymentReady, onPaymentComplete, currency }, ref) => {
-    const stripe = useStripe();
-    const elements = useElements();
+// Helper to detect if we're on a mobile device
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPaymentProps>(
+  ({ tourParticipantId, onAmountChange, onPaymentReady, onPaymentComplete, currency, stripePromise }, ref) => {
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [cardComplete, setCardComplete] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const isMobile = isMobileDevice();
+
+    // Handle return from checkout
+    useEffect(() => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const sessionId = searchParams.get('session_id');
+      
+      if (sessionId) {
+        // Clear the URL parameters
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+        
+        // Notify completion
+        onPaymentComplete();
+      }
+    }, [onPaymentComplete]);
 
     useImperativeHandle(ref, () => ({
       handlePayment: async () => {
-        if (!stripe || !elements || !selectedAmount) {
-          setError('Payment system is not ready. Please try again.');
-          return;
+        if (!selectedAmount) {
+          throw new Error('Payment cannot be processed at this time');
         }
 
-        if (selectedAmount < MIN_AMOUNT || selectedAmount > MAX_AMOUNT) {
-          setError(`Amount must be between ${formatAmount(MIN_AMOUNT)} and ${formatAmount(MAX_AMOUNT)}`);
-          return;
-        }
-
+        setIsProcessing(true);
+        setError(null);
+        
         try {
-          setError(null);
-          setIsProcessing(true);
-
-          // Create payment intent
-          const { data: intent, error: intentError } = await supabase.functions.invoke('create-payment-intent', {
+          // Get device ID
+          const deviceId = await DeviceIdService.getDatabaseId();
+          
+          const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('stripe-create-checkout', {
             body: {
-              amount: Math.round(selectedAmount * 100), // Convert to cents
+              tourParticipantId,
+              amount: selectedAmount * 100, // Convert to cents for Stripe
               currency: currency.toLowerCase(),
-              tourParticipantId
-            }
+              deviceId,
+            },
           });
 
-          if (intentError) throw intentError;
-
-          // Confirm card payment
-          const { error: stripeError } = await stripe.confirmCardPayment(intent.clientSecret, {
-            payment_method: {
-              card: elements.getElement(CardElement)!,
-            }
-          });
-
-          if (stripeError) {
-            if (stripeError.type === 'card_error' || stripeError.type === 'validation_error') {
-              setError(stripeError.message || 'An error occurred with your card.');
-            } else {
-              setError('An unexpected error occurred.');
-            }
-            return;
+          if (checkoutError) {
+            setError(checkoutError.message);
+            throw checkoutError;
+          }
+          
+          if (!checkoutData?.clientSecret) {
+            setError('No client secret returned');
+            throw new Error('No client secret returned');
           }
 
-          onPaymentComplete();
-          setSelectedAmount(null);
-          setCustomAmount('');
-          setCardComplete(false);
+          // Set client secret to show checkout
+          setClientSecret(checkoutData.clientSecret);
         } catch (error) {
           console.error('Payment failed:', error);
-          setError('Payment failed. Please try again.');
+          setError(error instanceof Error ? error.message : 'Payment failed');
+          throw error;
         } finally {
           setIsProcessing(false);
         }
       }
-    }));
+    }), [selectedAmount, tourParticipantId, currency]);
 
-    const handleAmountSelect = (amount: number | null) => {
-      setError(null);
-      setSelectedAmount(amount);
-      setCustomAmount('');
-      onAmountChange(amount);
+    const handleAmountSelect = async (amount: number) => {
+      try {
+        setSelectedAmount(amount);
+        onAmountChange(amount);
+        onPaymentReady(true);
+      } catch (error) {
+        console.error('Error handling amount selection:', error);
+        setSelectedAmount(null);
+        onAmountChange(null);
+        onPaymentReady(false);
+      }
     };
 
-    const handleCustomAmountChange = (value: string) => {
-      setError(null);
-      const numericValue = value.replace(/[^0-9.]/g, '');
-      const amount = parseFloat(numericValue);
+    const handleCustomAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value.replace(/[^0-9]/g, '');
+      setCustomAmount(value);
+      const amount = value ? parseInt(value, 10) : null;
       
-      setCustomAmount(numericValue);
-      
-      if (isNaN(amount)) {
+      if (amount && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
+        setSelectedAmount(amount);
+        onAmountChange(amount);
+        onPaymentReady(true);
+      } else {
         setSelectedAmount(null);
         onAmountChange(null);
-        return;
+        onPaymentReady(false);
       }
-
-      if (amount < MIN_AMOUNT) {
-        setError(`Minimum amount is ${formatAmount(MIN_AMOUNT)}`);
-        setSelectedAmount(null);
-        onAmountChange(null);
-        return;
-      }
-
-      if (amount > MAX_AMOUNT) {
-        setError(`Maximum amount is ${formatAmount(MAX_AMOUNT)}`);
-        setSelectedAmount(null);
-        onAmountChange(null);
-        return;
-      }
-
-      setSelectedAmount(amount);
-      onAmountChange(amount);
-    };
-
-    const handleCardChange = (event: any) => {
-      setError(event.error ? event.error.message : null);
-      setCardComplete(event.complete);
-      onPaymentReady(event.complete);
-    };
-
-    const formatAmount = (amount: number) => {
-      return new Intl.NumberFormat('en-GB', {
-        style: 'currency',
-        currency: currency.toUpperCase()
-      }).format(amount);
     };
 
     return (
-      <div className="space-y-4">
-        <div className="flex justify-center space-x-2">
-          {tipAmounts.map((amount) => (
-            <button
-              key={amount}
-              onClick={() => handleAmountSelect(amount)}
-              className={`px-4 py-2 rounded-md transition-colors duration-200 
-                ${selectedAmount === amount 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            {tipAmounts.map((amount) => (
+              <button
+                key={amount}
+                onClick={() => handleAmountSelect(amount)}
+                className={`py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200
+                  ${selectedAmount === amount
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+                disabled={isProcessing}
+              >
+                {new Intl.NumberFormat('en-GB', {
+                  style: 'currency',
+                  currency: currency.toUpperCase(),
+                }).format(amount)}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={customAmount}
+              onChange={handleCustomAmountChange}
+              placeholder="Custom amount"
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isProcessing}
-            >
-              {formatAmount(amount)}
-            </button>
-          ))}
+            />
+          </div>
         </div>
 
-        <div className="relative">
-          <input
-            type="text"
-            inputMode="decimal"
-            value={customAmount}
-            onChange={(e) => handleCustomAmountChange(e.target.value)}
-            placeholder={`Enter amount (min ${formatAmount(MIN_AMOUNT)})`}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            disabled={isProcessing}
-          />
-          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-            {currency.toUpperCase()}
-          </span>
-        </div>
+        {clientSecret && (
+          <div id="checkout" className="mt-4">
+            <EmbeddedCheckoutProvider
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                onComplete: () => {
+                  onPaymentComplete();
+                },
+              }}
+            >
+              <EmbeddedCheckout />
+            </EmbeddedCheckoutProvider>
+          </div>
+        )}
 
         {error && (
-          <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">
+          <div className="p-4 bg-red-50 text-red-700 rounded-md">
             {error}
           </div>
         )}
 
-        {selectedAmount !== null && selectedAmount > 0 && (
-          <div className="space-y-4">
-            <div className={`p-4 border rounded-md ${cardComplete ? 'border-green-500' : 'border-gray-300'}`}>
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '16px',
-                      color: '#424770',
-                      '::placeholder': {
-                        color: '#aab7c4',
-                      },
-                    },
-                    invalid: {
-                      color: '#9e2146',
-                    },
-                  },
-                  hidePostalCode: true,
-                }}
-                onChange={handleCardChange}
-              />
-            </div>
-            
-            {isProcessing && (
-              <div className="flex justify-center items-center space-x-2 text-blue-600">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
-                <span className="text-sm">Processing payment...</span>
-              </div>
-            )}
+        {isProcessing && (
+          <div className="flex justify-center mt-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
           </div>
         )}
       </div>
     );
   }
-); 
+);
+
+export const TipPayment = forwardRef<{ handlePayment: () => Promise<void> }, TipPaymentProps>(
+  (props, ref) => {
+    if (!props.stripePromise) {
+      return null;
+    }
+
+    return <TipPaymentForm ref={ref} {...props} />;
+  }
+);
+
+TipPayment.displayName = 'TipPayment';
+TipPaymentForm.displayName = 'TipPaymentForm'; 
