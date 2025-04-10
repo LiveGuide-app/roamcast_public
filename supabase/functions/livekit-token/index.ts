@@ -1,5 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { create, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts"
+import { liveKitTokenSchema } from '../_shared/schemas.ts'
+import { validateRequest } from '../_shared/validation.ts'
+import { sanitizeObject } from '../_shared/sanitization.ts'
 
 const apiKey = Deno.env.get('LIVEKIT_API_KEY')
 const apiSecret = Deno.env.get('LIVEKIT_API_SECRET')
@@ -18,37 +21,23 @@ serve(async (req) => {
       })
     }
 
+    // Parse and sanitize request body
     const body = await req.json();
     console.log('Received token request:', body);
-
-    const { tourId, role, metadata, deviceId } = body;
-
-    // Validate required fields
-    if (!tourId || !role) {
-      console.error('Missing required fields:', { tourId, role });
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      })
+    const sanitizedBody = sanitizeObject(body);
+    
+    // Validate request data
+    const validationResult = validateRequest(sanitizedBody, liveKitTokenSchema);
+    if (!validationResult.success) {
+      console.error('Validation error:', validationResult.error);
+      return new Response(
+        JSON.stringify({ error: validationResult.error }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
-
-    // Validate role
-    if (!['guide', 'listener'].includes(role)) {
-      console.error('Invalid role:', role);
-      return new Response(JSON.stringify({ error: 'Invalid role' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    // Validate deviceId for listeners
-    if (role === 'listener' && !deviceId) {
-      console.error('Missing deviceId for listener');
-      return new Response(JSON.stringify({ error: 'Device ID is required for listeners' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
+    
+    // Use the validated and sanitized data
+    const { tourId, role, metadata, deviceId } = validationResult.data;
 
     const isGuide = role === 'guide'
     // Use deviceId for listeners, guide-{tourId} for guides
@@ -98,7 +87,7 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error('Error generating token:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'An error occurred generating your token' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     })

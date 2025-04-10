@@ -121,17 +121,13 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
       }
 
       const { 
-        paymentIntent: paymentIntentClientSecret, 
-        ephemeralKey,
-        customer
+        paymentIntent: paymentIntentClientSecret
       } = data;
 
       // Initialize payment sheet
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: 'Roamcast',
         paymentIntentClientSecret,
-        customerEphemeralKeySecret: ephemeralKey,
-        customerId: customer,
         allowsDelayedPaymentMethods: true,
         returnURL: 'roamcast://stripe/return',
         defaultBillingDetails: {
