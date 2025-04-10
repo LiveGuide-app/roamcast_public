@@ -20,53 +20,75 @@ serve(async (req) => {
       });
     }
 
-    // Parse and sanitize request body
-    const body = await req.json();
-    const sanitizedBody = sanitizeObject(body);
-    
-    // Validate request data
-    const validationResult = validateRequest(sanitizedBody, stripeDashboardLinkSchema);
-    if (!validationResult.success) {
-      return new Response(
-        JSON.stringify({ error: validationResult.error }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Use the validated and sanitized data
-    const { userId } = validationResult.data;
-    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Get the user's Stripe account ID
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header is required' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Try to parse request body if present
+    let userId = user.id;
+    try {
+      if (req.headers.get('Content-Type')?.includes('application/json')) {
+        const body = await req.json();
+        const sanitizedBody = sanitizeObject(body);
+        
+        // Validate request data
+        const validationResult = validateRequest(sanitizedBody, stripeDashboardLinkSchema);
+        if (validationResult.success) {
+          userId = validationResult.data.userId;
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      // Continue with user ID from auth header if parsing fails
+    }
+
+    // Get guide's Stripe account ID
     const { data: guide, error: guideError } = await supabase
-      .from('tour_guides')
+      .from('users')
       .select('stripe_account_id')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single()
-      
-    if (guideError || !guide || !guide.stripe_account_id) {
+
+    if (guideError || !guide?.stripe_account_id) {
       return new Response(
-        JSON.stringify({ error: 'Guide not found or not connected to Stripe' }),
+        JSON.stringify({ error: 'Stripe account not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       )
     }
-    
-    // Create a dashboard link
-    const link = await stripe.accounts.createLoginLink(guide.stripe_account_id);
-    
-    return new Response(
-      JSON.stringify({ url: link.url }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+
+    // Create a direct link to the Stripe dashboard for the connected account
+    // For Standard accounts, we can use a direct URL to the dashboard
+    const dashboardUrl = `https://dashboard.stripe.com/test/connect/accounts/${guide.stripe_account_id}`;
+
+    return new Response(JSON.stringify({ url: dashboardUrl }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
   } catch (error) {
-    console.error('Error creating dashboard link:', error);
+    console.error('Error creating dashboard link:', error)
     return new Response(
-      JSON.stringify({ error: 'An error occurred creating your dashboard link' }),
+      JSON.stringify({ error: 'Failed to create dashboard link' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    )
   }
 }) 
