@@ -9,14 +9,21 @@ import { getTourByCode } from '@/services/tour';
 import { TourActiveScreen } from '@/components/TourActiveScreen';
 import { TourPendingScreen } from '@/components/TourPendingScreen';
 import { TourCompletedScreen } from '@/components/TourCompletedScreen';
-import { Tour } from '@/services/tour';
+import { Tour, createTourParticipant, getDeviceId, updateParticipantLeaveTime } from '@/services/tour';
 import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const [tourCode, setTourCode] = useState('');
   const [currentTour, setCurrentTour] = useState<Tour | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const { isConnected, isConnecting, error, connectToTour, disconnectFromTour } = useLiveKit();
+  const { 
+    isConnected, 
+    isConnecting, 
+    error, 
+    isMuted,
+    connectToTour, 
+    disconnectFromTour,
+    toggleMute
+  } = useLiveKit();
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,13 +42,26 @@ export default function Home() {
           table: 'tours',
           filter: `id=eq.${currentTour.id}`,
         },
-        (payload) => {
+        async (payload) => {
           const updatedTour = payload.new as Tour;
           setCurrentTour(updatedTour);
 
-          // If the tour becomes active, connect to LiveKit
-          if (updatedTour.status === 'active' && !isConnected) {
-            connectToTour(updatedTour.id);
+          // Handle tour status changes
+          if (updatedTour.status !== currentTour.status) {
+            // If tour is no longer active, disconnect first
+            if (updatedTour.status !== 'active' && isConnected) {
+              console.log('Tour is no longer active, disconnecting');
+              disconnectFromTour();
+            }
+            // If tour becomes active, connect after a small delay
+            else if (updatedTour.status === 'active' && !isConnected) {
+              console.log('Tour became active, connecting after delay');
+              // Add a small delay to ensure clean state
+              await new Promise(resolve => setTimeout(resolve, 500));
+              if (!isConnected) { // Double check we still want to connect
+                connectToTour(updatedTour.id);
+              }
+            }
           }
         }
       )
@@ -51,7 +71,7 @@ export default function Home() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentTour, isConnected, connectToTour]);
+  }, [currentTour, isConnected, connectToTour, disconnectFromTour]);
 
   const handleJoinTour = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +84,10 @@ export default function Home() {
       const tour = await getTourByCode(tourCode);
       setCurrentTour(tour);
       
+      // Create tour participant record for all tour statuses
+      const deviceId = await getDeviceId();
+      await createTourParticipant(tour.id, deviceId);
+
       if (tour.status === 'cancelled') {
         setDismissedError('This tour has been cancelled by the guide.');
         return;
@@ -92,20 +116,20 @@ export default function Home() {
     setDismissedError(error?.message || null);
   };
 
-  const handleLeaveTour = () => {
+  const handleLeaveTour = async () => {
+    if (currentTour) {
+      const deviceId = await getDeviceId();
+      await updateParticipantLeaveTime(currentTour.id, deviceId);
+    }
     setCurrentTour(null);
     setTourCode('');
     disconnectFromTour();
   };
 
-  const handleToggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
   const showError = error && error.message !== dismissedError;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-50">
+    <main className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-center mb-6">
           Join Roamcast Tour
@@ -137,7 +161,7 @@ export default function Home() {
                 tour={currentTour}
                 isConnected={isConnected}
                 isMuted={isMuted}
-                onToggleMute={handleToggleMute}
+                onToggleMute={toggleMute}
                 onLeaveTour={handleLeaveTour}
               />
             )}
@@ -213,7 +237,7 @@ export default function Home() {
         isConnected={isConnected} 
         onDisconnect={disconnectFromTour}
         isMuted={isMuted}
-        onToggleMute={handleToggleMute}
+        onToggleMute={toggleMute}
       />
     </main>
   );
