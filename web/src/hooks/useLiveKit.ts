@@ -19,13 +19,13 @@ export function useLiveKit() {
   }, []);
 
   // Connect to a tour
-  const connectToTour = useCallback(async (tourCode: string) => {
+  const connectToTour = useCallback(async (tourId: string) => {
     if (!liveKitService) return;
     
     try {
       setIsConnecting(true);
       setError(null);
-      await liveKitService.connect(tourCode);
+      await liveKitService.connect(tourId);
       setIsConnected(true);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to connect to tour'));

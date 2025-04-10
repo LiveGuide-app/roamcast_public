@@ -14,7 +14,7 @@ export class LiveKitService {
     }
   }
 
-  async connect(tourCode: string): Promise<void> {
+  async connect(tourId: string): Promise<void> {
     try {
       // Create a new room instance
       this.room = new Room({
@@ -26,7 +26,7 @@ export class LiveKitService {
       this.setupRoomEvents();
 
       // Get token from Supabase
-      const token = await generateLiveKitToken(tourCode, 'listener');
+      const token = await generateLiveKitToken(tourId, 'listener');
 
       // Connect to the room
       await this.room.connect(config.livekit.wsUrl, token);

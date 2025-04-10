@@ -41,7 +41,7 @@ export default function Home() {
 
           // If the tour becomes active, connect to LiveKit
           if (updatedTour.status === 'active' && !isConnected) {
-            connectToTour(tourCode);
+            connectToTour(updatedTour.id);
           }
         }
       )
@@ -51,7 +51,7 @@ export default function Home() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentTour, isConnected, connectToTour, tourCode]);
+  }, [currentTour, isConnected, connectToTour]);
 
   const handleJoinTour = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +79,7 @@ export default function Home() {
 
       // Only connect to LiveKit if the tour is active
       if (tour.status === 'active') {
-        await connectToTour(tourCode);
+        await connectToTour(tour.id);
       }
     } catch (error) {
       setDismissedError(error instanceof Error ? error.message : 'Failed to join tour');
