@@ -1,21 +1,29 @@
-import { Room, RoomEvent, RemoteParticipant } from 'livekit-client';
+import { Room, RoomEvent, RemoteParticipant, Track, TrackPublication, RemoteTrackPublication, Participant, RemoteTrack } from 'livekit-client';
 import { config } from '@/config';
 import { generateLiveKitToken } from '@/services/supabase';
+import { WebAudioSession } from '@/audio/WebAudioSession';
 
 export class LiveKitService {
   private room: Room | null = null;
-  private audioContext: AudioContext | null = null;
-  private mediaSession: MediaSession | null = null;
+  private audioSession: WebAudioSession;
+  private isMuted: boolean = false;
 
   constructor() {
-    // Initialize audio context
-    if (typeof window !== 'undefined') {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
+    this.audioSession = new WebAudioSession();
   }
 
   async connect(tourId: string): Promise<void> {
+    if (this.room?.state === 'connected') {
+      console.log('Already connected to room');
+      return;
+    }
+
     try {
+      // Initialize audio session
+      await this.audioSession.initialize();
+
+      console.log('Attempting to connect to tour:', tourId);
+      
       // Create a new room instance
       this.room = new Room({
         adaptiveStream: true,
@@ -28,13 +36,16 @@ export class LiveKitService {
       // Get token from Supabase
       const token = await generateLiveKitToken(tourId, 'listener');
 
-      // Connect to the room
-      await this.room.connect(config.livekit.wsUrl, token);
-      
-      // Set up media session for background playback
-      this.setupMediaSession();
+      // Connect to the room with autoSubscribe enabled
+      await this.room.connect(config.livekit.wsUrl, token, {
+        autoSubscribe: true,
+      });
+
+      console.log('Connected to room:', this.room.name);
+      console.log('Local participant:', this.room.localParticipant.identity);
     } catch (error) {
       console.error('Failed to connect to LiveKit room:', error);
+      this.cleanup();
       throw error;
     }
   }
@@ -42,72 +53,114 @@ export class LiveKitService {
   private setupRoomEvents(): void {
     if (!this.room) return;
 
-    this.room.on(RoomEvent.Connected, () => {
-      console.log('Connected to room');
+    this.room
+      .on(RoomEvent.Connected, () => {
+        console.log('Connected to room');
+        console.log('Remote participants:', Array.from(this.room!.remoteParticipants.values()).map(p => p.identity));
+        
+        // Handle existing participants
+        this.room!.remoteParticipants.forEach(participant => {
+          this.handleParticipantConnected(participant);
+        });
+      })
+      .on(RoomEvent.Disconnected, () => {
+        console.log('Disconnected from room');
+        this.cleanup();
+      })
+      .on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+        console.log('Participant connected:', participant.identity);
+        this.handleParticipantConnected(participant);
+      })
+      .on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+        console.log('Participant disconnected:', participant.identity);
+      })
+      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+        console.log('Track subscribed:', track.kind, 'from', participant.identity);
+        this.attachTrack(track, participant);
+        // Set initial enabled state based on mute status
+        if (track.kind === Track.Kind.Audio) {
+          track.setMuted(this.isMuted);
+        }
+      })
+      .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+        console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
+      });
+  }
+
+  private handleParticipantConnected(participant: RemoteParticipant): void {
+    console.log('Setting up participant:', participant.identity);
+    
+    // Log existing tracks
+    participant.getTrackPublications().forEach(publication => {
+      console.log('Found track:', publication.kind, publication.trackName, 'isMuted:', this.isMuted);
     });
 
-    this.room.on(RoomEvent.Disconnected, () => {
-      console.log('Disconnected from room');
-      this.cleanup();
-    });
+    // Handle new tracks
+    participant
+      .on(RoomEvent.TrackPublished, (publication) => {
+        console.log('Track published:', publication.kind, publication.trackName);
+      })
+      .on(RoomEvent.TrackUnpublished, (publication) => {
+        console.log('Track unpublished:', publication.kind, publication.trackName);
+      })
+      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
+        console.log('Track subscribed:', track.kind);
+        this.attachTrack(track, participant);
+        // Set initial enabled state based on mute status
+        if (track.kind === Track.Kind.Audio) {
+          track.setMuted(this.isMuted);
+        }
+      })
+      .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => {
+        console.log('Track unsubscribed:', track.kind);
+      });
+  }
 
-    this.room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-      console.log('Participant connected:', participant.identity);
-    });
+  private attachTrack(track: RemoteTrack, participant: RemoteParticipant): void {
+    if (track.kind !== Track.Kind.Audio) return;
 
-    this.room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-      console.log('Participant disconnected:', participant.identity);
+    console.log('Attaching audio track from:', participant.identity);
+    const audioElement = track.attach();
+    audioElement.style.display = 'none';
+    audioElement.muted = this.isMuted;  // Set initial mute state
+    document.body.appendChild(audioElement);
+  }
+
+  async toggleMute(): Promise<void> {
+    if (!this.room) return;
+
+    this.isMuted = !this.isMuted;
+    console.log('Toggling mute:', this.isMuted);
+    
+    // Update all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(el => {
+      el.muted = this.isMuted;
     });
   }
 
-  private setupMediaSession(): void {
-    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
-
-    // Set up media session metadata
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: 'Roamcast Tour',
-      artist: 'Live Tour',
-      album: 'Roamcast',
-    });
-
-    // Set up media controls
-    navigator.mediaSession.setActionHandler('play', () => {
-      this.resumeAudio();
-    });
-
-    navigator.mediaSession.setActionHandler('pause', () => {
-      this.pauseAudio();
-    });
-
-    navigator.mediaSession.setActionHandler('stop', () => {
-      this.disconnect();
-    });
-  }
-
-  private resumeAudio(): void {
-    if (this.audioContext?.state === 'suspended') {
-      this.audioContext.resume();
-    }
-  }
-
-  private pauseAudio(): void {
-    if (this.audioContext?.state === 'running') {
-      this.audioContext.suspend();
-    }
+  getMuted(): boolean {
+    return this.isMuted;
   }
 
   disconnect(): void {
     if (this.room) {
+      console.log('Disconnecting from room');
       this.room.disconnect();
     }
     this.cleanup();
   }
 
   private cleanup(): void {
-    this.room = null;
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
+    if (this.room) {
+      // Remove any attached audio elements
+      const audioElements = document.querySelectorAll('audio');
+      audioElements.forEach(el => el.remove());
+      this.room = null;
     }
   }
-} 
+
+  isConnected(): boolean {
+    return this.room?.state === 'connected';
+  }
+}
