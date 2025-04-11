@@ -59,6 +59,14 @@ export function ConnectedStripeProvider({
     );
   }
 
+  // Memoize the stripe instance
+  const stripePromise = useMemo(
+    () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
+      stripeAccount: stripeAccountId,
+    }),
+    [stripeAccountId]
+  );
+
   if (!stripeAccountId) {
     console.error('Missing Stripe connected account ID');
     return (
@@ -67,14 +75,6 @@ export function ConnectedStripeProvider({
       </div>
     );
   }
-
-  // Memoize the stripe instance
-  const stripePromise = useMemo(
-    () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
-      stripeAccount: stripeAccountId,
-    }),
-    [stripeAccountId]
-  );
 
   const options: StripeElementsOptions = {
     appearance,

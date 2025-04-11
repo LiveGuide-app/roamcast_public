@@ -16,13 +16,11 @@ export const config = {
 
 // Type-safe environment variables
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NEXT_PUBLIC_LIVEKIT_WS_URL: string;
-      NEXT_PUBLIC_LIVEKIT_API_KEY: string;
-      NEXT_PUBLIC_LIVEKIT_API_SECRET: string;
-      NEXT_PUBLIC_SUPABASE_URL: string;
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-    }
+  interface ProcessEnv {
+    NEXT_PUBLIC_LIVEKIT_WS_URL: string;
+    NEXT_PUBLIC_LIVEKIT_API_KEY: string;
+    NEXT_PUBLIC_LIVEKIT_API_SECRET: string;
+    NEXT_PUBLIC_SUPABASE_URL: string;
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   }
 } 

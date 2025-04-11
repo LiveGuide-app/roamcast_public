@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import type { Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
@@ -71,7 +71,7 @@ const CheckoutModal = ({
 };
 
 const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPaymentProps>(
-  ({ tourParticipantId, onAmountChange, onPaymentReady, onPaymentComplete, currency, stripePromise, stripeAccountId }, ref) => {
+  ({ tourParticipantId, onAmountChange, onPaymentReady, onPaymentComplete, currency, stripePromise }, ref) => {
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -99,7 +99,7 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
       // Signal that no amount is selected initially
       onAmountChange(null);
       onPaymentReady(false);
-    }, []);
+    }, [onAmountChange, onPaymentReady]);
 
     useImperativeHandle(ref, () => ({
       handlePayment: async () => {

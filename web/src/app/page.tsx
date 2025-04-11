@@ -98,7 +98,7 @@ export default function Home() {
 
       // Only create participant for non-completed tours
       const deviceId = await DeviceIdService.getDatabaseId();
-      const participant = await createTourParticipant(tour.id, deviceId);
+      await createTourParticipant(tour.id, deviceId);
       
       setCurrentTour(tour);
 
@@ -239,7 +239,7 @@ export default function Home() {
               <h2 className="font-semibold mb-2">Instructions:</h2>
               <ul className="list-disc list-inside space-y-1">
                 <li>Enter your tour code above</li>
-                <li>Click "Join Tour" to connect</li>
+                <li>Click &quot;Join Tour&quot; to connect</li>
                 <li>Keep this page open to continue listening</li>
                 <li>Audio will play in the background</li>
               </ul>

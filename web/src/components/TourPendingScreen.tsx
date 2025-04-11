@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Tour } from '@/services/tour';
+import Image from 'next/image';
 
 type GuideInfo = {
   full_name: string;
@@ -60,11 +61,14 @@ export const TourPendingScreen = ({ tour, onLeaveTour }: TourPendingScreenProps)
       
       <div className="flex items-center bg-gray-50 p-4 rounded-lg shadow-sm mb-8 w-full">
         {guideInfo?.avatar_url ? (
-          <img 
-            src={guideInfo.avatar_url} 
-            alt={guideInfo.full_name}
-            className="w-10 h-10 rounded-full bg-indigo-500 mr-4"
-          />
+          <div className="relative w-10 h-10 mr-4">
+            <Image 
+              src={guideInfo.avatar_url} 
+              alt={guideInfo.full_name}
+              fill
+              className="rounded-full bg-indigo-500 object-cover"
+            />
+          </div>
         ) : (
           <div className="w-10 h-10 rounded-full bg-indigo-500 mr-4 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

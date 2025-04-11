@@ -26,12 +26,13 @@ interface GuideInfo {
 interface TourCompletedScreenProps {
   tour: Tour;
   onRatingSubmit: (rating: number) => Promise<void>;
+  onLeaveTour: () => void;
 }
 
 export const TourCompletedScreen = forwardRef<{
   handlePayment: () => Promise<void>;
   handlePaymentComplete: (rating: number) => Promise<void>;
-}, TourCompletedScreenProps>(({ tour, onRatingSubmit }, ref) => {
+}, TourCompletedScreenProps>(({ tour, onRatingSubmit, onLeaveTour }, ref) => {
   const router = useRouter();
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
@@ -306,6 +307,13 @@ export const TourCompletedScreen = forwardRef<{
                 : 'bg-primary hover:bg-primary-hover'}`}
           >
             {getButtonTitle()}
+          </button>
+          
+          <button
+            onClick={onLeaveTour}
+            className="w-full mt-3 py-2 px-4 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+          >
+            Leave Tour
           </button>
         </div>
       </div>

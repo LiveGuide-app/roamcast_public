@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { DeviceIdService } from '@/services/deviceId';
 
 export type TourParticipant = {
   id: string;

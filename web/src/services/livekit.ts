@@ -1,4 +1,4 @@
-import { Room, RoomEvent, RemoteParticipant, Track, TrackPublication, RemoteTrackPublication, Participant, RemoteTrack } from 'livekit-client';
+import { Room, RoomEvent, RemoteParticipant, Track, RemoteTrackPublication, RemoteTrack } from 'livekit-client';
 import { config } from '@/config';
 import { generateLiveKitToken } from '@/services/supabase';
 import { WebAudioSession } from '@/audio/WebAudioSession';
