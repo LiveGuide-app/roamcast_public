@@ -128,6 +128,8 @@ export const TourCompletedScreen = forwardRef<{
         await onRatingSubmit(rating);
         setSelectedTipAmount(null);
         setIsPaymentReady(false);
+        // Call onLeaveTour before redirecting
+        onLeaveTour();
         // Redirect to thank you page
         if (guideId) {
           router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
@@ -137,7 +139,7 @@ export const TourCompletedScreen = forwardRef<{
         alert('Failed to submit rating.');
       }
     }
-  }), [selectedTipAmount, isPaymentReady, tipPaymentRef, onRatingSubmit, tour.id, guideId, router]);
+  }), [selectedTipAmount, isPaymentReady, tipPaymentRef, onRatingSubmit, tour.id, guideId, router, onLeaveTour]);
 
   // Check for return from Stripe Checkout and handle rating submission
   useEffect(() => {
