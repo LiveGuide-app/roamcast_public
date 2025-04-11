@@ -104,10 +104,6 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
         setError(null);
         
         try {
-          if (!supabase) {
-            throw new Error('Payment system is not available');
-          }
-          
           // Get device ID
           const deviceId = await DeviceIdService.getDatabaseId();
           
