@@ -132,10 +132,16 @@ export class LiveKitService {
     this.isMuted = !this.isMuted;
     console.log('Toggling mute:', this.isMuted);
     
-    // Update all audio elements
-    const audioElements = document.querySelectorAll('audio');
-    audioElements.forEach(el => {
-      el.muted = this.isMuted;
+    // Set mute state on all subscribed tracks
+    this.room.remoteParticipants.forEach(participant => {
+      const audioTracks = Array.from(participant.getTrackPublications().values())
+        .filter(pub => pub.kind === Track.Kind.Audio);
+      
+      audioTracks.forEach(publication => {
+        if (publication.track && publication.track.mediaStreamTrack) {
+          publication.track.mediaStreamTrack.enabled = !this.isMuted;
+        }
+      });
     });
   }
 
