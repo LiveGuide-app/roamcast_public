@@ -19,12 +19,6 @@ const tipAmounts = [5, 10, 20, 50];
 const MIN_AMOUNT = 1;
 const MAX_AMOUNT = 1000;
 
-// Helper to detect if we're on a mobile device
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
 // Modal component for the Stripe checkout
 const CheckoutModal = ({ 
   clientSecret, 
