@@ -78,7 +78,6 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
     const [error, setError] = useState<string | null>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [showCheckout, setShowCheckout] = useState(false);
-    const isMobile = isMobileDevice();
 
     // Handle return from checkout
     useEffect(() => {

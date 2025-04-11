@@ -50,15 +50,6 @@ export function ConnectedStripeProvider({
   children,
   clientSecret 
 }: ConnectedStripeProviderProps) {
-  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-    console.error('Missing Stripe publishable key');
-    return (
-      <div className="p-4 bg-red-50 text-red-700 rounded-md">
-        Payment system is currently unavailable. Please try again later.
-      </div>
-    );
-  }
-
   // Memoize the stripe instance
   const stripePromise = useMemo(
     () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
@@ -68,10 +59,9 @@ export function ConnectedStripeProvider({
   );
 
   if (!stripeAccountId) {
-    console.error('Missing Stripe connected account ID');
     return (
-      <div className="p-4 bg-red-50 text-red-700 rounded-md">
-        Payment system is currently unavailable. Please try again later.
+      <div className="p-4 text-center text-red-500">
+        <p>Stripe account ID is required</p>
       </div>
     );
   }
