@@ -131,4 +131,54 @@ export async function updateParticipantLeaveTime(tourId: string, deviceId: strin
   if (error) {
     throw new TourError('Failed to update leave time', TourErrorCode.NETWORK_ERROR);
   }
+}
+
+export async function submitTourRating(tourId: string, deviceId: string, rating: number): Promise<void> {
+  console.log('Submitting tour rating:', { tourId, deviceId, rating });
+
+  // Check if a rating already exists
+  const { data: existingRating, error: ratingError } = await supabase
+    .from('feedback')
+    .select('id')
+    .eq('tour_id', tourId)
+    .eq('device_id', deviceId)
+    .maybeSingle();
+
+  console.log('Existing rating check:', { existingRating, ratingError });
+
+  if (ratingError) {
+    console.error('Error checking existing rating:', ratingError);
+    throw new TourError('Failed to check existing rating', TourErrorCode.NETWORK_ERROR);
+  }
+
+  if (existingRating) {
+    // Update existing rating
+    const { error: updateError } = await supabase
+      .from('feedback')
+      .update({ rating })
+      .eq('id', existingRating.id);
+
+    console.log('Update rating result:', { updateError });
+
+    if (updateError) {
+      console.error('Error updating rating:', updateError);
+      throw new TourError('Failed to update rating', TourErrorCode.NETWORK_ERROR);
+    }
+  } else {
+    // Create new rating
+    const { error: insertError } = await supabase
+      .from('feedback')
+      .insert({
+        tour_id: tourId,
+        device_id: deviceId,
+        rating
+      });
+
+    console.log('Insert rating result:', { insertError });
+
+    if (insertError) {
+      console.error('Error inserting rating:', insertError);
+      throw new TourError('Failed to submit rating', TourErrorCode.NETWORK_ERROR);
+    }
+  }
 } 

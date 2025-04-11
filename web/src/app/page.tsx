@@ -5,11 +5,11 @@ import { useLiveKit } from '@/hooks/useLiveKit';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { getTourByCode } from '@/services/tour';
+import { getTourByCode, createTourParticipant, updateParticipantLeaveTime, submitTourRating } from '@/services/tour';
 import { TourActiveScreen } from '@/components/TourActiveScreen';
 import { TourPendingScreen } from '@/components/TourPendingScreen';
 import { TourCompletedScreen } from '@/components/TourCompletedScreen';
-import { Tour, createTourParticipant, updateParticipantLeaveTime } from '@/services/tour';
+import { Tour } from '@/services/tour';
 import { supabase } from '@/lib/supabase';
 import { DeviceIdService } from '@/services/deviceId';
 
@@ -132,11 +132,7 @@ export default function Home() {
   const handleRatingSubmit = async (rating: number) => {
     if (!currentTour) return;
     const deviceId = await DeviceIdService.getDatabaseId();
-    await supabase
-      .from('tour_participants')
-      .update({ rating })
-      .eq('tour_id', currentTour.id)
-      .eq('device_id', deviceId);
+    await submitTourRating(currentTour.id, deviceId, rating);
   };
 
   const showError = error && error.message !== dismissedError;
