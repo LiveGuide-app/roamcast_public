@@ -32,13 +32,16 @@ export default function Home() {
 
   // Subscribe to tour changes when a tour is loaded
   useEffect(() => {
-    if (!currentTour || !supabase) return;
+    // Skip this effect during SSR
+    if (typeof window === 'undefined') return;
+    
+    if (!currentTour) return;
 
     // Subscribe to changes for this specific tour
     const subscription = supabase
       .channel(`tour-${currentTour.id}`)
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: 'UPDATE',
           schema: 'public',
