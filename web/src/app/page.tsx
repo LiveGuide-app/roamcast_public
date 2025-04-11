@@ -32,7 +32,7 @@ export default function Home() {
 
   // Subscribe to tour changes when a tour is loaded
   useEffect(() => {
-    if (!currentTour) return;
+    if (!currentTour || !supabase) return;
 
     // Subscribe to changes for this specific tour
     const subscription = supabase
@@ -45,8 +45,8 @@ export default function Home() {
           table: 'tours',
           filter: `id=eq.${currentTour.id}`,
         },
-        async (payload) => {
-          const updatedTour = payload.new as Tour;
+        async (payload: { new: Tour; old: Tour }) => {
+          const updatedTour = payload.new;
           setCurrentTour(updatedTour);
 
           // Handle tour status changes
