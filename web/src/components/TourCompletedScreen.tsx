@@ -1,13 +1,21 @@
 import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 import { Tour } from '@/types/tour';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/utils/currency';
 import { TipPayment } from '@/components/TipPayment';
 import { DeviceIdService } from '@/services/deviceId';
+import { useRouter } from 'next/navigation';
 
 // Initialize Stripe outside of component to avoid recreating it
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const initializeStripe = (accountId: string) => loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+  { stripeAccount: accountId }
+);
+
+// Default promise that resolves to null when no account is available
+const nullStripePromise: Promise<Stripe | null> = Promise.resolve(null);
 
 interface GuideInfo {
   full_name: string;
@@ -15,23 +23,26 @@ interface GuideInfo {
   stripe_default_currency: string | null;
 }
 
-type TourCompletedScreenProps = {
+interface TourCompletedScreenProps {
   tour: Tour;
   onRatingSubmit: (rating: number) => Promise<void>;
   onLeaveTour: () => void;
-};
+}
 
 export const TourCompletedScreen = forwardRef<{
   handlePayment: () => Promise<void>;
   handlePaymentComplete: (rating: number) => Promise<void>;
 }, TourCompletedScreenProps>(({ tour, onRatingSubmit, onLeaveTour }, ref) => {
+  const router = useRouter();
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [selectedTipAmount, setSelectedTipAmount] = useState<number | null>(null);
   const [isPaymentReady, setIsPaymentReady] = useState(false);
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null>>(nullStripePromise);
   const [isLoading, setIsLoading] = useState(true);
   const [participantId, setParticipantId] = useState<string | null>(null);
+  const [guideId, setGuideId] = useState<string | null>(null);
   const tipPaymentRef = useRef<{
     handlePayment: () => Promise<void>;
     handlePaymentComplete: (rating: number) => Promise<void>;
@@ -74,6 +85,9 @@ export const TourCompletedScreen = forwardRef<{
           setParticipantId(participantResult.data.id);
         }
 
+        // Set guide ID
+        setGuideId(tourResult.data.guide_id);
+
         // Fetch guide info
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -91,6 +105,7 @@ export const TourCompletedScreen = forwardRef<{
 
         if (userData?.stripe_account_id) {
           setStripeAccountId(userData.stripe_account_id);
+          setStripePromise(initializeStripe(userData.stripe_account_id));
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -113,12 +128,16 @@ export const TourCompletedScreen = forwardRef<{
         await onRatingSubmit(rating);
         setSelectedTipAmount(null);
         setIsPaymentReady(false);
+        // Redirect to thank you page
+        if (guideId) {
+          router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
+        }
       } catch (error) {
         console.error('Error submitting rating:', error);
         alert('Failed to submit rating.');
       }
     }
-  }), [selectedTipAmount, isPaymentReady, tipPaymentRef, onRatingSubmit]);
+  }), [selectedTipAmount, isPaymentReady, tipPaymentRef, onRatingSubmit, tour.id, guideId, router]);
 
   // Check for return from Stripe Checkout and handle rating submission
   useEffect(() => {
@@ -140,6 +159,10 @@ export const TourCompletedScreen = forwardRef<{
             setIsPaymentReady(false);
             // Clear stored rating
             localStorage.removeItem('pendingTourRating');
+            // Redirect to thank you page
+            if (guideId) {
+              router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
+            }
           } catch (error) {
             console.error('Error submitting rating:', error);
             alert('Failed to submit rating.');
@@ -149,7 +172,7 @@ export const TourCompletedScreen = forwardRef<{
     };
 
     submitStoredRating();
-  }, [onRatingSubmit]);
+  }, [onRatingSubmit, tour.id, guideId, router]);
 
   const handleRating = (rating: number) => {
     setSelectedRating(rating);
@@ -177,6 +200,10 @@ export const TourCompletedScreen = forwardRef<{
         await tipPaymentRef.current.handlePayment();
       } else {
         await onRatingSubmit(selectedRating);
+        // Redirect to thank you page
+        if (guideId) {
+          router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
+        }
       }
     } catch (error) {
       console.error('Error during submission:', error);
@@ -246,6 +273,10 @@ export const TourCompletedScreen = forwardRef<{
                       setSelectedTipAmount(null);
                       setIsPaymentReady(false);
                       localStorage.removeItem('pendingTourRating');
+                      // Redirect to thank you page
+                      if (guideId) {
+                        router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
+                      }
                     } catch (error) {
                       console.error('Error submitting rating:', error);
                       alert('Failed to submit rating.');
@@ -254,6 +285,7 @@ export const TourCompletedScreen = forwardRef<{
                 }}
                 currency={guideInfo?.stripe_default_currency || 'gbp'}
                 stripePromise={stripePromise}
+                stripeAccountId={stripeAccountId}
               />
             ) : participantId && !stripeAccountId && !isLoading ? (
               <p className="text-center text-gray-600">

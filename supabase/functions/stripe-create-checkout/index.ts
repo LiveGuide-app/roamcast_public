@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@14.17.0/deno/stripe.mjs'
 import { tipPaymentSchema } from '../_shared/schemas.ts'
 import { validateRequest } from '../_shared/validation.ts'
 import { sanitizeObject } from '../_shared/sanitization.ts'
@@ -72,6 +72,7 @@ serve(async (req) => {
         tours (
           guide_id,
           users (
+            id,
             stripe_account_id,
             stripe_account_enabled,
             full_name
@@ -103,6 +104,7 @@ serve(async (req) => {
       ui_mode: 'embedded',
       payment_intent_data: {
         application_fee_amount: Math.round(amount * 0.075), // 7.5% platform fee
+        setup_future_usage: 'on_session',
       },
       line_items: [
         {
@@ -120,7 +122,15 @@ serve(async (req) => {
       metadata: {
         tourParticipantId,
       },
-      return_url: `${req.headers.get('origin')}/tour/completed?session_id={CHECKOUT_SESSION_ID}`,
+      return_url: `${req.headers.get('origin')}/tour/thank-you?session_id={CHECKOUT_SESSION_ID}&tourId=${participant.tour_id}&guideId=${guide.id}`,
+      customer_creation: 'if_required',
+      billing_address_collection: 'auto',
+      payment_method_options: {
+        card: {
+          setup_future_usage: 'on_session',
+          request_three_d_secure: 'automatic',
+        },
+      },
     }, {
       stripeAccount: guide.stripe_account_id,
     });
