@@ -1,5 +1,12 @@
 import { config } from '@/config';
 
+// Extend Window interface using declaration merging
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+  }
+}
+
 export class WebAudioSession {
   private isIOS: boolean;
   private isSafari: boolean;
@@ -36,7 +43,8 @@ export class WebAudioSession {
    */
   private async initializeIOSAudio(): Promise<void> {
     // Create a silent audio context to unlock audio
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContextConstructor();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     gainNode.gain.value = 0;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { TourThankYouScreen } from '@/components/TourThankYouScreen';
 import { supabase } from '@/lib/supabase';
 
@@ -73,13 +74,13 @@ export default function ThankYouPage() {
       <div className="min-h-screen bg-white flex items-center justify-center p-8">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
-          <p className="text-gray-600 mb-6">We couldn't find the tour information.</p>
-          <a 
+          <p className="text-gray-600 mb-6">We couldn&apos;t find the tour information.</p>
+          <Link 
             href="/" 
             className="inline-block py-3 px-4 bg-primary text-white font-medium rounded-md shadow-sm hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Return to Home
-          </a>
+          </Link>
         </div>
       </div>
     );

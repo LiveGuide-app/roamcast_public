@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useLiveKit } from '@/hooks/useLiveKit';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { ErrorMessage } from '@/components/ErrorMessage';
@@ -28,7 +29,6 @@ export default function Home() {
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [currentParticipantId, setCurrentParticipantId] = useState<string | null>(null);
 
   // Subscribe to tour changes when a tour is loaded
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function Home() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentTour, isConnected, connectToTour, disconnectFromTour]);
+  }, [currentTour, isConnected, connectToTour, disconnectFromTour, isDisconnecting]);
 
   const handleJoinTour = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +99,6 @@ export default function Home() {
       // Only create participant for non-completed tours
       const deviceId = await DeviceIdService.getDatabaseId();
       const participant = await createTourParticipant(tour.id, deviceId);
-      setCurrentParticipantId(participant.id);
       
       setCurrentTour(tour);
 
@@ -125,7 +124,6 @@ export default function Home() {
     }
     setCurrentTour(null);
     setTourCode('');
-    setCurrentParticipantId(null);
     disconnectFromTour();
   };
 
@@ -148,10 +146,12 @@ export default function Home() {
     <main className="min-h-screen bg-white py-8 px-4">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md border border-gray-200">
         <div className="flex flex-col items-center mb-6">
-          <img 
+          <Image 
             src="/icon-512x512.png" 
             alt="Roamcast Logo" 
-            className="w-24 h-24 mb-4 rounded-lg"
+            width={96}
+            height={96}
+            className="mb-4 rounded-lg"
           />
           <h1 className="text-2xl font-bold text-center text-gray-900">
             Welcome to Roamcast

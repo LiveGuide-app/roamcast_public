@@ -26,13 +26,12 @@ interface GuideInfo {
 interface TourCompletedScreenProps {
   tour: Tour;
   onRatingSubmit: (rating: number) => Promise<void>;
-  onLeaveTour: () => void;
 }
 
 export const TourCompletedScreen = forwardRef<{
   handlePayment: () => Promise<void>;
   handlePaymentComplete: (rating: number) => Promise<void>;
-}, TourCompletedScreenProps>(({ tour, onRatingSubmit, onLeaveTour }, ref) => {
+}, TourCompletedScreenProps>(({ tour, onRatingSubmit }, ref) => {
   const router = useRouter();
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
@@ -312,4 +311,6 @@ export const TourCompletedScreen = forwardRef<{
       </div>
     </div>
   );
-}); 
+});
+
+TourCompletedScreen.displayName = 'TourCompletedScreen'; 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { Tour } from '@/services/tour';
 
@@ -74,10 +75,12 @@ export const TourActiveScreen = ({
       
       <div className="flex items-center bg-gray-50 p-4 rounded-lg shadow-sm mb-8 w-full">
         {guideInfo?.avatar_url ? (
-          <img 
+          <Image 
             src={guideInfo.avatar_url} 
             alt={guideInfo.full_name}
-            className="w-10 h-10 rounded-full bg-indigo-500 mr-4"
+            width={40}
+            height={40}
+            className="rounded-full bg-indigo-500 mr-4"
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-indigo-500 mr-4 flex items-center justify-center">
