@@ -159,7 +159,7 @@ export default function Home() {
               className="mb-4 rounded-lg"
             />
             <h1 className="text-2xl font-bold text-center text-gray-900">
-              Welcome to your Roamcast tour
+              Welcome to Your Roamcast Tour
             </h1>
           </div>
 
