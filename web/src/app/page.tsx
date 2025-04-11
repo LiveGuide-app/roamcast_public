@@ -13,6 +13,7 @@ import { TourCompletedScreen } from '@/components/TourCompletedScreen';
 import { Tour } from '@/services/tour';
 import { supabase } from '@/lib/supabase';
 import { DeviceIdService } from '@/services/deviceId';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export default function Home() {
   const [tourCode, setTourCode] = useState('');
@@ -41,15 +42,15 @@ export default function Home() {
     const subscription = supabase
       .channel(`tour-${currentTour.id}`)
       .on(
-        'postgres_changes' as any,
+        'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'tours',
           filter: `id=eq.${currentTour.id}`,
         },
-        async (payload: { new: Tour; old: Tour }) => {
-          const updatedTour = payload.new;
+        async (payload: RealtimePostgresChangesPayload<{ new: Tour; old: Tour }>) => {
+          const updatedTour = payload.new as Tour;
           setCurrentTour(updatedTour);
 
           // Handle tour status changes
