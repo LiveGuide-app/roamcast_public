@@ -149,18 +149,20 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white py-8 px-4">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md border border-gray-200">
-        <div className="flex flex-col items-center mb-6">
-          <Image 
-            src="/icon-512x512.png" 
-            alt="Roamcast Logo" 
-            width={96}
-            height={96}
-            className="mb-4 rounded-lg"
-          />
-          <h1 className="text-2xl font-bold text-center text-gray-900">
-            Welcome to Roamcast
-          </h1>
-        </div>
+        {!currentTour && (
+          <div className="flex flex-col items-center mb-6">
+            <Image 
+              src="/icon-512x512.png" 
+              alt="Roamcast Logo" 
+              width={96}
+              height={96}
+              className="mb-4 rounded-lg"
+            />
+            <h1 className="text-2xl font-bold text-center text-gray-900">
+              Welcome to Roamcast
+            </h1>
+          </div>
+        )}
         
         {showError && (
           <ErrorMessage 
