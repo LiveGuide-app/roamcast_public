@@ -62,21 +62,21 @@ export default function ThankYouPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!guideInfo || !tourName) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+      <div className="min-h-screen bg-white flex items-center justify-center p-8">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
           <p className="text-gray-600 mb-6">We couldn't find the tour information.</p>
           <a 
             href="/" 
-            className="inline-block py-3 px-4 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            className="inline-block py-3 px-4 bg-primary text-white font-medium rounded-md shadow-sm hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
           >
             Return to Home
           </a>

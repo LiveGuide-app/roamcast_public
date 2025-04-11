@@ -27,12 +27,12 @@ export function AudioPlayer({
   if (!isConnected) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 border-t border-gray-200">
+    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-md p-4 border-t border-gray-200">
       <div className="max-w-md mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
             onClick={onToggleMute}
-            className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="p-2 rounded-full bg-primary-light bg-opacity-20 text-primary hover:bg-primary-light hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label={isMuted ? 'Unmute' : 'Mute'}
           >
             {isMuted ? (
@@ -47,10 +47,10 @@ export function AudioPlayer({
             )}
           </button>
           <div>
-            <h3 className="font-medium">Roamcast Tour</h3>
+            <h3 className="font-medium text-gray-900">Roamcast Tour</h3>
             <p className="text-sm text-gray-500">Live audio streaming</p>
             {(isIOS && isSafari) && (
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-xs text-primary mt-1">
                 Keep Safari open to continue listening
               </p>
             )}
@@ -58,7 +58,7 @@ export function AudioPlayer({
         </div>
         <button
           onClick={onDisconnect}
-          className="text-sm text-red-600 hover:text-red-800 focus:outline-none"
+          className="text-sm text-danger hover:text-red-800 focus:outline-none"
         >
           Leave Tour
         </button>

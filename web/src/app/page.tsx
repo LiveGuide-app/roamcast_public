@@ -145,10 +145,10 @@ export default function Home() {
   }, [isConnected]);
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          Join Roamcast Tourr
+    <main className="min-h-screen bg-white py-8 px-4">
+      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md border border-gray-200">
+        <h1 className="text-2xl font-bold text-center mb-6 text-gray-900">
+          Join Roamcast Tour
         </h1>
         
         {showError && (
@@ -210,7 +210,7 @@ export default function Home() {
                 value={tourCode}
                 onChange={(e) => setTourCode(e.target.value)}
                 placeholder="Enter your tour code"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                 required
                 disabled={isConnecting || isLoading}
               />
@@ -219,7 +219,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={isConnecting || isLoading || !tourCode.trim()}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Join Tour
             </button>
@@ -238,9 +238,9 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded-md">
-              <h2 className="font-semibold text-blue-800 mb-2">Platform Notes:</h2>
-              <p className="text-sm text-blue-700">
+            <div className="mt-6 p-4 bg-primary-light bg-opacity-10 rounded-md">
+              <h2 className="font-semibold text-primary mb-2">Platform Notes:</h2>
+              <p className="text-sm text-primary">
                 iOS: Keep Safari open to continue listening
                 <br />
                 Android: Audio will continue when screen is locked

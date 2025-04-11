@@ -37,7 +37,7 @@ export const TourThankYouScreen = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
           Thank you for joining {tourName}!
@@ -54,7 +54,7 @@ export const TourThankYouScreen = ({
           <div className="mb-8 w-full max-w-xs">
             <button
               onClick={handleViewRecommendations}
-              className="w-full py-3 px-4 bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
             >
               View recommendations
             </button>
@@ -62,10 +62,10 @@ export const TourThankYouScreen = ({
         )}
       </div>
 
-      <div className="p-8 bg-white border-t border-gray-200">
+      <div className="p-8 bg-gray-50 border-t border-gray-200">
         <button
           onClick={handleReturnHome}
-          className="w-full max-w-xs mx-auto block py-3 px-4 border border-blue-700 text-blue-700 hover:bg-blue-50 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          className="w-full max-w-xs mx-auto block py-3 px-4 border border-primary text-primary hover:bg-primary-light hover:bg-opacity-10 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
         >
           Return to Home
         </button>

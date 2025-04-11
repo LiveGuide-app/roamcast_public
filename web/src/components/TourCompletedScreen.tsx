@@ -226,11 +226,11 @@ export const TourCompletedScreen = forwardRef<{
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-white py-8 px-4">
       <div className="max-w-md mx-auto">
         <div className="space-y-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-center mb-4">
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-medium text-center mb-4 text-gray-900">
               How was your experience?
             </h3>
             <div className="flex justify-center space-x-2 mb-8">
@@ -238,11 +238,11 @@ export const TourCompletedScreen = forwardRef<{
                 <button
                   key={star}
                   onClick={() => handleRating(star)}
-                  className="p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+                  className="p-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-full"
                 >
                   <svg
                     className={`w-8 h-8 ${
-                      star <= selectedRating ? 'text-yellow-400' : 'text-gray-300'
+                      star <= selectedRating ? 'text-amber-400' : 'text-gray-300'
                     }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
@@ -254,8 +254,8 @@ export const TourCompletedScreen = forwardRef<{
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-center mb-4">
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-medium text-center mb-4 text-gray-900">
               Would you like to leave a tip for {guideInfo?.full_name || 'Your Guide'}?
             </h3>
             {participantId && stripeAccountId && !isLoading ? (
@@ -293,7 +293,7 @@ export const TourCompletedScreen = forwardRef<{
               </p>
             ) : isLoading ? (
               <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : null}
           </div>
@@ -301,10 +301,10 @@ export const TourCompletedScreen = forwardRef<{
           <button
             onClick={handleSubmit}
             disabled={selectedRating === 0 || isSubmitting}
-            className={`w-full py-2 px-4 rounded-md text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200
+            className={`w-full py-2 px-4 rounded-md text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200
               ${selectedRating === 0 || isSubmitting 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700'}`}
+                : 'bg-primary hover:bg-primary-hover'}`}
           >
             {getButtonTitle()}
           </button>

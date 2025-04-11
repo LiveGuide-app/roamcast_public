@@ -41,7 +41,7 @@ const CheckoutModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-medium">Complete Payment</h3>
+          <h3 className="text-lg font-medium text-gray-900">Complete Payment</h3>
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -194,9 +194,9 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
               <button
                 key={amount}
                 onClick={() => handleAmountSelect(amount)}
-                className={`py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200
+                className={`py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200
                   ${selectedAmount === amount
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
                 disabled={isProcessing}
               >
@@ -213,15 +213,15 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
               value={customAmount}
               onChange={handleCustomAmountChange}
               placeholder="Custom amount"
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={isProcessing}
             />
           </div>
           <button
             onClick={() => handleAmountSelect(null)}
-            className={`w-full py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200
+            className={`w-full py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200
               ${selectedAmount === null && !customAmount
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary text-white'
                 : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
             disabled={isProcessing}
           >
@@ -239,14 +239,14 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
         )}
 
         {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-md">
+          <div className="p-4 bg-danger bg-opacity-10 text-danger rounded-md border border-danger border-opacity-20">
             {error}
           </div>
         )}
 
         {isProcessing && (
           <div className="flex justify-center mt-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
           </div>
         )}
       </div>

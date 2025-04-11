@@ -58,50 +58,50 @@ export const TourActiveScreen = ({
   }, [tour.id]);
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg shadow-lg">
-      <h1 className="text-2xl font-bold text-center mb-6">
+    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md">
+      <h1 className="text-2xl font-bold text-center mb-6 text-gray-900">
         {tour.name}
       </h1>
       
       <div className="flex space-x-2 mb-6">
-        <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full">
+        <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full">
           <span className="font-semibold">Live</span>
         </div>
-        <div className={`px-4 py-2 rounded-full ${isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        <div className={`px-4 py-2 rounded-full ${isConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
           <span className="font-semibold">{isConnected ? 'Connected' : 'Disconnected'}</span>
         </div>
       </div>
       
-      <div className="flex items-center bg-white p-4 rounded-lg shadow-sm mb-8 w-full">
+      <div className="flex items-center bg-gray-50 p-4 rounded-lg shadow-sm mb-8 w-full">
         {guideInfo?.avatar_url ? (
           <img 
             src={guideInfo.avatar_url} 
             alt={guideInfo.full_name}
-            className="w-10 h-10 rounded-full bg-blue-500 mr-4"
+            className="w-10 h-10 rounded-full bg-indigo-500 mr-4"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-blue-500 mr-4 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-indigo-500 mr-4 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
         )}
         <div>
-          <p className="font-semibold text-gray-800">{guideInfo?.full_name || 'Tour Guide'}</p>
+          <p className="font-semibold text-gray-900">{guideInfo?.full_name || 'Tour Guide'}</p>
           <p className="text-sm text-gray-500">Your Tour Guide</p>
         </div>
       </div>
       
-      <div className="bg-white p-8 rounded-lg shadow-sm mb-8 w-full text-center">
-        <div className="w-20 h-20 rounded-full bg-blue-100 mx-auto mb-6 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="bg-gray-50 p-8 rounded-lg shadow-sm mb-8 w-full text-center">
+        <div className="w-20 h-20 rounded-full bg-indigo-100 mx-auto mb-6 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
           </svg>
         </div>
         
         <button
           onClick={onToggleMute}
-          className="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center mx-auto"
+          className="py-2 px-6 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center justify-center mx-auto"
         >
           {isMuted ? (
             <>
@@ -122,7 +122,7 @@ export const TourActiveScreen = ({
         </button>
       </div>
       
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-8 w-full">
+      <div className="bg-gray-50 p-4 rounded-lg shadow-sm mb-8 w-full">
         <p className="text-sm text-gray-600 text-center">
           Your audio will stream as long as you remain on this page. You can lock your device, but navigating away will pause the audio stream. It will automatically reconnect when you return.
         </p>

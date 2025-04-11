@@ -2,12 +2,37 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #2D3436;
+  --primary: #00615F; /* Primary color from theme.ts */
+  --primary-hover: #004140; /* Dark primary from theme.ts */
+  --primary-light: #00807D; /* Light primary from theme.ts */
+  --secondary: #636E72; /* Secondary color from theme.ts */
+  --secondary-light: #95A5A6; /* Light secondary from theme.ts */
+  --secondary-dark: #2D3436; /* Dark secondary from theme.ts */
+  --accent: #67d695; /* Success color from theme.ts */
+  --danger: #ff7973; /* Error color from theme.ts */
+  --warning: #E5A13B; /* Warning color from theme.ts */
+  --text-primary: #2D3436; /* Text primary from theme.ts */
+  --text-secondary: #636E72; /* Text secondary from theme.ts */
+  --border: #E1E8ED; /* Border color from theme.ts */
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-secondary-dark: var(--secondary-dark);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +41,15 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --primary: #00807D; /* Light primary for dark mode */
+    --primary-hover: #00615F; /* Main primary for dark mode */
+    --primary-light: #00A3A0; /* Lighter primary for dark mode */
+    --secondary: #95A5A6; /* Light secondary for dark mode */
+    --secondary-light: #B0BEC5; /* Lighter secondary for dark mode */
+    --secondary-dark: #636E72; /* Main secondary for dark mode */
+    --text-primary: #F9FAFB;
+    --text-secondary: #D1D5DB;
+    --border: #374151;
   }
 }
 
