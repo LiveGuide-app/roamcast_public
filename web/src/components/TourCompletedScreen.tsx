@@ -232,9 +232,12 @@ export const TourCompletedScreen = forwardRef<{
       <div className="max-w-md mx-auto">
         <div className="space-y-6">
           <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-lg font-medium text-center mb-4 text-gray-900">
-              How was your experience?
+            <h3 className="text-2xl font-bold text-center mb-6 text-gray-900">
+              Tour Finished
             </h3>
+            <h4 className="text-lg font-medium text-center mb-4 text-gray-900">
+              How was your experience?
+            </h4>
             <div className="flex justify-center space-x-2 mb-8">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
