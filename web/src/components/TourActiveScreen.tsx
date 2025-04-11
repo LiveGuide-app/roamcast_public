@@ -80,10 +80,10 @@ export const TourActiveScreen = ({
             alt={guideInfo.full_name}
             width={40}
             height={40}
-            className="rounded-full bg-[#00615F] mr-4"
+            className="rounded-full bg-indigo-500 mr-4"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-[#00615F] mr-4 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-indigo-500 mr-4 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -125,11 +125,6 @@ export const TourActiveScreen = ({
         </button>
       </div>
       
-      <div className="bg-gray-50 p-4 rounded-lg shadow-sm mb-8 w-full">
-        <p className="text-sm text-gray-600 text-center">
-          Your audio will stream as long as you remain on this page. You can lock your device, but navigating away will pause the audio stream. It will automatically reconnect when you return.
-        </p>
-      </div>
       
       <button
         onClick={onLeaveTour}
