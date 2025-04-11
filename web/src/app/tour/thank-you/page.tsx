@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { TourThankYouScreen } from '@/components/TourThankYouScreen';
 import { supabase } from '@/lib/supabase';
 
-export default function ThankYouPage() {
+function ThankYouContent() {
   const searchParams = useSearchParams();
   const [guideInfo, setGuideInfo] = useState<{
     name: string;
@@ -92,5 +92,17 @@ export default function ThankYouPage() {
       tourName={tourName}
       recommendationsLink={guideInfo.recommendationsLink}
     />
+  );
+}
+
+export default function ThankYouPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <ThankYouContent />
+    </Suspense>
   );
 } 
