@@ -80,10 +80,10 @@ export const TourActiveScreen = ({
             alt={guideInfo.full_name}
             width={40}
             height={40}
-            className="rounded-full bg-indigo-500 mr-4"
+            className="rounded-full bg-[#00615F] mr-4"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-indigo-500 mr-4 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-[#00615F] mr-4 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -96,15 +96,15 @@ export const TourActiveScreen = ({
       </div>
       
       <div className="bg-gray-50 p-8 rounded-lg shadow-sm mb-8 w-full text-center">
-        <div className="w-20 h-20 rounded-full bg-indigo-100 mx-auto mb-6 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="w-20 h-20 rounded-full bg-[#00615F] mx-auto mb-6 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
           </svg>
         </div>
         
         <button
           onClick={onToggleMute}
-          className="py-2 px-6 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center justify-center mx-auto"
+          className="py-2 px-6 bg-[#00615F] text-white rounded-md hover:bg-[#004140] focus:outline-none focus:ring-2 focus:ring-[#00615F] focus:ring-offset-2 flex items-center justify-center mx-auto"
         >
           {isMuted ? (
             <>
