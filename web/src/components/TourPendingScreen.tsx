@@ -83,8 +83,8 @@ export const TourPendingScreen = ({ tour, onLeaveTour }: TourPendingScreenProps)
       </div>
       
       <div className="bg-gray-50 p-8 rounded-lg shadow-sm mb-8 w-full text-center">
-        <div className="w-20 h-20 rounded-full bg-[#00807D] bg-opacity-10 mx-auto mb-6 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#00615F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="w-20 h-20 rounded-full bg-[#00615F] mx-auto mb-6 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
           </svg>
         </div>

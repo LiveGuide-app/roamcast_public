@@ -162,7 +162,7 @@ export default function Home() {
               Welcome to Roamcast
             </h1>
           </div>
-          
+
           {showError && (
             <ErrorMessage 
               message={error.message} 
@@ -209,6 +209,16 @@ export default function Home() {
               </button>
             </form>
           )}
+
+          <div className="mt-6 text-sm text-gray-600">
+            <h2 className="font-semibold mb-2">Instructions:</h2>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Enter your tour code above</li>
+              <li>Click &quot;Join Tour&quot; to connect</li>
+              <li>Keep this page open to continue listening</li>
+              <li>Audio will play in the background</li>
+            </ul>
+          </div>
         </div>
       ) : (
         <>

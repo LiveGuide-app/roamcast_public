@@ -65,7 +65,7 @@ export const TourActiveScreen = ({
       </h1>
       
       <div className="flex space-x-2 mb-6">
-        <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full">
+        <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-full">
           <span className="font-semibold">Live</span>
         </div>
         <div className={`px-4 py-2 rounded-full ${isConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
