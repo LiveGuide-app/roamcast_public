@@ -88,12 +88,6 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
       }
     }, [onPaymentComplete]);
 
-    useEffect(() => {
-      // Signal that no amount is selected initially
-      onAmountChange(null);
-      onPaymentReady(false);
-    }, [onAmountChange, onPaymentReady]);
-
     useImperativeHandle(ref, () => ({
       handlePayment: async () => {
         if (!selectedAmount) {
@@ -141,16 +135,9 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
     }), [selectedAmount, tourParticipantId, currency]);
 
     const handleAmountSelect = async (amount: number | null) => {
-      try {
-        setSelectedAmount(amount);
-        onAmountChange(amount);
-        onPaymentReady(amount !== null);
-      } catch (error) {
-        console.error('Error handling amount selection:', error);
-        setSelectedAmount(null);
-        onAmountChange(null);
-        onPaymentReady(false);
-      }
+      setSelectedAmount(amount);
+      onAmountChange(amount);
+      onPaymentReady(amount !== null);
     };
 
     const handleCustomAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {

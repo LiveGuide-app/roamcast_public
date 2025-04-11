@@ -180,6 +180,8 @@ export const TourCompletedScreen = forwardRef<{
 
   const handleTipAmountChange = (amount: number | null) => {
     setSelectedTipAmount(amount);
+    // Only update payment ready state if we have a valid amount
+    setIsPaymentReady(amount !== null);
   };
 
   const handlePaymentReady = (ready: boolean) => {
