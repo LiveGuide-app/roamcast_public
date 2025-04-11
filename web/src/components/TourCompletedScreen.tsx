@@ -161,6 +161,8 @@ export const TourCompletedScreen = forwardRef<{
             setIsPaymentReady(false);
             // Clear stored rating
             localStorage.removeItem('pendingTourRating');
+            // Call onLeaveTour before redirecting
+            onLeaveTour();
             // Redirect to thank you page
             if (guideId) {
               router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
@@ -174,7 +176,7 @@ export const TourCompletedScreen = forwardRef<{
     };
 
     submitStoredRating();
-  }, [onRatingSubmit, tour.id, guideId, router]);
+  }, [onRatingSubmit, tour.id, guideId, router, onLeaveTour]);
 
   const handleRating = (rating: number) => {
     setSelectedRating(rating);
@@ -204,6 +206,8 @@ export const TourCompletedScreen = forwardRef<{
         await tipPaymentRef.current.handlePayment();
       } else {
         await onRatingSubmit(selectedRating);
+        // Call onLeaveTour before redirecting
+        onLeaveTour();
         // Redirect to thank you page
         if (guideId) {
           router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
@@ -280,6 +284,8 @@ export const TourCompletedScreen = forwardRef<{
                       setSelectedTipAmount(null);
                       setIsPaymentReady(false);
                       localStorage.removeItem('pendingTourRating');
+                      // Call onLeaveTour before redirecting
+                      onLeaveTour();
                       // Redirect to thank you page
                       if (guideId) {
                         router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
