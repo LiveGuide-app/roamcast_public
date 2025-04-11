@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import type { Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
@@ -11,6 +11,7 @@ interface TipPaymentProps {
   onPaymentComplete: () => void;
   currency: string;
   stripePromise: Promise<Stripe | null>;
+  stripeAccountId: string;
 }
 
 // Amounts in currency units (not cents)
@@ -24,13 +25,59 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
+// Modal component for the Stripe checkout
+const CheckoutModal = ({ 
+  clientSecret, 
+  stripePromise, 
+  onClose, 
+  onComplete 
+}: { 
+  clientSecret: string; 
+  stripePromise: Promise<Stripe | null>; 
+  onClose: () => void;
+  onComplete: () => void;
+}) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-medium">Complete Payment</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          <EmbeddedCheckoutProvider
+            stripe={stripePromise}
+            options={{
+              clientSecret,
+              onComplete: () => {
+                onComplete();
+                onClose();
+              },
+            }}
+          >
+            <EmbeddedCheckout />
+          </EmbeddedCheckoutProvider>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPaymentProps>(
-  ({ tourParticipantId, onAmountChange, onPaymentReady, onPaymentComplete, currency, stripePromise }, ref) => {
+  ({ tourParticipantId, onAmountChange, onPaymentReady, onPaymentComplete, currency, stripePromise, stripeAccountId }, ref) => {
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [showCheckout, setShowCheckout] = useState(false);
     const isMobile = isMobileDevice();
 
     // Handle return from checkout
@@ -47,6 +94,12 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
         onPaymentComplete();
       }
     }, [onPaymentComplete]);
+
+    useEffect(() => {
+      // Signal that no amount is selected initially
+      onAmountChange(null);
+      onPaymentReady(false);
+    }, []);
 
     useImperativeHandle(ref, () => ({
       handlePayment: async () => {
@@ -82,6 +135,8 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
 
           // Set client secret to show checkout
           setClientSecret(checkoutData.clientSecret);
+          // Show checkout modal
+          setShowCheckout(true);
         } catch (error) {
           console.error('Payment failed:', error);
           setError(error instanceof Error ? error.message : 'Payment failed');
@@ -92,11 +147,11 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
       }
     }), [selectedAmount, tourParticipantId, currency]);
 
-    const handleAmountSelect = async (amount: number) => {
+    const handleAmountSelect = async (amount: number | null) => {
       try {
         setSelectedAmount(amount);
         onAmountChange(amount);
-        onPaymentReady(true);
+        onPaymentReady(amount !== null);
       } catch (error) {
         console.error('Error handling amount selection:', error);
         setSelectedAmount(null);
@@ -106,9 +161,15 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
     };
 
     const handleCustomAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value.replace(/[^0-9]/g, '');
-      setCustomAmount(value);
-      const amount = value ? parseInt(value, 10) : null;
+      const value = event.target.value.replace(/[^0-9.,]/g, '');
+      // Replace comma with dot for consistency
+      const normalizedValue = value.replace(',', '.');
+      // Ensure only one decimal point
+      const parts = normalizedValue.split('.');
+      const formattedValue = parts.length > 2 ? `${parts[0]}.${parts[1]}` : normalizedValue;
+      setCustomAmount(formattedValue);
+      
+      const amount = formattedValue ? parseFloat(formattedValue) : null;
       
       if (amount && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
         setSelectedAmount(amount);
@@ -119,6 +180,10 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
         onAmountChange(null);
         onPaymentReady(false);
       }
+    };
+
+    const handleCloseCheckout = () => {
+      setShowCheckout(false);
     };
 
     return (
@@ -152,22 +217,25 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
               disabled={isProcessing}
             />
           </div>
+          <button
+            onClick={() => handleAmountSelect(null)}
+            className={`w-full py-2 px-4 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200
+              ${selectedAmount === null && !customAmount
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+            disabled={isProcessing}
+          >
+            No tip
+          </button>
         </div>
 
-        {clientSecret && (
-          <div id="checkout" className="mt-4">
-            <EmbeddedCheckoutProvider
-              stripe={stripePromise}
-              options={{
-                clientSecret,
-                onComplete: () => {
-                  onPaymentComplete();
-                },
-              }}
-            >
-              <EmbeddedCheckout />
-            </EmbeddedCheckoutProvider>
-          </div>
+        {clientSecret && showCheckout && (
+          <CheckoutModal
+            clientSecret={clientSecret}
+            stripePromise={stripePromise}
+            onClose={handleCloseCheckout}
+            onComplete={onPaymentComplete}
+          />
         )}
 
         {error && (
@@ -186,6 +254,8 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
   }
 );
 
+TipPaymentForm.displayName = 'TipPaymentForm';
+
 export const TipPayment = forwardRef<{ handlePayment: () => Promise<void> }, TipPaymentProps>(
   (props, ref) => {
     if (!props.stripePromise) {
@@ -196,5 +266,4 @@ export const TipPayment = forwardRef<{ handlePayment: () => Promise<void> }, Tip
   }
 );
 
-TipPayment.displayName = 'TipPayment';
-TipPaymentForm.displayName = 'TipPaymentForm'; 
+TipPayment.displayName = 'TipPayment'; 
