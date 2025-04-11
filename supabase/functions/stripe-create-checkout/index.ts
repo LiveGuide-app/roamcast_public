@@ -143,6 +143,7 @@ serve(async (req) => {
         amount,
         currency,
         payment_intent_id: session.payment_intent,
+        checkout_session_id: session.id,
         status: 'pending',
         stripe_account_id: guide.stripe_account_id,
         application_fee_amount: Math.round(amount * 0.075)
