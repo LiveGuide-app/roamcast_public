@@ -1,12 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import { config } from '@/config';
-import { getDeviceId } from '../utils/device';
+'use client';
 
-// Initialize Supabase client
-export const supabase = createClient(
-  config.supabase.url,
-  config.supabase.anonKey
-);
+import { getDeviceId } from '../utils/device';
+import { supabase } from '@/lib/supabase';
 
 // Generate LiveKit token
 export async function generateLiveKitToken(tourId: string, role: 'guide' | 'listener' = 'listener') {
