@@ -1,13 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  // Enable experimental features needed for audio streaming
   experimental: {
-    // Enable server actions
-    serverActions: true,
+    serverActions: {
+      enabled: true
+    }
   },
-  // Configure headers for audio streaming
+  // Configure headers for audio streaming and Stripe
   async headers() {
     return [
       {
@@ -15,14 +14,10 @@ const nextConfig = {
         headers: [
           {
             key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
+            value: 'same-origin-allow-popups'
+          }
         ],
-      },
+      }
     ];
   },
   // Configure webpack for audio processing
