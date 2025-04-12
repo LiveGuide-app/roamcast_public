@@ -6,7 +6,7 @@ import { useLiveKit } from '@/hooks/useLiveKit';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { getTourByCode, createTourParticipant, updateParticipantLeaveTime, submitTourRating } from '@/services/tour';
+import { getTourByCode, createTourParticipant, updateParticipantLeaveTime, submitTourRating, verifyTourParticipant } from '@/services/tour';
 import { TourActiveScreen } from '@/components/TourActiveScreen';
 import { TourPendingScreen } from '@/components/TourPendingScreen';
 import { TourCompletedScreen } from '@/components/TourCompletedScreen';
@@ -46,13 +46,20 @@ export default function Home() {
         return;
       }
 
+      const deviceId = await DeviceIdService.getDatabaseId();
+
       if (tour.status === 'completed') {
+        // Verify participant access for completed tours
+        const hasAccess = await verifyTourParticipant(tour.id, deviceId);
+        if (!hasAccess) {
+          setDismissedError("You don't have access to this completed tour.");
+          return;
+        }
         setCurrentTour(tour);
         return;
       }
 
       // Only create participant for non-completed tours
-      const deviceId = await DeviceIdService.getDatabaseId();
       await createTourParticipant(tour.id, deviceId);
       
       setCurrentTour(tour);

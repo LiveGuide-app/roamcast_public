@@ -180,4 +180,19 @@ export async function submitTourRating(tourId: string, deviceId: string, rating:
       throw new TourError('Failed to submit rating', TourErrorCode.NETWORK_ERROR);
     }
   }
+}
+
+export async function verifyTourParticipant(tourId: string, deviceId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('tour_participants')
+    .select('id')
+    .eq('tour_id', tourId)
+    .eq('device_id', deviceId)
+    .maybeSingle();
+
+  if (error) {
+    throw new TourError('Failed to verify tour participant', TourErrorCode.NETWORK_ERROR);
+  }
+
+  return !!data;
 } 
