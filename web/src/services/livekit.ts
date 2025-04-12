@@ -19,7 +19,8 @@ export class LiveKitService {
     }
 
     try {
-      // Initialize audio session
+      // Initialize audio session right when user clicks join
+      console.log('Initializing audio session...');
       await this.audioSession.initialize();
 
       console.log('Attempting to connect to tour:', tourId);
@@ -116,13 +117,21 @@ export class LiveKitService {
       });
   }
 
-  private attachTrack(track: RemoteTrack, participant: RemoteParticipant): void {
+  private async attachTrack(track: RemoteTrack, participant: RemoteParticipant): Promise<void> {
     if (track.kind !== Track.Kind.Audio) return;
 
     console.log('Attaching audio track from:', participant.identity);
-    const audioElement = track.attach();
+    
+    const audioElement = track.attach() as HTMLAudioElement;
     audioElement.style.display = 'none';
     audioElement.muted = this.isMuted;  // Set initial mute state
+    
+    // For iOS Safari, we need to play on user interaction
+    if (this.audioSession.isIOSSafari()) {
+      audioElement.setAttribute('playsinline', 'true');
+      audioElement.autoplay = true;
+    }
+    
     document.body.appendChild(audioElement);
   }
 

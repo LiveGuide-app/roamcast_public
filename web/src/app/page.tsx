@@ -134,6 +134,41 @@ export default function Home() {
     };
   }, [currentTour, isConnected, connectToTour, disconnectFromTour, isDisconnecting]);
 
+  // Subscribe to tour status changes
+  useEffect(() => {
+    if (!currentTour) return;
+
+    type TourUpdate = {
+      status: 'pending' | 'active' | 'completed' | 'cancelled';
+      id: string;
+    };
+
+    // Subscribe to tour status changes
+    const subscription = supabase
+      .channel(`tour-${currentTour.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tours',
+          filter: `id=eq.${currentTour.id}`
+        },
+        async (payload: RealtimePostgresChangesPayload<TourUpdate>) => {
+          const newStatus = (payload.new as TourUpdate).status;
+          console.log('Tour status changed:', newStatus);
+          
+          // Update local tour state
+          setCurrentTour(prev => prev ? { ...prev, status: newStatus } : null);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentTour]);
+
   const handleDismissError = () => {
     setDismissedError(error?.message || null);
   };
@@ -230,7 +265,7 @@ export default function Home() {
           <div className="mt-6 text-sm text-gray-600">
             <h2 className="font-semibold mb-2">Instructions:</h2>
             <ul className="list-disc list-inside space-y-1">
-              <li>Enter your tour code, or it’s pre-filled if you joined via QR code.</li>
+              <li>Enter your tour code, or it's pre-filled if you joined via QR code.</li>
               <li>Click &quot;Join Tour&quot; to connect</li>
               <li>Keep this page open to continue listening</li>
               <li>Audio will play in the background</li>
@@ -273,6 +308,15 @@ export default function Home() {
                 <TourPendingScreen
                   tour={currentTour}
                   onLeaveTour={handleLeaveTour}
+                  isActive={false}
+                  onStartListening={async () => {
+                    try {
+                      await connectToTour(currentTour.id);
+                    } catch (error) {
+                      console.error('Failed to connect to LiveKit:', error);
+                      setDismissedError('Failed to connect to audio stream');
+                    }
+                  }}
                 />
               )}
               {currentTour.status === 'completed' && (
