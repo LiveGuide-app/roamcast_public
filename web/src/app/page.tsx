@@ -31,12 +31,15 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
-  // Detect iOS device
-  const [isIOS] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  });
+  // Handle URL query parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = searchParams.get('code');
+    
+    if (codeFromUrl && !currentTour && !isLoading) {
+      setTourCode(codeFromUrl.toUpperCase());
+    }
+  }, [currentTour, isLoading]);
 
   const handleJoinTour = useCallback(async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
@@ -81,20 +84,6 @@ export default function Home() {
       setIsLoading(false);
     }
   }, [tourCode, setCurrentTour, setDismissedError, setIsLoading, connectToTour]);
-
-  // Handle URL query parameters
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const codeFromUrl = searchParams.get('code');
-    
-    if (codeFromUrl && !currentTour && !isLoading) {
-      setTourCode(codeFromUrl.toUpperCase());
-      // Only auto-join if not on iOS
-      if (!isIOS) {
-        handleJoinTour(null);
-      }
-    }
-  }, [currentTour, isLoading, handleJoinTour, isIOS]);
 
   // Subscribe to tour changes when a tour is loaded
   useEffect(() => {
@@ -228,11 +217,6 @@ export default function Home() {
                   autoFocus
                 />
               </div>
-              {isIOS && tourCode && !currentTour && (
-                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                  Please click &quot;Join Tour&quot; to enable audio playback
-                </div>
-              )}
               <button
                 type="submit"
                 disabled={!tourCode.trim() || isLoading}
