@@ -5,12 +5,12 @@ interface ErrorMessageProps {
 
 export function ErrorMessage({ message, onDismiss }: ErrorMessageProps) {
   return (
-    <div className="p-3 bg-danger bg-opacity-10 text-danger rounded-md flex justify-between items-center border border-danger border-opacity-20">
+    <div className="p-3 bg-danger rounded-md flex justify-between items-center text-white">
       <p>{message}</p>
       {onDismiss && (
         <button
           onClick={onDismiss}
-          className="ml-2 text-danger hover:text-danger hover:opacity-80 focus:outline-none"
+          className="ml-2 text-white hover:text-white hover:opacity-80 focus:outline-none"
           aria-label="Dismiss error"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

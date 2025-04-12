@@ -62,7 +62,7 @@ export default function Home() {
         // Verify participant access for completed tours
         const hasAccess = await verifyTourParticipant(tour.id, deviceId);
         if (!hasAccess) {
-          setDismissedError("You don't have access to this completed tour.");
+          setDismissedError("You don't have access to this tour.");
           return;
         }
         setCurrentTour(tour);
@@ -230,7 +230,7 @@ export default function Home() {
           <div className="mt-6 text-sm text-gray-600">
             <h2 className="font-semibold mb-2">Instructions:</h2>
             <ul className="list-disc list-inside space-y-1">
-              <li>Enter your tour code above</li>
+              <li>Enter your tour code, or it’s pre-filled if you joined via QR code.</li>
               <li>Click &quot;Join Tour&quot; to connect</li>
               <li>Keep this page open to continue listening</li>
               <li>Audio will play in the background</li>
