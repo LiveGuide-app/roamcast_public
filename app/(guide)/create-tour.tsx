@@ -129,6 +129,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     padding: spacing.md,
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.text.secondary,
   },
   inputError: {
     borderColor: colors.error.main,

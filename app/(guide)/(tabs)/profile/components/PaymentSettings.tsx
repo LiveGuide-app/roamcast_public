@@ -39,7 +39,7 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
         <ActivityIndicator color={colors.primary.main} />
       ) : (
         <Button
-          title={stripeAccountEnabled ? 'Open Stripe Dashboard' : 'Set up tip payments'}
+          title={stripeAccountEnabled ? 'See Earnings in Stripe Dashbaord' : 'Set up tip payments'}
           variant="primary"
           onPress={onStripePress}
         />

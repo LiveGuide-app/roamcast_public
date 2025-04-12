@@ -15,7 +15,7 @@ interface TipPaymentProps {
 }
 
 // Amounts in currency units (not cents)
-const tipAmounts = [5, 10, 20, 50];
+const tipAmounts = [5, 10, 15];
 const MIN_AMOUNT = 1;
 const MAX_AMOUNT = 1000;
 

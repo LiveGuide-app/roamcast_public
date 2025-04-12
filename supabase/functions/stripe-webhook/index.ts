@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@11.0.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
@@ -70,6 +70,25 @@ serve(async (req) => {
           if (updateError) {
             console.error('Error updating user:', updateError)
             throw updateError
+          }
+
+          // If the account is now fully enabled, register the domain for Apple Pay
+          if (account.charges_enabled && account.details_submitted) {
+            try {
+              const domain = 'join.tryroamcast.com'
+              await stripe.paymentMethodDomains.create(
+                {
+                  domain_name: domain,
+                },
+                {
+                  stripeAccount: account.id,
+                }
+              )
+              console.log('Registered domain for Apple Pay:', domain)
+            } catch (domainError) {
+              console.error('Error registering domain for Apple Pay:', domainError)
+              // Don't throw the error as it shouldn't block the account update
+            }
           }
           break
 

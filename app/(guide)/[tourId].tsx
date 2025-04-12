@@ -17,6 +17,7 @@ import { useTourActions } from '@/hooks/tour/useTourActions';
 import { useParticipantCount } from '@/hooks/tour/useParticipantCount';
 import { supabase } from '@/lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
+import { QRCodeModal } from '../components/tour/QRCodeModal';
 
 // Extend the base Tour type with the additional fields we need
 interface Tour extends BaseTour {
@@ -38,6 +39,7 @@ export default function LiveTourDetail() {
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEndingTour, setIsEndingTour] = useState(false);
+  const [isQRCodeVisible, setIsQRCodeVisible] = useState(false);
   
   // Use the new hook for participant count
   const participantCount = useParticipantCount(tourId || null, tour);
@@ -210,6 +212,15 @@ export default function LiveTourDetail() {
                 <Text style={styles.sectionTitle}>Tour Code</Text>
                 <Text style={styles.codeText}>{tour.unique_code}</Text>
                 <Text style={styles.helperText}>Give this code to your guests so they can join the tour.</Text>
+                <Button
+                  title="Show QR Code"
+                  variant="outline"
+                  onPress={() => setIsQRCodeVisible(true)}
+                  leftIcon={
+                    <Ionicons name="qr-code" size={24} color={colors.text.primary} />
+                  }
+                  style={styles.qrCodeButton}
+                />
               </View>
 
               <TourMetrics
@@ -244,6 +255,15 @@ export default function LiveTourDetail() {
               <View style={styles.codeSection}>
                 <Text style={styles.sectionTitle}>Tour Code</Text>
                 <Text style={styles.codeText}>{tour.unique_code}</Text>
+                <Button
+                  title="Show QR Code"
+                  variant="outline"
+                  onPress={() => setIsQRCodeVisible(true)}
+                  leftIcon={
+                    <Ionicons name="qr-code" size={24} color={colors.text.primary} />
+                  }
+                  style={styles.qrCodeButton}
+                />
               </View>
 
               <View style={styles.metricsContainer}>
@@ -341,6 +361,12 @@ export default function LiveTourDetail() {
           ) : null}
         </View>
       </View>
+
+      <QRCodeModal
+        visible={isQRCodeVisible}
+        onClose={() => setIsQRCodeVisible(false)}
+        tourCode={tour?.unique_code || ''}
+      />
     </SafeAreaView>
   );
 }
@@ -444,5 +470,9 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
-  }
+  },
+  qrCodeButton: {
+    marginTop: spacing.md,
+    width: '100%',
+  },
 });

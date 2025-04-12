@@ -166,7 +166,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
     return formatCurrency(0, currency).replace(/[\d,]/g, '');
   };
 
-  const predefinedAmounts = [200, 500, 1000]; // £2, £5, £10 or $2, $5, $10
+  const predefinedAmounts = [500, 1000, 1500]; // £5, £10, £15 or $5, $10, $15
 
   return (
     <View style={styles.container}>

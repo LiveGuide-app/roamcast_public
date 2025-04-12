@@ -21,7 +21,7 @@ export default function LandingScreen() {
     if (Platform.OS === 'android') {
       StatusBar.setBackgroundColor(colors.primary.main);
     }
-    StatusBar.setBarStyle('light-content');
+    StatusBar.setBarStyle('dark-content');
 
     // Reset status bar when component unmounts
     return () => {
@@ -126,7 +126,7 @@ export default function LandingScreen() {
               {tourCode.map((digit, index) => (
                 <TextInput
                   key={index}
-                  ref={ref => inputRefs.current[index] = ref}
+                  ref={(ref) => { inputRefs.current[index] = ref }}
                   style={styles.codeInput}
                   value={digit}
                   onChangeText={(value) => handleCodeChange(index, value)}
