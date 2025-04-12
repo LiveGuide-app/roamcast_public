@@ -141,9 +141,9 @@ export const TourCompletedScreen = forwardRef<{
     }
   }), [selectedTipAmount, isPaymentReady, tipPaymentRef, onRatingSubmit, tour.id, guideId, router, onLeaveTour]);
 
-  // Check for return from Stripe Checkout and handle rating submission
+  // Remove the stored rating handling effect since we submit rating immediately
   useEffect(() => {
-    const submitStoredRating = async () => {
+    const handlePaymentCompletion = async () => {
       const searchParams = new URLSearchParams(window.location.search);
       const sessionId = searchParams.get('session_id');
       
@@ -151,32 +151,16 @@ export const TourCompletedScreen = forwardRef<{
         // Clear the URL parameters
         window.history.replaceState({}, '', window.location.pathname);
         
-        // Get stored rating and submit it
-        const storedRating = localStorage.getItem('pendingTourRating');
-        if (storedRating) {
-          const rating = parseInt(storedRating, 10);
-          try {
-            await onRatingSubmit(rating);
-            setSelectedTipAmount(null);
-            setIsPaymentReady(false);
-            // Clear stored rating
-            localStorage.removeItem('pendingTourRating');
-            // Call onLeaveTour before redirecting
-            onLeaveTour();
-            // Redirect to thank you page
-            if (guideId) {
-              router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
-            }
-          } catch (error) {
-            console.error('Error submitting rating:', error);
-            alert('Failed to submit rating.');
-          }
+        // Just handle redirect after payment
+        onLeaveTour();
+        if (guideId) {
+          router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
         }
       }
     };
 
-    submitStoredRating();
-  }, [onRatingSubmit, tour.id, guideId, router, onLeaveTour]);
+    handlePaymentCompletion();
+  }, [tour.id, guideId, router, onLeaveTour]);
 
   const handleRating = (rating: number) => {
     setSelectedRating(rating);
@@ -200,15 +184,17 @@ export const TourCompletedScreen = forwardRef<{
 
     try {
       setIsSubmitting(true);
+      
+      // Submit rating first in all cases
+      await onRatingSubmit(selectedRating);
+
       if (selectedTipAmount && isPaymentReady && tipPaymentRef.current) {
-        // Store rating before redirecting to Stripe
-        localStorage.setItem('pendingTourRating', selectedRating.toString());
         await tipPaymentRef.current.handlePayment();
-      } else {
-        await onRatingSubmit(selectedRating);
-        // Call onLeaveTour before redirecting
+      }
+      
+      // Call onLeaveTour and redirect only if no tip or tip is complete
+      if (!selectedTipAmount || !isPaymentReady) {
         onLeaveTour();
-        // Redirect to thank you page
         if (guideId) {
           router.push(`/tour/thank-you?tourId=${tour.id}&guideId=${guideId}`);
         }

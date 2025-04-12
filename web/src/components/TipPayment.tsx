@@ -164,6 +164,12 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
 
     const handleCloseCheckout = () => {
       setShowCheckout(false);
+      setClientSecret(null);
+    };
+
+    const handlePaymentComplete = () => {
+      onPaymentComplete();
+      handleCloseCheckout();
     };
 
     return (
@@ -214,7 +220,7 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
             clientSecret={clientSecret}
             stripePromise={stripePromise}
             onClose={handleCloseCheckout}
-            onComplete={onPaymentComplete}
+            onComplete={handlePaymentComplete}
           />
         )}
 
