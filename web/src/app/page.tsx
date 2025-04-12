@@ -265,7 +265,7 @@ export default function Home() {
           <div className="mt-6 text-sm text-gray-600">
             <h2 className="font-semibold mb-2">Instructions:</h2>
             <ul className="list-disc list-inside space-y-1">
-              <li>Enter your tour code, or it's pre-filled if you joined via QR code.</li>
+              <li>Enter your tour code, or it&apos;s pre-filled if you joined via QR code.</li>
               <li>Click &quot;Join Tour&quot; to connect</li>
               <li>Keep this page open to continue listening</li>
               <li>Audio will play in the background</li>
