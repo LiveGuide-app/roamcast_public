@@ -20,7 +20,7 @@ export const stripeDashboardLinkSchema = z.object({
 
 export const tipPaymentSchema = z.object({
   tourParticipantId: z.string().uuid(),
-  amount: z.number().int().min(100).max(1000000), // Amount in cents
+  amount: z.number().int().min(100).max(10000), // Amount in cents, max 100 currency units
   currency: z.string().length(3), // ISO 4217 currency code
   deviceId: z.string(),
 }); 

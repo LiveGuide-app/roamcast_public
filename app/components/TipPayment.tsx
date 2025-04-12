@@ -30,6 +30,9 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
+  const MAX_TIP_AMOUNT = 10000; // 100 currency units in cents
+  const predefinedAmounts = [500, 1000, 1500]; // £5, £10, £15 or $5, $10, $15
+
   useEffect(() => {
     // Signal that no amount is selected initially
     onAmountChange(null);
@@ -95,10 +98,17 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
     const numericValue = text.replace(/[^0-9]/g, '');
     setCustomAmount(numericValue);
     setSelectedAmount(null);
-    const amount = numericValue ? parseInt(numericValue, 10) * 100 : null;
-    onAmountChange(amount);
-    // Signal payment readiness if there's a valid amount
-    onPaymentReady(!!amount);
+    const amount = numericValue ? parseInt(numericValue, 10) * 100 : null; // Convert to cents
+    
+    if (amount && amount > MAX_TIP_AMOUNT) {
+      Alert.alert('Invalid Amount', `Maximum tip amount is ${formatCurrency(MAX_TIP_AMOUNT / 100, currency)}`);
+      setCustomAmount('');
+      onAmountChange(null);
+      onPaymentReady(false);
+    } else {
+      onAmountChange(amount);
+      onPaymentReady(!!amount);
+    }
   };
 
   const initializePaymentSheet = async (amount: number) => {
@@ -165,8 +175,6 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   const getCurrencySymbol = () => {
     return formatCurrency(0, currency).replace(/[\d,]/g, '');
   };
-
-  const predefinedAmounts = [500, 1000, 1500]; // £5, £10, £15 or $5, $10, $15
 
   return (
     <View style={styles.container}>

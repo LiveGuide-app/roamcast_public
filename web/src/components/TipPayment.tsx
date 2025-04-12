@@ -3,6 +3,7 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe
 import type { Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
 import { DeviceIdService } from '@/services/deviceId';
+import { formatCurrency } from '@/utils/currency';
 
 interface TipPaymentProps {
   tourParticipantId: string;
@@ -17,7 +18,7 @@ interface TipPaymentProps {
 // Amounts in currency units (not cents)
 const tipAmounts = [5, 10, 15];
 const MIN_AMOUNT = 1;
-const MAX_AMOUNT = 1000;
+const MAX_AMOUNT = 100;
 
 // Modal component for the Stripe checkout
 const CheckoutModal = ({ 
@@ -159,6 +160,11 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
         setSelectedAmount(null);
         onAmountChange(null);
         onPaymentReady(false);
+        if (amount && amount > MAX_AMOUNT) {
+          setError(`Maximum tip amount is ${formatCurrency(MAX_AMOUNT, currency)}`);
+        } else {
+          setError(null);
+        }
       }
     };
 
