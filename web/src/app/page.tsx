@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useLiveKit } from '@/hooks/useLiveKit';
 import { AudioPlayer } from '@/components/AudioPlayer';
@@ -30,6 +30,55 @@ export default function Home() {
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  const handleJoinTour = useCallback(async (e: React.FormEvent | null) => {
+    if (e) e.preventDefault();
+    if (!tourCode.trim()) return;
+    
+    setDismissedError(null);
+    setIsLoading(true);
+
+    try {
+      const tour = await getTourByCode(tourCode);
+      
+      if (tour.status === 'cancelled') {
+        setDismissedError('This tour has been cancelled by the guide.');
+        return;
+      }
+
+      if (tour.status === 'completed') {
+        setCurrentTour(tour);
+        return;
+      }
+
+      // Only create participant for non-completed tours
+      const deviceId = await DeviceIdService.getDatabaseId();
+      await createTourParticipant(tour.id, deviceId);
+      
+      setCurrentTour(tour);
+
+      // Only connect to LiveKit if the tour is active
+      if (tour.status === 'active') {
+        await connectToTour(tour.id);
+      }
+    } catch (error) {
+      setDismissedError(error instanceof Error ? error.message : 'Failed to join tour');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tourCode, setCurrentTour, setDismissedError, setIsLoading, connectToTour]);
+
+  // Handle URL query parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = searchParams.get('code');
+    
+    if (codeFromUrl && !currentTour && !isLoading) {
+      setTourCode(codeFromUrl.toUpperCase());
+      // Trigger join tour automatically
+      handleJoinTour(null);
+    }
+  }, [currentTour, isLoading, handleJoinTour]);
 
   // Subscribe to tour changes when a tour is loaded
   useEffect(() => {
@@ -79,43 +128,6 @@ export default function Home() {
       subscription.unsubscribe();
     };
   }, [currentTour, isConnected, connectToTour, disconnectFromTour, isDisconnecting]);
-
-  const handleJoinTour = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tourCode.trim()) return;
-    
-    setDismissedError(null);
-    setIsLoading(true);
-
-    try {
-      const tour = await getTourByCode(tourCode);
-      
-      if (tour.status === 'cancelled') {
-        setDismissedError('This tour has been cancelled by the guide.');
-        return;
-      }
-
-      if (tour.status === 'completed') {
-        setCurrentTour(tour);
-        return;
-      }
-
-      // Only create participant for non-completed tours
-      const deviceId = await DeviceIdService.getDatabaseId();
-      await createTourParticipant(tour.id, deviceId);
-      
-      setCurrentTour(tour);
-
-      // Only connect to LiveKit if the tour is active
-      if (tour.status === 'active') {
-        await connectToTour(tour.id);
-      }
-    } catch (error) {
-      setDismissedError(error instanceof Error ? error.message : 'Failed to join tour');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDismissError = () => {
     setDismissedError(error?.message || null);
