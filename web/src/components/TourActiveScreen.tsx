@@ -3,8 +3,9 @@
 import { Tour } from '@/types/tour';
 import { AudioPlayer } from './AudioPlayer';
 import { StartAudioButton } from './StartAudioButton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 type TourActiveScreenProps = {
   tour: Tour;
@@ -27,11 +28,38 @@ export function TourActiveScreen({
   onToggleMute,
   onLeaveTour
 }: TourActiveScreenProps) {
-  // Mock guide info since we don't have a real API call for this in the web version
-  const [guideInfo] = useState<{ full_name: string; avatar_url: string | null }>({
+  // Set up proper guide info state with fetch from supabase
+  const [guideInfo, setGuideInfo] = useState<{ full_name: string; avatar_url: string | null }>({
     full_name: 'Tour Guide',
     avatar_url: null
   });
+
+  // Fetch guide info when tour changes
+  useEffect(() => {
+    const fetchGuideInfo = async () => {
+      try {
+        if (!tour || !tour.guide_id) return;
+        
+        // Fetch guide information using the tour's guide_id
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('full_name, profile_image_url')
+          .eq('id', tour.guide_id)
+          .single();
+
+        if (userError) throw userError;
+        
+        setGuideInfo({
+          full_name: userData.full_name,
+          avatar_url: userData.profile_image_url
+        });
+      } catch (error) {
+        console.error('Error fetching guide info:', error);
+      }
+    };
+
+    fetchGuideInfo();
+  }, [tour]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
