@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Tour } from '@/types/tour';
 import { AudioPlayer } from './AudioPlayer';
 import { StartAudioButton } from './StartAudioButton';
