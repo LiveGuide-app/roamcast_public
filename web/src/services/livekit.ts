@@ -161,10 +161,17 @@ export class LiveKitService {
         .filter(pub => pub.kind === Track.Kind.Audio);
       
       audioTracks.forEach(publication => {
+        // Use the track's enabled property to control audio
         if (publication.track && publication.track.mediaStreamTrack) {
           publication.track.mediaStreamTrack.enabled = !this.isMuted;
         }
       });
+    });
+
+    // Also update all audio HTML elements to match the mute state
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(el => {
+      el.muted = this.isMuted;
     });
   }
 
