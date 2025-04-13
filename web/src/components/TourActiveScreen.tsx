@@ -3,7 +3,7 @@
 import { Tour } from '@/types/tour';
 import { AudioPlayer } from './AudioPlayer';
 import { StartAudioButton } from './StartAudioButton';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 
 type TourActiveScreenProps = {
@@ -28,7 +28,7 @@ export function TourActiveScreen({
   onLeaveTour
 }: TourActiveScreenProps) {
   // Mock guide info since we don't have a real API call for this in the web version
-  const [guideInfo, setGuideInfo] = useState<{ full_name: string; avatar_url: string | null }>({
+  const [guideInfo] = useState<{ full_name: string; avatar_url: string | null }>({
     full_name: 'Tour Guide',
     avatar_url: null
   });
