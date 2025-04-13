@@ -6,21 +6,29 @@ export function useLiveKit() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isAudioReady, setIsAudioReady] = useState(false);
   const [liveKitService] = useState(() => new LiveKitService());
   const isDisconnectingRef = useRef(false);
 
-  // Connect to a tour
-  const connectToTour = useCallback(async (tourId: string) => {
+  // Initialize audio and connect to tour
+  const initializeAudioAndConnect = useCallback(async (tourId: string) => {
     if (!liveKitService || isConnecting || isDisconnectingRef.current) return;
     
     try {
       setIsConnecting(true);
       setError(null);
+
+      // Initialize audio first
+      await liveKitService.initializeAudio();
+      setIsAudioReady(true);
+
+      // Then connect to LiveKit
       await liveKitService.connect(tourId);
       setIsConnected(liveKitService.isConnected());
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to connect to tour'));
+      setError(err instanceof Error ? err : new Error('Failed to initialize audio and connect'));
       setIsConnected(false);
+      setIsAudioReady(false);
     } finally {
       setIsConnecting(false);
     }
@@ -34,6 +42,7 @@ export function useLiveKit() {
     console.log('Starting disconnect from tour');
     liveKitService.disconnect();
     setIsConnected(false);
+    setIsAudioReady(false);
   }, [liveKitService]);
 
   // Toggle mute
@@ -86,7 +95,8 @@ export function useLiveKit() {
     isConnecting,
     error,
     isMuted,
-    connectToTour,
+    isAudioReady,
+    initializeAudioAndConnect,
     disconnectFromTour,
     toggleMute
   };

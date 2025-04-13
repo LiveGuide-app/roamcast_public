@@ -7,9 +7,23 @@ export class LiveKitService {
   private room: Room | null = null;
   private audioSession: WebAudioSession;
   private isMuted: boolean = false;
+  private isAudioInitialized: boolean = false;
 
   constructor() {
     this.audioSession = new WebAudioSession();
+  }
+
+  async initializeAudio(): Promise<void> {
+    if (this.isAudioInitialized) return;
+    
+    try {
+      console.log('Initializing audio session...');
+      await this.audioSession.initialize();
+      this.isAudioInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize audio:', error);
+      throw error;
+    }
   }
 
   async connect(tourId: string): Promise<void> {
@@ -18,11 +32,11 @@ export class LiveKitService {
       return;
     }
 
-    try {
-      // Initialize audio session right when user clicks join
-      console.log('Initializing audio session...');
-      await this.audioSession.initialize();
+    if (!this.isAudioInitialized) {
+      throw new Error('Audio must be initialized before connecting');
+    }
 
+    try {
       console.log('Attempting to connect to tour:', tourId);
       
       // Create a new room instance
@@ -186,5 +200,9 @@ export class LiveKitService {
 
   isConnected(): boolean {
     return this.room?.state === 'connected';
+  }
+
+  isAudioReady(): boolean {
+    return this.isAudioInitialized;
   }
 }

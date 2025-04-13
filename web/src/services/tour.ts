@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { Tour } from '../types/tour';
 
 export type TourParticipant = {
   id: string;
@@ -14,16 +15,6 @@ export enum TourErrorCode {
   NOT_FOUND = 'TOUR_NOT_FOUND',
   UNAUTHORIZED = 'UNAUTHORIZED',
   NETWORK_ERROR = 'NETWORK_ERROR'
-}
-
-export interface Tour {
-  id: string;
-  guide_id: string;
-  name: string;
-  unique_code: string;
-  status: 'pending' | 'active' | 'completed' | 'cancelled';
-  created_at: string;
-  updated_at: string;
 }
 
 export class TourError extends Error {
