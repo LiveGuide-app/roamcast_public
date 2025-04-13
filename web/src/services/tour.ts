@@ -38,8 +38,16 @@ export async function getTourByCode(code: string): Promise<Tour> {
       }
       throw new TourError('Failed to fetch tour', TourErrorCode.NETWORK_ERROR);
     }
+    
+    // Normalize data to handle name/title field mismatch
+    const normalizedTour = {
+      ...data,
+      // Ensure both name and title are available
+      name: data.name || data.title,
+      title: data.title || data.name
+    };
 
-    return data;
+    return normalizedTour;
   } catch (error) {
     if (error instanceof TourError) {
       throw error;

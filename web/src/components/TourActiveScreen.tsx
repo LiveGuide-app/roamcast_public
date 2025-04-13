@@ -67,7 +67,7 @@ export function TourActiveScreen({
         <div className="max-w-2xl mx-auto">
           {/* Tour Header */}
           <div className="bg-[#00615F] text-white rounded-lg px-4 py-3 mb-3">
-            <h1 className="text-xl font-semibold">{tour.title}</h1>
+            <h1 className="text-xl font-semibold">{tour.title || tour.name || 'Tour'}</h1>
           </div>
           
           {/* Status Badges */}
@@ -75,7 +75,7 @@ export function TourActiveScreen({
             <div className="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
               Live
             </div>
-            <div className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${isConnected ? 'bg-green-600' : 'bg-red-600'}`}>
+            <div className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${isConnected ? 'bg-green-600' : 'bg-red-500'}`}>
               {isConnected ? 'Connected' : 'Disconnected'}
             </div>
           </div>

@@ -2,6 +2,7 @@ export interface Tour {
   id: string;
   code: string;
   title: string;
+  name?: string;
   status: 'pending' | 'active' | 'completed' | 'cancelled';
   guide_id: string;
   unique_code: string;
