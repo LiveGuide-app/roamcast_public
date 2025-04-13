@@ -1,16 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
 import { Tour } from '@/types/tour';
 import { AudioPlayer } from './AudioPlayer';
 import { StartAudioButton } from './StartAudioButton';
-
-type GuideInfo = {
-  full_name: string;
-  avatar_url: string | null;
-};
 
 type TourActiveScreenProps = {
   tour: Tour;
@@ -33,41 +26,6 @@ export function TourActiveScreen({
   onToggleMute,
   onLeaveTour
 }: TourActiveScreenProps) {
-  const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
-
-  useEffect(() => {
-    const fetchGuideInfo = async () => {
-      try {
-        // First get the tour with guide_id
-        const { data: tourData, error: tourError } = await supabase
-          .from('tours')
-          .select('guide_id')
-          .eq('id', tour.id)
-          .single();
-
-        if (tourError) throw tourError;
-        if (!tourData?.guide_id) throw new Error('No guide found for this tour');
-
-        // Then get the guide's information
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('full_name, profile_image_url')
-          .eq('id', tourData.guide_id)
-          .single();
-
-        if (userError) throw userError;
-        setGuideInfo({
-          full_name: userData.full_name,
-          avatar_url: userData.profile_image_url
-        });
-      } catch (error) {
-        console.error('Error fetching guide info:', error);
-      }
-    };
-
-    fetchGuideInfo();
-  }, [tour.id]);
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 container mx-auto px-4 py-8">

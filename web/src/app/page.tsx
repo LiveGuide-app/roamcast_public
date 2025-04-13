@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { useLiveKit } from '@/hooks/useLiveKit';
-import { AudioPlayer } from '@/components/AudioPlayer';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { getTourByCode, createTourParticipant, updateParticipantLeaveTime, submitTourRating, verifyTourParticipant } from '@/services/tour';
