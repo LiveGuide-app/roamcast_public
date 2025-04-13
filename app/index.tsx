@@ -1,6 +1,6 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, Image, StatusBar, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../config/theme';
 import { useRouter } from 'expo-router';
 import { getTourByCode, createTourParticipant, TourError, getRecentTours, Tour } from '../services/tour';
@@ -15,6 +15,7 @@ export default function LandingScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [recentTours, setRecentTours] = useState<Tour[]>([]);
   const inputRefs = useRef<Array<TextInput | null>>([]);
+  const [userType, setUserType] = useState<'none' | 'guest'>('none');
 
   useEffect(() => {
     // Set status bar for this screen
@@ -42,8 +43,10 @@ export default function LandingScreen() {
         console.error('Error loading recent tours:', error);
       }
     }
-    loadRecentTours();
-  }, []);
+    if (userType === 'guest') {
+      loadRecentTours();
+    }
+  }, [userType]);
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) return; // Only allow single digits
@@ -100,6 +103,90 @@ export default function LandingScreen() {
     }
   };
 
+  const renderUserTypeSelection = () => {
+    return (
+      <View style={styles.userTypeContainer}>
+        <Text style={styles.sectionTitle}>How would you like to use Roamcast?</Text>
+        
+        <Button
+          title="I'm a Guest"
+          onPress={() => setUserType('guest')}
+          variant="primary"
+          style={styles.userTypeButton}
+        />
+        
+        <Button
+          title="I'm a Guide"
+          onPress={handleGuideLogin}
+          variant="outline"
+          style={styles.userTypeButton}
+        />
+      </View>
+    );
+  };
+
+  const renderGuestContent = () => {
+    return (
+      <>
+        {/* Join Tour Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Join a Tour</Text>
+          <Text style={styles.sectionSubtitle}>Enter the 6-digit code provided by your tour guide</Text>
+          
+          <View style={styles.codeInputContainer}>
+            {tourCode.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => { inputRefs.current[index] = ref }}
+                style={styles.codeInput}
+                value={digit}
+                onChangeText={(value) => handleCodeChange(index, value)}
+                keyboardType="numeric"
+                maxLength={1}
+                selectTextOnFocus
+              />
+            ))}
+          </View>
+
+          <Button
+            title={isLoading ? 'Joining...' : 'Join Tour'}
+            onPress={handleJoinTour}
+            disabled={!tourCode.every(digit => digit) || isLoading}
+            variant="primary"
+          />
+          
+          <TouchableOpacity 
+            onPress={() => setUserType('none')}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonText}>Back to Selection</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Recent Tours Section */}
+        {recentTours.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Your Active Tours</Text>
+            {recentTours.map((tour) => (
+              <TouchableOpacity 
+                key={tour.id} 
+                style={styles.tourCard}
+                onPress={() => router.push(`/(tour)/${tour.unique_code}`)}
+              >
+                <View style={styles.tourInfo}>
+                  <Text style={styles.tourName}>{tour.name}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(tour.status) }]}>
+                    <Text style={styles.statusText}>{tour.status}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.primary.main }]} edges={['top']}>
       <KeyboardAvoidingView 
@@ -117,64 +204,11 @@ export default function LandingScreen() {
             <Text style={styles.subtitle}>Immersive Audio Experiences</Text>
           </View>
 
-          {/* Join Tour Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Join a Tour</Text>
-            <Text style={styles.sectionSubtitle}>Enter the 6-digit code provided by your tour guide</Text>
-            
-            <View style={styles.codeInputContainer}>
-              {tourCode.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={(ref) => { inputRefs.current[index] = ref }}
-                  style={styles.codeInput}
-                  value={digit}
-                  onChangeText={(value) => handleCodeChange(index, value)}
-                  keyboardType="numeric"
-                  maxLength={1}
-                  selectTextOnFocus
-                />
-              ))}
-            </View>
-
-            <Button
-              title={isLoading ? 'Joining...' : 'Join Tour'}
-              onPress={handleJoinTour}
-              disabled={!tourCode.every(digit => digit) || isLoading}
-              variant="primary"
-            />
-          </View>
-
-          {/* Recent Tours Section */}
-          {recentTours.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Your Active Tours</Text>
-              {recentTours.map((tour) => (
-                <TouchableOpacity 
-                  key={tour.id} 
-                  style={styles.tourCard}
-                  onPress={() => router.push(`/(tour)/${tour.unique_code}`)}
-                >
-                  <View style={styles.tourInfo}>
-                    <Text style={styles.tourName}>{tour.name}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(tour.status) }]}>
-                      <Text style={styles.statusText}>{tour.status}</Text>
-                    </View>
-                  </View>
- 
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+          {userType === 'none' 
+            ? renderUserTypeSelection() 
+            : renderGuestContent()
+          }
         </ScrollView>
-
-        {/* Guide Login Section */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Are you a tour guide?</Text>
-          <TouchableOpacity onPress={handleGuideLogin}>
-            <Text style={styles.link}>Log in to your account</Text>
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -316,5 +350,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  userTypeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: spacing.xl * 2,
+  },
+  userTypeButton: {
+    marginVertical: spacing.md,
+    minWidth: 200,
+  },
+  backButton: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: colors.primary.main,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
