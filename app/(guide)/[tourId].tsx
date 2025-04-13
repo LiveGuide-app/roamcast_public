@@ -295,12 +295,6 @@ export default function LiveTourDetail() {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.infoContainer}>
-                <Text style={styles.infoText}>
-                  Your audio will stream as long as you remain on this screen. You can lock your device, but navigating away will pause the audio stream. It will automatically reconnect when you return.
-                </Text>
-              </View>
-
               <View style={styles.buttonContainer}>
                 <Button
                   title="End Tour"
