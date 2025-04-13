@@ -7,13 +7,15 @@ interface AudioPlayerProps {
   onDisconnect: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  hideUI?: boolean;
 }
 
 export function AudioPlayer({ 
   isConnected, 
   onDisconnect, 
   isMuted, 
-  onToggleMute
+  onToggleMute,
+  hideUI = false
 }: AudioPlayerProps) {
   const [isIOS, setIsIOS] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
@@ -25,6 +27,10 @@ export function AudioPlayer({
   }, []);
 
   if (!isConnected) return null;
+  
+  // If hideUI is true, we still want to keep the component mounted
+  // but not render the UI elements
+  if (hideUI) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-md p-4 border-t border-gray-200">
