@@ -139,14 +139,25 @@ export class LiveKitService {
     const audioElement = track.attach() as HTMLAudioElement;
     audioElement.style.display = 'none';
     audioElement.muted = this.isMuted;  // Set initial mute state
+    audioElement.autoplay = true;  // Enable autoplay for all browsers
     
     // For iOS Safari, we need to play on user interaction
     if (this.audioSession.isIOSSafari()) {
       audioElement.setAttribute('playsinline', 'true');
-      audioElement.autoplay = true;
     }
     
     document.body.appendChild(audioElement);
+    
+    // Force a quick toggle of the mediaStreamTrack's enabled state to kickstart audio
+    if (track.mediaStreamTrack) {
+      // Toggle mediaStreamTrack state to trigger audio flow
+      const originalState = track.mediaStreamTrack.enabled;
+      track.mediaStreamTrack.enabled = false;
+      setTimeout(() => {
+        track.mediaStreamTrack.enabled = originalState;
+        audioElement.play().catch(e => console.log('Auto-play prevented by browser:', e));
+      }, 10);
+    }
   }
 
   async toggleMute(): Promise<void> {
