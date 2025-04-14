@@ -11,6 +11,9 @@ enum LogLevel {
   DEBUG = 3,
 }
 
+// Define a type for context objects
+type LogContext = Record<string, unknown>;
+
 // Determine current environment
 const getEnvironment = (): 'development' | 'test' | 'production' => {
   // Check for Next.js/Vercel environment variables
@@ -48,7 +51,7 @@ const currentLogLevel = getLogLevel();
 /**
  * Formats the log message with timestamp and additional context
  */
-const formatLogMessage = (message: string, context?: Record<string, any>): string => {
+const formatLogMessage = (message: string, context?: LogContext): string => {
   const timestamp = new Date().toISOString();
   const contextString = context ? ` | ${JSON.stringify(context)}` : '';
   return `[${timestamp}]${contextString} ${message}`;
@@ -61,7 +64,7 @@ const appLogger = {
   /**
    * Log error messages (always shown in all environments)
    */
-  logError: (message: string, error?: Error, context?: Record<string, any>) => {
+  logError: (message: string, error?: Error, context?: LogContext) => {
     if (currentLogLevel >= LogLevel.ERROR) {
       const formattedMessage = formatLogMessage(message, context);
       console.error(formattedMessage, error || '');
@@ -71,7 +74,7 @@ const appLogger = {
   /**
    * Log warning messages (shown in development and test)
    */
-  logWarning: (message: string, context?: Record<string, any>) => {
+  logWarning: (message: string, context?: LogContext) => {
     if (currentLogLevel >= LogLevel.WARN) {
       const formattedMessage = formatLogMessage(message, context);
       console.warn(formattedMessage);
@@ -81,7 +84,7 @@ const appLogger = {
   /**
    * Log info messages (shown in development, may be shown in test)
    */
-  logInfo: (message: string, context?: Record<string, any>) => {
+  logInfo: (message: string, context?: LogContext) => {
     if (currentLogLevel >= LogLevel.INFO) {
       const formattedMessage = formatLogMessage(message, context);
       console.info(formattedMessage);
@@ -91,7 +94,7 @@ const appLogger = {
   /**
    * Log debug messages (only shown in development)
    */
-  logDebug: (message: string, context?: Record<string, any>) => {
+  logDebug: (message: string, context?: LogContext) => {
     if (currentLogLevel >= LogLevel.DEBUG) {
       const formattedMessage = formatLogMessage(message, context);
       console.debug(formattedMessage);

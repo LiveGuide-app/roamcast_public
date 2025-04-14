@@ -8,7 +8,7 @@ import appLogger from './appLogger';
 // Example of how to use the logger in your web components/services
 
 // Error logging (shows in all environments)
-function handleApiError(error: Error) {
+export function handleApiError(error: Error) {
   appLogger.logError('API request failed', error, { 
     endpoint: '/api/users',
     method: 'GET'
@@ -16,21 +16,21 @@ function handleApiError(error: Error) {
 }
 
 // Warning logging (shows in development and test)
-function deprecatedMethodWarning(methodName: string) {
+export function deprecatedMethodWarning(methodName: string) {
   appLogger.logWarning(`The method ${methodName} is deprecated and will be removed soon`, {
     alternative: 'newMethodName'
   });
 }
 
 // Info logging (shows in development)
-function userInteraction(action: string) {
+export function userInteraction(action: string) {
   appLogger.logInfo(`User performed action: ${action}`, {
     timestamp: new Date().toISOString()
   });
 }
 
 // Debug logging (only in development)
-function componentRender(componentName: string, props: any) {
+export function componentRender(componentName: string, props: Record<string, unknown>) {
   appLogger.logDebug(`Component ${componentName} rendered`, {
     props,
     renderCount: props.renderCount || 1
