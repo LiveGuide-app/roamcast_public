@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
+import appLogger from '@/utils/appLogger';
 
 const DEVICE_ID_KEY = '@roamcast_device_id';
 
@@ -25,7 +26,7 @@ export async function getDeviceId(): Promise<string> {
     await AsyncStorage.setItem(DEVICE_ID_KEY, newId);
     return newId;
   } catch (error) {
-    console.error('Error getting device ID:', error);
+    appLogger.logError('Error getting device ID:', error instanceof Error ? error : new Error(String(error)));
     return 'unknown-device';
   }
 } 

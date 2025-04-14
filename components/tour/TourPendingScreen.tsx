@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MaterialIcons } from '@expo/vector-icons';
+import appLogger from '@/utils/appLogger';
 
 type GuideInfo = {
   full_name: string;
@@ -46,7 +47,7 @@ export const TourPendingScreen = ({ tour, onLeaveTour }: TourPendingScreenProps)
           avatar_url: userData.profile_image_url
         });
       } catch (error) {
-        console.error('Error fetching guide info:', error);
+        appLogger.logError('Error fetching guide info:', error instanceof Error ? error : new Error(String(error)));
       }
     };
 

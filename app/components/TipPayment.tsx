@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { getDeviceId } from '@/services/device';
 import { colors, borderRadius } from '@/config/theme';
 import { formatCurrency } from '@/utils/currency';
+import appLogger from '@/utils/appLogger';
 
 export type TipPaymentHandle = {
   handlePayment: () => Promise<void>;
@@ -74,7 +75,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         setCustomAmount('');
         onAmountChange(null);
       } catch (err) {
-        console.error('Payment error:', err);
+        appLogger.logError('Payment error:', err instanceof Error ? err : new Error(String(err)));
         Alert.alert(
           'Error',
           err instanceof Error ? err.message : 'Payment failed'
@@ -126,7 +127,7 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
       });
 
       if (supabaseError) {
-        console.error('Supabase error:', supabaseError);
+        appLogger.logError('Supabase error:', supabaseError instanceof Error ? supabaseError : new Error(String(supabaseError)));
         throw new Error(supabaseError.message);
       }
 
@@ -153,13 +154,13 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
       });
 
       if (initError) {
-        console.error('Init payment sheet error:', initError);
+        appLogger.logError('Init payment sheet error:', initError instanceof Error ? initError : new Error(String(initError)));
         throw initError;
       }
 
       return true;
     } catch (err) {
-      console.error('Payment initialization error:', err);
+      appLogger.logError('Payment initialization error:', err instanceof Error ? err : new Error(String(err)));
       Alert.alert(
         'Error',
         err instanceof Error ? err.message : 'Failed to initialize payment'

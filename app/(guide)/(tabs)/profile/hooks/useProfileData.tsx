@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getGuideRatings, GuideRatings } from '@/services/tour';
+import appLogger from '@/utils/appLogger';
 
 interface ProfileData {
   user: User | null;
@@ -71,7 +72,7 @@ export const useProfileData = () => {
         }));
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      appLogger.logError('Error loading profile:', error instanceof Error ? error : new Error(String(error)));
       setProfileData(prev => ({
         ...prev,
         isLoading: false,
@@ -106,7 +107,7 @@ export const useProfileData = () => {
 
       return true;
     } catch (error) {
-      console.error('Error updating recommendations link:', error);
+      appLogger.logError('Error updating recommendations link:', error instanceof Error ? error : new Error(String(error)));
       setProfileData(prev => ({ ...prev, isLoading: false }));
       return false;
     }

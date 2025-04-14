@@ -1,4 +1,4 @@
-console.log('Loading babel.config.js');
+//console.log('Loading babel.config.js');
 
 module.exports = function (api) {
   api.cache(true);

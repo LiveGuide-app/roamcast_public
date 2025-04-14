@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Tour } from '@/types/tour';
 import Image from 'next/image';
+import appLogger from '@/utils/appLogger';
 
 type GuideInfo = {
   full_name: string;
@@ -49,7 +50,7 @@ export const TourPendingScreen = ({
           avatar_url: userData.profile_image_url
         });
       } catch (error) {
-        console.error('Error fetching guide info:', error);
+        appLogger.logError('Error fetching guide info:', error instanceof Error ? error : new Error(String(error)));
       }
     };
 

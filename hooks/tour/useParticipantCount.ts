@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Tour } from '@/services/tour';
+import appLogger from '@/utils/appLogger';
 
 export const useParticipantCount = (tourId: string | null, tour: Tour | null) => {
   const [participantCount, setParticipantCount] = useState(0);
@@ -8,11 +9,11 @@ export const useParticipantCount = (tourId: string | null, tour: Tour | null) =>
   useEffect(() => {
     if (!tourId) return;
 
-    console.log('Setting up participant count subscription for tour:', tourId);
+    appLogger.logInfo('Setting up participant count subscription for tour:', { tourId });
 
     // Initial fetch
     const fetchParticipantCount = async () => {
-      console.log('Fetching participant count for tour:', tourId);
+      appLogger.logInfo('Fetching participant count for tour:', { tourId });
       const { data, error } = await supabase
         .from('tours')
         .select('current_participants, total_participants')
@@ -25,10 +26,10 @@ export const useParticipantCount = (tourId: string | null, tour: Tour | null) =>
           ? data.total_participants 
           : data.current_participants;
         
-        console.log('Participant count updated:', count);
+        appLogger.logInfo('Participant count updated:', { count });
         setParticipantCount(count || 0);
       } else if (error) {
-        console.error('Error fetching participant count:', error);
+        appLogger.logError('Error fetching participant count:', error instanceof Error ? error : new Error(String(error)));
       }
     };
 
@@ -51,20 +52,20 @@ export const useParticipantCount = (tourId: string | null, tour: Tour | null) =>
             filter: `id=eq.${tourId}`
           },
           (payload) => {
-            console.log('Tour updated:', payload);
+            appLogger.logInfo('Tour updated:', payload);
             // Update the count directly from the payload
             if (payload.new && 'current_participants' in payload.new) {
-              console.log('Current participants updated:', payload.new.current_participants);
+              appLogger.logInfo('Current participants updated:', { participants: payload.new.current_participants });
               setParticipantCount(payload.new.current_participants || 0);
             }
           }
         )
         .subscribe((status) => {
-          console.log('Subscription status:', status);
+          appLogger.logInfo('Subscription status:', { status });
         });
 
       return () => {
-        console.log('Cleaning up participant count subscription for tour:', tourId);
+        appLogger.logInfo('Cleaning up participant count subscription for tour:', { tourId });
         channel.unsubscribe();
       };
     }

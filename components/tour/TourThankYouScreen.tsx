@@ -4,6 +4,7 @@ import { Button } from '@/components/Button';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
+import appLogger from '@/utils/appLogger';
 
 type TourThankYouScreenProps = {
   guideName: string;
@@ -34,7 +35,7 @@ export const TourThankYouScreen = ({
           await Linking.openURL(recommendationsLink);
         }
       } catch (error) {
-        console.error('Error opening recommendations link:', error);
+        appLogger.logError('Error opening recommendations link:', error instanceof Error ? error : new Error(String(error)));
       }
     }
   };

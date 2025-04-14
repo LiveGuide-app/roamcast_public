@@ -7,6 +7,7 @@ import { getTourByCode, createTourParticipant, TourError, getRecentTours, Tour }
 import { getDeviceId } from '../services/device';
 import { Button } from '@/components/Button';
 import { useAuth } from '../components/auth/AuthContext';
+import appLogger from '@/utils/appLogger';
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function LandingScreen() {
         const tours = await getRecentTours(deviceId);
         setRecentTours(tours);
       } catch (error) {
-        console.error('Error loading recent tours:', error);
+        appLogger.logError('Error loading recent tours:', error instanceof Error ? error : new Error(String(error)));
       }
     }
     if (userType === 'guest') {

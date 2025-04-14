@@ -7,6 +7,7 @@ import { getDeviceId } from '@/services/device';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 import { AppState, AppStateStatus } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import appLogger from '@/utils/appLogger';
 
 // Set LiveKit logging to errors only
 setLogLevel(LogLevel.error);
@@ -62,7 +63,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
       });
       await AudioSession.startAudioSession();
     } catch (error) {
-      console.error('Failed to start audio session:', error);
+      appLogger.logError('Failed to start audio session:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, []);
@@ -81,7 +82,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
         interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       });
     } catch (error) {
-      console.error('Failed to stop audio session:', error);
+      appLogger.logError('Failed to stop audio session:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, []);
@@ -89,7 +90,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
   const getToken = useCallback(async () => {
     try {
       const deviceId = await getDeviceId();
-      console.log('🔑 Guest requesting token for tour:', tourId);
+      appLogger.logInfo('Guest requesting token for tour:', { tourId });
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: { 
           tourId,
@@ -105,21 +106,21 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
       if (error) throw error;
       return data.token;
     } catch (error) {
-      console.error('❌ Guest token error:', error);
+      appLogger.logError('Guest token error:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [tourId, user?.id, user?.email]);
 
   const connect = useCallback(async () => {
     if (state.isConnected) {
-      console.log('Already connected, skipping connection');
+      appLogger.logInfo('Already connected, skipping connection');
       return;
     }
 
     try {
       await initializeAudio();
       
-      console.log('🔄 Guest attempting to connect to tour:', tourId);
+      appLogger.logInfo('Guest attempting to connect to tour:', { tourId });
       const token = await getToken();
       const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
@@ -134,7 +135,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
-        console.log('✅ Guest connected to tour:', tourId);
+        appLogger.logInfo('Guest connected to tour:', { tourId });
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -157,7 +158,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
       });
 
       room.on(RoomEvent.Disconnected, () => {
-        console.log('🔌 Guest disconnected from tour:', tourId);
+        appLogger.logInfo('Guest disconnected from tour:', { tourId });
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -191,7 +192,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
 
       await room.connect(wsUrl, token);
     } catch (error) {
-      console.error('❌ Guest connection error:', error);
+      appLogger.logError('Guest connection error:', error instanceof Error ? error : new Error(String(error)));
       setState(prev => ({
         ...prev,
         isConnected: false,
@@ -206,14 +207,14 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
 
   const disconnect = useCallback(async () => {
     if (!state.isConnected || state.isDisconnecting) {
-      console.log('Already disconnected or disconnecting, skipping disconnection');
+      appLogger.logInfo('Already disconnected or disconnecting, skipping disconnection');
       return;
     }
 
     try {
       setState(prev => ({ ...prev, isDisconnecting: true }));
       if (state.room) {
-        console.log('🔌 Guest disconnecting from tour:', tourId);
+        appLogger.logInfo('Guest disconnecting from tour:', { tourId });
         await state.room.disconnect();
         await cleanupAudio();
         setState({
@@ -225,7 +226,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
         });
       }
     } catch (error) {
-      console.error('Error disconnecting from LiveKit room:', error);
+      appLogger.logError('Error disconnecting from LiveKit room:', error instanceof Error ? error : new Error(String(error)));
       setState(prev => ({ ...prev, isDisconnecting: false }));
       throw error;
     }
@@ -237,21 +238,25 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
     const shouldDisconnect = (!isActiveTour || hasLeft) && state.isConnected && !state.isDisconnecting;
 
     if (shouldConnect) {
-      console.log('Tour is active and not left, connecting guest');
-      connect().catch(console.error);
+      appLogger.logInfo('Tour is active and not left, connecting guest');
+      connect().catch((error) => {
+        appLogger.logError('Connection error:', error instanceof Error ? error : new Error(String(error)));
+      });
     } else if (shouldDisconnect) {
-      console.log('Tour is not active or left, disconnecting guest');
-      disconnect().catch(console.error);
+      appLogger.logInfo('Tour is not active or left, disconnecting guest');
+      disconnect().catch((error) => {
+        appLogger.logError('Disconnection error:', error instanceof Error ? error : new Error(String(error)));
+      });
     }
   }, [isActiveTour, hasLeft, state.isConnected, state.isDisconnecting, connect, disconnect]);
 
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
     if (nextAppState === 'background' && state.isConnected && !state.isDisconnecting) {
-      console.log('📱 Guest app to background, disconnecting');
+      appLogger.logInfo('Guest app to background, disconnecting');
       await disconnect();
     } else if (nextAppState === 'active' && isActiveTour && !hasLeft && !state.isConnected && !state.isDisconnecting) {
-      console.log('📱 Guest app to foreground, reconnecting to active tour');
+      appLogger.logInfo('Guest app to foreground, reconnecting to active tour');
       await connect();
     }
   }, [state.isConnected, state.isDisconnecting, isActiveTour, hasLeft, connect, disconnect]);
@@ -266,11 +271,12 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (state.isConnected && !state.isDisconnecting) {
-        disconnect().catch(console.error);
-      }
+      // Clean up the connection when unmounting
+      disconnect().catch((error) => {
+        appLogger.logError('Cleanup disconnect error:', error instanceof Error ? error : new Error(String(error)));
+      });
     };
-  }, [disconnect, state.isConnected, state.isDisconnecting]);
+  }, [disconnect]);
 
   return {
     ...state,

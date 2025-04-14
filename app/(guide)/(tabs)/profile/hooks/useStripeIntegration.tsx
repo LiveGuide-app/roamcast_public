@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import appLogger from '@/utils/appLogger';
 
 interface UseStripeIntegrationProps {
   session: Session | null;
@@ -25,7 +26,7 @@ export const useStripeIntegration = ({ session }: UseStripeIntegrationProps) => 
       
       return data?.url;
     } catch (error) {
-      console.error('Error starting onboarding:', error);
+      appLogger.logError('Error starting onboarding:', error instanceof Error ? error : new Error(String(error)));
       Alert.alert('Error', 'Failed to start onboarding process. Please try again.');
       return null;
     } finally {
@@ -48,7 +49,7 @@ export const useStripeIntegration = ({ session }: UseStripeIntegrationProps) => 
       
       return data?.url;
     } catch (error) {
-      console.error('Error accessing dashboard:', error);
+      appLogger.logError('Error accessing dashboard:', error instanceof Error ? error : new Error(String(error)));
       Alert.alert('Error', 'Failed to access Stripe dashboard. Please try again.');
       return null;
     } finally {

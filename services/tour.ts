@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Tour, TourStatus, CreateTourInput, TourParticipant } from '../types/tour';
+import appLogger from '@/utils/appLogger';
 
 export type { Tour, TourStatus, CreateTourInput, TourParticipant };
 
@@ -26,13 +27,13 @@ export class TourError extends Error {
 }
 
 export async function createTour(input: CreateTourInput): Promise<Tour> {
-  console.log('Starting tour creation...');
+  appLogger.logInfo('Starting tour creation...');
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
-  console.log('Auth state:', { user, authError });
+  appLogger.logInfo('Auth state:', { user, authError });
   
   if (!user) {
-    console.log('No user found in auth state');
+    appLogger.logInfo('No user found in auth state');
     throw new TourError('User must be authenticated to create a tour', TourErrorCode.UNAUTHORIZED);
   }
 
@@ -48,7 +49,7 @@ export async function createTour(input: CreateTourInput): Promise<Tour> {
     .single();
 
   if (error) {
-    console.error('Tour creation error:', error);
+    appLogger.logError('Tour creation error:', error);
     
     // Handle the tour limit error
     if (error.message?.includes('Maximum of 2 tours within 7 days')) {
@@ -96,7 +97,7 @@ export async function getTour(tourId: string): Promise<Tour> {
     .eq('tour_id', tourId);
 
   if (participantsError) {
-    console.error('Error fetching participants:', participantsError);
+    appLogger.logError('Error fetching participants:', participantsError);
   }
 
   return {
@@ -165,7 +166,7 @@ export const getGuideTours = async (): Promise<Tour[]> => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching guide tours:', error);
+    appLogger.logError('Error fetching guide tours:', error);
     throw new TourError('Failed to fetch tours', TourErrorCode.NETWORK_ERROR);
   }
 
@@ -197,18 +198,18 @@ export const getGuideStats = async (): Promise<GuideStats> => {
     throw new TourError('User must be authenticated to fetch stats', TourErrorCode.UNAUTHORIZED);
   }
 
-  console.log('Fetching stats for guide:', user.id);
+  appLogger.logInfo('Fetching stats for guide:', { userId: user.id });
 
   // Get all completed tours for this guide
   const { data: tourStats, error: tourError } = await supabase
     .rpc('calculate_guide_stats', { guide_id: user.id });
 
   if (tourError) {
-    console.error('Error fetching guide stats:', tourError);
+    appLogger.logError('Error fetching guide stats:', tourError);
     throw new TourError('Failed to fetch guide stats', TourErrorCode.NETWORK_ERROR);
   }
 
-  console.log('Guide stats response:', tourStats);
+  appLogger.logInfo('Guide stats response:', { tourStats });
 
   // Handle the array response by getting the first row
   const stats = Array.isArray(tourStats) ? tourStats[0] : tourStats;
@@ -238,7 +239,7 @@ export async function getTourByCode(code: string): Promise<Tour> {
 }
 
 export async function createTourParticipant(tourId: string, deviceId: string): Promise<TourParticipant> {
-  console.log('Input values:', {
+  appLogger.logInfo('Input values:', {
     tourId: tourId,
     deviceId: deviceId,
     tourIdType: typeof tourId,
@@ -382,7 +383,7 @@ export async function getRecentTours(deviceId: string): Promise<Tour[]> {
       .limit(5);
 
     if (error) {
-      console.error('Error fetching recent tours:', error);
+      appLogger.logError('Error fetching recent tours:', error);
       throw new TourError('Failed to fetch recent tours', TourErrorCode.NETWORK_ERROR);
     }
 
@@ -399,7 +400,7 @@ export async function getRecentTours(deviceId: string): Promise<Tour[]> {
         created_at: participant.tours.created_at
       } as Tour));
   } catch (error) {
-    console.error('Error in getRecentTours:', error);
+    appLogger.logError('Error in getRecentTours:', error instanceof Error ? error : new Error(String(error)));
     return []; // Return empty array instead of throwing to handle gracefully
   }
 }
@@ -420,7 +421,7 @@ export const getGuideRatings = async (): Promise<GuideRatings> => {
     .rpc('calculate_guide_ratings', { input_guide_id: user.id });
 
   if (error) {
-    console.error('Error fetching guide ratings:', error);
+    appLogger.logError('Error fetching guide ratings:', error);
     throw new TourError('Failed to fetch guide ratings', TourErrorCode.NETWORK_ERROR);
   }
 
@@ -441,7 +442,7 @@ export async function getTourAverageRating(tourId: string): Promise<{ averageRat
     .is('deleted_at', null);
 
   if (error) {
-    console.error('Error fetching tour ratings:', error);
+    appLogger.logError('Error fetching tour ratings:', error);
     return { averageRating: null, totalReviews: 0 };
   }
 

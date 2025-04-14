@@ -18,6 +18,7 @@ import { useParticipantCount } from '@/hooks/tour/useParticipantCount';
 import { supabase } from '@/lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { QRCodeModal } from '../components/tour/QRCodeModal';
+import appLogger from '@/utils/appLogger';
 
 // Extend the base Tour type with the additional fields we need
 interface Tour extends BaseTour {
@@ -46,7 +47,7 @@ export default function LiveTourDetail() {
   
   // Log participant count changes
   React.useEffect(() => {
-    console.log('Participant count in UI:', participantCount);
+    appLogger.logInfo('Participant count in UI:', { count: participantCount });
   }, [participantCount]);
 
   const { statistics } = useTourStatistics(tour, participantCount);
@@ -86,22 +87,24 @@ export default function LiveTourDetail() {
   useFocusEffect(
     useCallback(() => {
       // Component is focused (user navigated to this screen)
-      console.log('Guide tour screen focused');
+      appLogger.logInfo('Guide tour screen focused');
       
       // Reconnect if tour is active, not connected, and not ending
       if (tour?.status === 'active' && !isConnected && !isEndingTour) {
-        console.log('Returned to active tour, reconnecting to LiveKit');
+        appLogger.logInfo('Returned to active tour, reconnecting to LiveKit');
         connect().catch(error => {
-          console.error('Failed to reconnect to LiveKit:', error);
+          appLogger.logError('Failed to reconnect to LiveKit:', error instanceof Error ? error : new Error(String(error)));
         });
       }
       
       return () => {
         // Component is unfocused (user navigated away from this screen)
-        console.log('Guide tour screen unfocused');
+        appLogger.logInfo('Guide tour screen unfocused');
         if (tour?.status === 'active' && isConnected && !isEndingTour) {
-          console.log('Navigated away from active tour, disconnecting');
-          disconnect().catch(console.error);
+          appLogger.logInfo('Navigated away from active tour, disconnecting');
+          disconnect().catch((error) => {
+            appLogger.logError('Error disconnecting from LiveKit:', error instanceof Error ? error : new Error(String(error)));
+          });
         }
       };
     }, [tour?.status, isConnected, connect, disconnect, isEndingTour])
@@ -130,7 +133,7 @@ export default function LiveTourDetail() {
     try {
       await toggleMicrophone(!isMicrophoneEnabled);
     } catch (error) {
-      console.error('Error toggling microphone:', error);
+      appLogger.logError('Error toggling microphone:', error instanceof Error ? error : new Error(String(error)));
       Alert.alert('Error', 'Failed to toggle microphone');
     }
   };
@@ -312,7 +315,7 @@ export default function LiveTourDetail() {
 
               {/* Debug timing info */}
               {(() => {
-                console.log('Tour timing:', {
+                appLogger.logInfo('Tour timing:', {
                   room_started_at: tour.room_started_at,
                   room_finished_at: tour.room_finished_at,
                   completed_at: tour.completed_at,

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/utils/currency';
+import appLogger from '@/utils/appLogger';
 
 interface TourRatings {
   [key: string]: { averageRating: number | null; totalReviews: number };
@@ -63,7 +64,7 @@ export default function ToursOverview() {
         setGuideCurrency(userData.stripe_default_currency);
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      appLogger.logError('Error loading data:', error instanceof Error ? error : new Error(String(error)));
     } finally {
       setLoading(false);
     }

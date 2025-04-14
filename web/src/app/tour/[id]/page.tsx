@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { DeviceIdService } from '@/services/deviceId';
 import { submitTourRating } from '@/services/tour';
+import appLogger from '@/utils/appLogger';
 
 export default function TourPage() {
   const params = useParams();
@@ -15,20 +16,20 @@ export default function TourPage() {
   const handleRatingSubmit = async (rating: number) => {
     if (!id) return;
     
-    console.log('handleRatingSubmit called with:', { rating, tourId: id });
+    appLogger.logInfo('handleRatingSubmit called with:', { rating, tourId: id });
     
     try {
       const deviceId = await DeviceIdService.getDatabaseId();
-      console.log('Got device ID:', deviceId);
+      appLogger.logInfo('Got device ID:', { deviceId });
       
       await submitTourRating(id, deviceId, rating);
-      console.log('Rating submitted successfully');
+      appLogger.logInfo('Rating submitted successfully');
       
       setShowRating(false);
       setHasRated(true);
       setError(null);
     } catch (error) {
-      console.error('Error submitting rating:', error);
+      appLogger.logError('Error submitting rating:', error as Error);
       setError('Failed to submit rating. Please try again.');
     }
   };

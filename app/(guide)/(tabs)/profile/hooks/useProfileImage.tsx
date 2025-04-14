@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system';
 import { Alert } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { Buffer } from 'buffer';
+import appLogger from '@/utils/appLogger';
 
 interface UseProfileImageProps {
   userId: string | undefined;
@@ -15,7 +16,7 @@ export const useProfileImage = ({ userId, onImageUpdated }: UseProfileImageProps
 
   const handleImagePick = async () => {
     if (!userId) {
-      console.error('No user ID provided');
+      appLogger.logError('No user ID provided', new Error('Missing userId parameter'));
       return;
     }
 
@@ -82,7 +83,7 @@ export const useProfileImage = ({ userId, onImageUpdated }: UseProfileImageProps
         setIsUploading(false);
       }
     } catch (error) {
-      console.error('Error handling image:', error);
+      appLogger.logError('Error handling image:', error instanceof Error ? error : new Error(String(error)));
       Alert.alert('Error', 'Failed to update profile picture. Please try again.');
     }
   };

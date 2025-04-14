@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
+import appLogger from '@/utils/appLogger';
 
 // Set LiveKit logging to warnings and errors only
 setLogLevel(LogLevel.warn);
@@ -61,7 +62,7 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       }
       return data.token;
     } catch (error) {
-      console.error('Error getting LiveKit token:', error);
+      appLogger.logError('Error getting LiveKit token:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [tourId, user?.id, user?.email, role]);
@@ -123,7 +124,7 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
       // Connect to room
       await room.connect(wsUrl, token);
     } catch (error) {
-      console.error('Error connecting to LiveKit room:', error);
+      appLogger.logError('Error connecting to LiveKit room:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [tourId, getLiveKitToken]);
@@ -141,7 +142,7 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
         });
       }
     } catch (error) {
-      console.error('Error disconnecting from LiveKit room:', error);
+      appLogger.logError('Error disconnecting from LiveKit room:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [state.room]);
@@ -156,7 +157,7 @@ export const useLiveKit = (tourId: string | null | undefined, role: 'guide' | 'l
         }));
       }
     } catch (error) {
-      console.error('Error toggling microphone:', error);
+      appLogger.logError('Error toggling microphone:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [state.room?.localParticipant]);

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Tour } from '../types/tour';
+import appLogger from '@/utils/appLogger';
 
 export type TourParticipant = {
   id: string;
@@ -57,9 +58,9 @@ export async function getTourByCode(code: string): Promise<Tour> {
 }
 
 export async function createTourParticipant(tourId: string, deviceId: string): Promise<TourParticipant> {
-  console.log('Input values:', {
-    tourId: tourId,
-    deviceId: deviceId,
+  appLogger.logInfo('Creating tour participant:', {
+    tourId,
+    deviceId,
     tourIdType: typeof tourId,
     deviceIdType: typeof deviceId
   });
@@ -132,7 +133,7 @@ export async function updateParticipantLeaveTime(tourId: string, deviceId: strin
 }
 
 export async function submitTourRating(tourId: string, deviceId: string, rating: number): Promise<void> {
-  console.log('Submitting tour rating:', { tourId, deviceId, rating });
+  appLogger.logInfo('Submitting tour rating:', { tourId, deviceId, rating });
 
   // Check if a rating already exists
   const { data: existingRating, error: ratingError } = await supabase
@@ -142,10 +143,10 @@ export async function submitTourRating(tourId: string, deviceId: string, rating:
     .eq('device_id', deviceId)
     .maybeSingle();
 
-  console.log('Existing rating check:', { existingRating, ratingError });
+  appLogger.logInfo('Existing rating check:', { existingRating, ratingError });
 
   if (ratingError) {
-    console.error('Error checking existing rating:', ratingError);
+    appLogger.logError('Error checking existing rating:', ratingError as Error);
     throw new TourError('Failed to check existing rating', TourErrorCode.NETWORK_ERROR);
   }
 
@@ -156,10 +157,10 @@ export async function submitTourRating(tourId: string, deviceId: string, rating:
       .update({ rating })
       .eq('id', existingRating.id);
 
-    console.log('Update rating result:', { updateError });
+    appLogger.logInfo('Update rating result:', { updateError });
 
     if (updateError) {
-      console.error('Error updating rating:', updateError);
+      appLogger.logError('Error updating rating:', updateError as Error);
       throw new TourError('Failed to update rating', TourErrorCode.NETWORK_ERROR);
     }
   } else {
@@ -172,10 +173,10 @@ export async function submitTourRating(tourId: string, deviceId: string, rating:
         rating
       });
 
-    console.log('Insert rating result:', { insertError });
+    appLogger.logInfo('Insert rating result:', { insertError });
 
     if (insertError) {
-      console.error('Error inserting rating:', insertError);
+      appLogger.logError('Error inserting rating:', insertError as Error);
       throw new TourError('Failed to submit rating', TourErrorCode.NETWORK_ERROR);
     }
   }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { LiveKitService } from '@/services/livekit';
+import appLogger from '@/utils/appLogger';
 
 export function useLiveKit() {
   const [isConnected, setIsConnected] = useState(false);
@@ -39,7 +40,7 @@ export function useLiveKit() {
     if (!liveKitService || isDisconnectingRef.current) return;
     
     isDisconnectingRef.current = true;
-    console.log('Starting disconnect from tour');
+    appLogger.logInfo('Starting disconnect from tour');
     liveKitService.disconnect();
     setIsConnected(false);
     setIsAudioReady(false);
@@ -59,7 +60,7 @@ export function useLiveKit() {
       if (document.hidden) {
         // Keep the connection alive when the page is hidden
         if (isConnected) {
-          console.log('Page hidden, keeping connection alive');
+          appLogger.logInfo('Page hidden, keeping connection alive');
         }
       }
     };
@@ -84,7 +85,7 @@ export function useLiveKit() {
   useEffect(() => {
     return () => {
       if (isConnected && !isDisconnectingRef.current) {
-        console.log('Cleanup: disconnecting from tour');
+        appLogger.logInfo('Cleanup: disconnecting from tour');
         disconnectFromTour();
       }
     };

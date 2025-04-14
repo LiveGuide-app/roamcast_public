@@ -2,6 +2,7 @@ import { Room, RoomEvent, RemoteParticipant, Track, RemoteTrackPublication, Remo
 import { config } from '@/config';
 import { generateLiveKitToken } from '@/services/supabase';
 import { WebAudioSession } from '@/audio/WebAudioSession';
+import appLogger from '@/utils/appLogger';
 
 export class LiveKitService {
   private room: Room | null = null;
@@ -17,18 +18,18 @@ export class LiveKitService {
     if (this.isAudioInitialized) return;
     
     try {
-      console.log('Initializing audio session...');
+      appLogger.logInfo('Initializing audio session...');
       await this.audioSession.initialize();
       this.isAudioInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize audio:', error);
+      appLogger.logError('Failed to initialize audio:', error as Error);
       throw error;
     }
   }
 
   async connect(tourId: string): Promise<void> {
     if (this.room?.state === 'connected') {
-      console.log('Already connected to room');
+      appLogger.logInfo('Already connected to room');
       return;
     }
 
@@ -37,7 +38,7 @@ export class LiveKitService {
     }
 
     try {
-      console.log('Attempting to connect to tour:', tourId);
+      appLogger.logInfo('Attempting to connect to tour:', { tourId });
       
       // Create a new room instance
       this.room = new Room({
@@ -56,13 +57,12 @@ export class LiveKitService {
         autoSubscribe: true,
       });
 
-      console.log('Connected to room:', this.room.name);
-      console.log('Local participant:', this.room.localParticipant.identity);
+      appLogger.logInfo('Connected to room:', { roomName: this.room.name, localParticipant: this.room.localParticipant.identity });
       
       // After connecting, simulate a mute/unmute cycle to kickstart audio
       setTimeout(() => {
         if (this.room) {
-          console.log('Simulating mute/unmute cycle to kickstart audio...');
+          appLogger.logInfo('Simulating mute/unmute cycle to kickstart audio...');
           
           // First disable all audio tracks
           this.room.remoteParticipants.forEach(participant => {
@@ -90,7 +90,7 @@ export class LiveKitService {
                   
                   // Also try to play any audio elements
                   document.querySelectorAll('audio').forEach(el => {
-                    el.play().catch(e => console.log('Could not auto-play audio:', e));
+                    el.play().catch(e => appLogger.logError('Could not auto-play audio:', e));
                   });
                 }
               });
@@ -99,7 +99,7 @@ export class LiveKitService {
         }
       }, 500); // Wait 500ms after connection before simulating mute/unmute
     } catch (error) {
-      console.error('Failed to connect to LiveKit room:', error);
+      appLogger.logError('Failed to connect to LiveKit room:', error as Error);
       this.cleanup();
       throw error;
     }
@@ -110,8 +110,10 @@ export class LiveKitService {
 
     this.room
       .on(RoomEvent.Connected, () => {
-        console.log('Connected to room');
-        console.log('Remote participants:', Array.from(this.room!.remoteParticipants.values()).map(p => p.identity));
+        appLogger.logInfo('Connected to room');
+        appLogger.logInfo('Remote participants:', { 
+          participants: Array.from(this.room!.remoteParticipants.values()).map(p => p.identity) 
+        });
         
         // Handle existing participants
         this.room!.remoteParticipants.forEach(participant => {
@@ -119,18 +121,21 @@ export class LiveKitService {
         });
       })
       .on(RoomEvent.Disconnected, () => {
-        console.log('Disconnected from room');
+        appLogger.logInfo('Disconnected from room');
         this.cleanup();
       })
       .on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-        console.log('Participant connected:', participant.identity);
+        appLogger.logInfo('Participant connected:', { participantId: participant.identity });
         this.handleParticipantConnected(participant);
       })
       .on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-        console.log('Participant disconnected:', participant.identity);
+        appLogger.logInfo('Participant disconnected:', { participantId: participant.identity });
       })
       .on(RoomEvent.TrackSubscribed, (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
-        console.log('Track subscribed:', track.kind, 'from', participant.identity);
+        appLogger.logInfo('Track subscribed:', { 
+          kind: track.kind, 
+          participantId: participant.identity 
+        });
         this.attachTrack(track, participant);
         // Set initial enabled state based on mute status
         if (track.kind === Track.Kind.Audio) {
@@ -138,28 +143,41 @@ export class LiveKitService {
         }
       })
       .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
-        console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
+        appLogger.logInfo('Track unsubscribed:', { 
+          kind: track.kind, 
+          participantId: participant.identity 
+        });
       });
   }
 
   private handleParticipantConnected(participant: RemoteParticipant): void {
-    console.log('Setting up participant:', participant.identity);
+    appLogger.logInfo('Setting up participant:', { participantId: participant.identity });
     
     // Log existing tracks
     participant.getTrackPublications().forEach(publication => {
-      console.log('Found track:', publication.kind, publication.trackName, 'isMuted:', this.isMuted);
+      appLogger.logInfo('Found track:', { 
+        kind: publication.kind, 
+        trackName: publication.trackName, 
+        isMuted: this.isMuted 
+      });
     });
 
     // Handle new tracks
     participant
       .on(RoomEvent.TrackPublished, (publication) => {
-        console.log('Track published:', publication.kind, publication.trackName);
+        appLogger.logInfo('Track published:', { 
+          kind: publication.kind, 
+          trackName: publication.trackName 
+        });
       })
       .on(RoomEvent.TrackUnpublished, (publication) => {
-        console.log('Track unpublished:', publication.kind, publication.trackName);
+        appLogger.logInfo('Track unpublished:', { 
+          kind: publication.kind, 
+          trackName: publication.trackName 
+        });
       })
       .on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
-        console.log('Track subscribed:', track.kind);
+        appLogger.logInfo('Track subscribed:', { kind: track.kind });
         this.attachTrack(track, participant);
         // Set initial enabled state based on mute status
         if (track.kind === Track.Kind.Audio) {
@@ -167,14 +185,14 @@ export class LiveKitService {
         }
       })
       .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => {
-        console.log('Track unsubscribed:', track.kind);
+        appLogger.logInfo('Track unsubscribed:', { kind: track.kind });
       });
   }
 
   private async attachTrack(track: RemoteTrack, participant: RemoteParticipant): Promise<void> {
     if (track.kind !== Track.Kind.Audio) return;
 
-    console.log('Attaching audio track from:', participant.identity);
+    appLogger.logInfo('Attaching audio track from:', { participantId: participant.identity });
     
     // Create and configure audio element
     const audioElement = track.attach() as HTMLAudioElement;
@@ -193,15 +211,15 @@ export class LiveKitService {
     // Try to play immediately
     try {
       await audioElement.play();
-      console.log('Audio playback started successfully');
+      appLogger.logInfo('Audio playback started successfully');
     } catch (e) {
-      console.warn('Initial auto-play failed, will retry:', e);
+      appLogger.logWarning('Initial auto-play failed, will retry:', { error: e });
       
       // Set up a persistent retry mechanism
       const retryPlay = (attempt = 0) => {
         if (attempt > 5) return; // Give up after several attempts
         
-        console.log(`Retry attempt ${attempt + 1} to play audio`);
+        appLogger.logInfo(`Retry attempt ${attempt + 1} to play audio`);
         audioElement.play().catch(() => {
           // If play fails, try again with increasing delay
           setTimeout(() => retryPlay(attempt + 1), 200 * (attempt + 1));
@@ -222,7 +240,7 @@ export class LiveKitService {
     if (!this.room) return;
 
     this.isMuted = !this.isMuted;
-    console.log('Toggling mute:', this.isMuted);
+    appLogger.logInfo('Toggling mute:', { isMuted: this.isMuted });
     
     // Set mute state on all subscribed tracks
     this.room.remoteParticipants.forEach(participant => {
@@ -250,7 +268,7 @@ export class LiveKitService {
 
   disconnect(): void {
     if (this.room) {
-      console.log('Disconnecting from room');
+      appLogger.logInfo('Disconnecting from room');
       // Remove event listeners before disconnecting
       this.room.removeAllListeners();
       this.room.disconnect();

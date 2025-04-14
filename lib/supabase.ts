@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Database } from '../types/supabase';
 import { EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY } from '@env';
+import appLogger from '@/utils/appLogger';
 
 const supabaseUrl = EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-console.log('Supabase initialization:', {
+appLogger.logInfo('Supabase initialization:', {
   hasUrl: !!supabaseUrl,
   hasAnonKey: !!supabaseAnonKey,
   urlLength: supabaseUrl?.length,
@@ -15,7 +16,7 @@ console.log('Supabase initialization:', {
 });
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables. Please check your .env file and app configuration.');
+  appLogger.logError('Missing Supabase environment variables. Please check your .env file and app configuration.');
   throw new Error('Missing Supabase environment variables');
 }
 

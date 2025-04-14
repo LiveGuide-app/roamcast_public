@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { useRouter } from 'expo-router';
 import { getDeviceId } from '@/services/device';
 import { formatCurrency } from '@/utils/currency';
+import appLogger from '@/utils/appLogger';
 
 type GuideInfo = {
   full_name: string;
@@ -64,7 +65,7 @@ export const TourCompletedScreen = ({
 
         if (participantResult.error) {
           if (participantResult.error.code === 'PGRST116') {
-            console.warn('No participant found for this tour');
+            appLogger.logWarning('No participant found for this tour', { tourId: tour.id, deviceId });
             return;
           }
           throw participantResult.error;
@@ -93,7 +94,7 @@ export const TourCompletedScreen = ({
           setStripeAccountId(userData.stripe_account_id);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        appLogger.logError('Error fetching data:', error instanceof Error ? error : new Error(String(error)));
       } finally {
         setIsLoading(false);
       }
@@ -121,7 +122,7 @@ export const TourCompletedScreen = ({
       setSelectedTipAmount(null);
       setIsPaymentReady(false);
     } catch (error) {
-      console.error('Error submitting rating:', error);
+      appLogger.logError('Error submitting rating:', error instanceof Error ? error : new Error(String(error)));
       Alert.alert('Error', 'Failed to submit rating.');
     }
   };
@@ -152,7 +153,7 @@ export const TourCompletedScreen = ({
         await onRatingSubmit(selectedRating);
       }
     } catch (error) {
-      console.error('Error during submission:', error);
+      appLogger.logError('Error during submission:', error instanceof Error ? error : new Error(String(error)));
       Alert.alert('Error', 'Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -10,6 +10,7 @@ import { useTourManagement } from '@/hooks/useTourManagement';
 import { useCallback } from 'react';
 import { TourThankYouScreen } from '@/components/tour/TourThankYouScreen';
 import { useFocusEffect } from '@react-navigation/native';
+import appLogger from '@/utils/appLogger';
 
 export default function TourCodeScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -39,7 +40,7 @@ export default function TourCodeScreen() {
       await onLeaveTour();
       router.replace('/');
     } catch (error) {
-      console.error('Error leaving tour:', error);
+      appLogger.logError('Error leaving tour:', error instanceof Error ? error : new Error(String(error)));
       // Even if there's an error updating the leave time, we still want to let them leave
       router.replace('/');
     }
@@ -49,11 +50,11 @@ export default function TourCodeScreen() {
   useFocusEffect(
     useCallback(() => {
       // Component is focused (user navigated to this screen)
-      console.log('Tour screen focused');
+      appLogger.logInfo('Tour screen focused');
       
       return () => {
         // Component is unfocused (user navigated away from this screen)
-        console.log('Tour screen unfocused');
+        appLogger.logInfo('Tour screen unfocused');
       };
     }, [])
   );

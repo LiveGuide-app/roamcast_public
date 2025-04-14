@@ -4,6 +4,7 @@ import { getDeviceId } from '../services/device';
 import { useGuestLiveKit } from './useGuestLiveKit';
 import { supabase } from '@/lib/supabase';
 import { Room } from 'livekit-client';
+import appLogger from '@/utils/appLogger';
 
 export type UseTourManagementReturn = {
   tour: Tour | null;
@@ -50,7 +51,7 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
 
       // Get the tour participant ID
       const deviceId = await getDeviceId();
-      console.log('Fetching tour participant with:', { tourId: tourData.id, deviceId });
+      appLogger.logInfo('Fetching tour participant with:', { tourId: tourData.id, deviceId });
       
       const { data: participant, error: participantError } = await supabase
         .from('tour_participants')
@@ -63,17 +64,17 @@ export const useTourManagement = (code: string): UseTourManagementReturn => {
         if (participantError.code === 'PGRST116') {
           throw new TourError("You don't have access to this tour", TourErrorCode.UNAUTHORIZED);
         }
-        console.error('Error fetching tour participant:', participantError);
+        appLogger.logError('Error fetching tour participant:', participantError instanceof Error ? participantError : new Error(String(participantError)));
         throw new TourError('Unable to verify tour participation', TourErrorCode.NETWORK_ERROR);
       }
 
-      console.log('Found tour participant:', participant);
+      appLogger.logInfo('Found tour participant:', participant);
       if (participant) {
         setTourParticipantId(participant.id);
         // Update tour with participant_id
         setTour(prev => prev ? { ...prev, participant_id: participant.id } : null);
       } else {
-        console.error('No tour participant found for:', { tourId: tourData.id, deviceId });
+        appLogger.logError('No tour participant found for tour:', new Error("No participant found"), { tourId: tourData.id, deviceId });
         throw new TourError("You don't have access to this tour", TourErrorCode.UNAUTHORIZED);
       }
     } catch (error) {

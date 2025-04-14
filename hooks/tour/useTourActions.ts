@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Tour, updateTourStatus, TourError } from '@/services/tour';
 import { Alert } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import appLogger from '@/utils/appLogger';
 
 interface UseTourActionsProps {
   tour?: Tour | null;
@@ -71,7 +72,7 @@ export const useTourActions = ({
         onTourUpdate(updatedTour);
       }
     } catch (error) {
-      console.error('Error ending tour:', error);
+      appLogger.logError('Error ending tour:', error instanceof Error ? error : new Error(String(error)));
     }
   }, [isGuide, disconnect, tour?.id, onTourUpdate]);
 
@@ -146,7 +147,7 @@ export const useTourActions = ({
               // Navigate back to tours list
               router.push('/(guide)/(tabs)/tours');
             } catch (error) {
-              console.error('Error deleting tour:', error);
+              appLogger.logError('Error deleting tour:', error instanceof Error ? error : new Error(String(error)));
               Alert.alert('Error', 'Failed to delete tour. Please try again.');
             } finally {
               setIsLoading(false);

@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { EXPO_PUBLIC_LIVEKIT_WS_URL } from '@env';
 import { AppState, AppStateStatus } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import appLogger from '@/utils/appLogger';
 
 // Set LiveKit logging to errors only
 setLogLevel(LogLevel.error);
@@ -46,7 +47,7 @@ export const useGuideLiveKit = (tourId: string) => {
       // Start LiveKit audio session
       await AudioSession.startAudioSession();
     } catch (error) {
-      console.error('Failed to start audio session:', error);
+      appLogger.logError('Failed to start audio session:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, []);
@@ -68,14 +69,14 @@ export const useGuideLiveKit = (tourId: string) => {
         interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       });
     } catch (error) {
-      console.error('Failed to stop audio session:', error);
+      appLogger.logError('Failed to stop audio session:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, []);
 
   const getToken = useCallback(async () => {
     try {
-      console.log('🔑 Guide requesting token for tour:', tourId);
+      appLogger.logInfo('Guide requesting token for tour:', { tourId });
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: { 
           tourId,
@@ -90,14 +91,14 @@ export const useGuideLiveKit = (tourId: string) => {
       if (error) throw error;
       return data.token;
     } catch (error) {
-      console.error('❌ Guide token error:', error);
+      appLogger.logError('Guide token error:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [tourId, user?.id, user?.email]);
 
   const connect = useCallback(async () => {
     try {
-      console.log('🔄 Guide attempting to connect to tour:', tourId);
+      appLogger.logInfo('Guide attempting to connect to tour:', { tourId });
       const token = await getToken();
       const wsUrl = EXPO_PUBLIC_LIVEKIT_WS_URL;
 
@@ -112,7 +113,7 @@ export const useGuideLiveKit = (tourId: string) => {
 
       // Set up event listeners
       room.on(RoomEvent.Connected, () => {
-        console.log('✅ Guide connected to tour:', tourId);
+        appLogger.logInfo('Guide connected to tour:', { tourId });
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -127,7 +128,7 @@ export const useGuideLiveKit = (tourId: string) => {
         }
         // Set new timer for 6 hours (21600000 ms)
         autoEndTimerRef.current = setTimeout(async () => {
-          console.log('🕒 Auto-ending tour after 6 hours');
+          appLogger.logInfo('Auto-ending tour after 6 hours');
           try {
             // Update tour status to completed
             await supabase
@@ -141,13 +142,13 @@ export const useGuideLiveKit = (tourId: string) => {
             // Disconnect from LiveKit
             await disconnect(true);
           } catch (error) {
-            console.error('Error auto-ending tour:', error);
+            appLogger.logError('Error auto-ending tour:', error instanceof Error ? error : new Error(String(error)));
           }
         }, 21600000);
       });
 
       room.on(RoomEvent.Disconnected, () => {
-        console.log('🔌 Guide disconnected from tour:', tourId);
+        appLogger.logInfo('Guide disconnected from tour:', { tourId });
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -180,7 +181,7 @@ export const useGuideLiveKit = (tourId: string) => {
       await room.connect(wsUrl, token);
       return room;
     } catch (error) {
-      console.error('❌ Guide connection error:', error);
+      appLogger.logError('Guide connection error:', error instanceof Error ? error : new Error(String(error)));
       setState(prev => ({
         ...prev,
         isConnected: false,
@@ -208,7 +209,7 @@ export const useGuideLiveKit = (tourId: string) => {
         });
       }
     } catch (error) {
-      console.error('Error disconnecting from LiveKit room:', error);
+      appLogger.logError('Error disconnecting from LiveKit room:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [state.room, cleanupAudio]);
@@ -216,10 +217,10 @@ export const useGuideLiveKit = (tourId: string) => {
   // Handle app state changes
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
     if (nextAppState === 'background' && state.isConnected) {
-      console.log('📱 Guide app to background, disconnecting (no cleanup)');
+      appLogger.logInfo('Guide app to background, disconnecting (no cleanup)');
       await disconnect(false);
     } else if (nextAppState === 'active' && state.isMicrophoneEnabled) {
-      console.log('📱 Guide app to foreground, reconnecting');
+      appLogger.logInfo('Guide app to foreground, reconnecting');
       await connect();
     }
   }, [state.isConnected, state.isMicrophoneEnabled, connect, disconnect]);
@@ -249,7 +250,7 @@ export const useGuideLiveKit = (tourId: string) => {
         }));
       }
     } catch (error) {
-      console.error('Error toggling microphone:', error);
+      appLogger.logError('Error toggling microphone:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }, [state.room?.localParticipant, state.isMicrophoneEnabled, initializeAudio]);

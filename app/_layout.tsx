@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { View, Text, Platform } from 'react-native';
 import { EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY, EXPO_PUBLIC_APP_URL_SCHEME } from '@env';
+import appLogger from '@/utils/appLogger';
 
 enableScreens();
 
@@ -40,7 +41,7 @@ export default function RootLayout() {
           await AudioSession.startAudioSession();
         }
       } catch (error) {
-        console.error('Error initializing LiveKit:', error);
+        appLogger.logError('Error initializing LiveKit:', error instanceof Error ? error : new Error(String(error)));
       }
     };
 
@@ -50,7 +51,7 @@ export default function RootLayout() {
     return () => {
       if (Platform.OS === 'android') {
         AudioSession.stopAudioSession().catch(error => {
-          console.error('Error stopping audio session:', error);
+          appLogger.logError('Error stopping audio session:', error instanceof Error ? error : new Error(String(error)));
         });
       }
     };

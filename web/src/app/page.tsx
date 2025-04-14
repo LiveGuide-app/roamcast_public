@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { DeviceIdService } from '@/services/deviceId';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { JoinTourForm } from '@/components/JoinTourForm';
-
+import appLogger from '@/utils/appLogger';
 export default function Home() {
   const [tourCode, setTourCode] = useState('');
   const [currentTour, setCurrentTour] = useState<Tour | null>(null);
@@ -98,7 +98,7 @@ export default function Home() {
 
           // If tour becomes inactive while we're connected, disconnect
           if (updatedTour.status !== 'active' && isConnected) {
-            console.log('Tour is no longer active, disconnecting');
+            appLogger.logInfo('Tour is no longer active, disconnecting');
             disconnectFromTour();
           }
         }
@@ -115,7 +115,7 @@ export default function Home() {
     try {
       await initializeAudioAndConnect(currentTour.id);
     } catch (error) {
-      console.error('Failed to start audio:', error);
+      appLogger.logError('Failed to start audio:', error as Error);
       setDismissedError('Failed to start audio. Please try again.');
     }
   }, [currentTour, initializeAudioAndConnect]);
