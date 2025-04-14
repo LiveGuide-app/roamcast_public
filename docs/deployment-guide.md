@@ -7,11 +7,11 @@ This guide outlines the steps to move your working development environment to pr
 - [2. Infrastructure Migration](#2-infrastructure-migration)
 - [3. Mobile App Deployment](#3-mobile-app-deployment)
 - [4. Web Deployment](#4-web-deployment)
-- [5. Going Live Checklist](#5-going-live-checklist)
+- [5. Going Live](#5-going-live-checklist)
 - [6. Post-Launch Operations](#6-post-launch-operations)
 - [7. Rollback Procedure](#7-rollback-procedure)
 
-## 1. Environment Setup
+## 1. Environment Setup - DONE
 
 ### 1.1 Preserve Development Environment
 1. Create a backup of your current working environment:

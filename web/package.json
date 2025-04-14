@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "dev:local": "cp .env.local.development .env.local && next dev --turbopack",
+    "prod:local": "cp .env.local.production .env.local && next dev --turbopack",
+    "build:prod": "cp .env.local.production .env.local && next build",
+    "start:prod": "cp .env.local.production .env.local && next start"
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.0",
