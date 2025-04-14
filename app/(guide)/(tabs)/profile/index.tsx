@@ -107,7 +107,7 @@ export default function GuideProfile() {
           onChangeEmail={handleChangeEmail}
         />
 
-        <FAQ faqUrl="https://roamcast.me/faq" />
+        <FAQ faqUrl="https://www.tryroamcast.com" />
 
         <View style={styles.section}>
           <Button 

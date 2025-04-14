@@ -58,6 +58,46 @@ export class LiveKitService {
 
       console.log('Connected to room:', this.room.name);
       console.log('Local participant:', this.room.localParticipant.identity);
+      
+      // After connecting, simulate a mute/unmute cycle to kickstart audio
+      setTimeout(() => {
+        if (this.room) {
+          console.log('Simulating mute/unmute cycle to kickstart audio...');
+          
+          // First disable all audio tracks
+          this.room.remoteParticipants.forEach(participant => {
+            const audioTracks = Array.from(participant.getTrackPublications().values())
+              .filter(pub => pub.kind === Track.Kind.Audio);
+            
+            audioTracks.forEach(publication => {
+              if (publication.track && publication.track.mediaStreamTrack) {
+                // Temporarily disable track
+                publication.track.mediaStreamTrack.enabled = false;
+              }
+            });
+          });
+          
+          // Then re-enable them after a short delay
+          setTimeout(() => {
+            this.room?.remoteParticipants.forEach(participant => {
+              const audioTracks = Array.from(participant.getTrackPublications().values())
+                .filter(pub => pub.kind === Track.Kind.Audio);
+              
+              audioTracks.forEach(publication => {
+                if (publication.track && publication.track.mediaStreamTrack) {
+                  // Re-enable track
+                  publication.track.mediaStreamTrack.enabled = true;
+                  
+                  // Also try to play any audio elements
+                  document.querySelectorAll('audio').forEach(el => {
+                    el.play().catch(e => console.log('Could not auto-play audio:', e));
+                  });
+                }
+              });
+            });
+          }, 100);
+        }
+      }, 500); // Wait 500ms after connection before simulating mute/unmute
     } catch (error) {
       console.error('Failed to connect to LiveKit room:', error);
       this.cleanup();
@@ -136,27 +176,45 @@ export class LiveKitService {
 
     console.log('Attaching audio track from:', participant.identity);
     
+    // Create and configure audio element
     const audioElement = track.attach() as HTMLAudioElement;
     audioElement.style.display = 'none';
     audioElement.muted = this.isMuted;  // Set initial mute state
     audioElement.autoplay = true;  // Enable autoplay for all browsers
     
-    // For iOS Safari, we need to play on user interaction
-    if (this.audioSession.isIOSSafari()) {
-      audioElement.setAttribute('playsinline', 'true');
-    }
+    // Set additional attributes for mobile browsers
+    audioElement.setAttribute('playsinline', 'true');
+    audioElement.setAttribute('webkit-playsinline', 'true');
+    audioElement.setAttribute('controls', 'false');
     
+    // Add the element to DOM
     document.body.appendChild(audioElement);
     
-    // Force a quick toggle of the mediaStreamTrack's enabled state to kickstart audio
+    // Try to play immediately
+    try {
+      await audioElement.play();
+      console.log('Audio playback started successfully');
+    } catch (e) {
+      console.warn('Initial auto-play failed, will retry:', e);
+      
+      // Set up a persistent retry mechanism
+      const retryPlay = (attempt = 0) => {
+        if (attempt > 5) return; // Give up after several attempts
+        
+        console.log(`Retry attempt ${attempt + 1} to play audio`);
+        audioElement.play().catch(() => {
+          // If play fails, try again with increasing delay
+          setTimeout(() => retryPlay(attempt + 1), 200 * (attempt + 1));
+        });
+      };
+      
+      // Start retrying after a short delay
+      setTimeout(() => retryPlay(), 200);
+    }
+    
+    // Ensure the MediaStreamTrack is enabled
     if (track.mediaStreamTrack) {
-      // Toggle mediaStreamTrack state to trigger audio flow
-      const originalState = track.mediaStreamTrack.enabled;
-      track.mediaStreamTrack.enabled = false;
-      setTimeout(() => {
-        track.mediaStreamTrack.enabled = originalState;
-        audioElement.play().catch(e => console.log('Auto-play prevented by browser:', e));
-      }, 10);
+      track.mediaStreamTrack.enabled = true;
     }
   }
 
