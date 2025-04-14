@@ -14,7 +14,9 @@ if (!apiKey || !apiSecret) {
 
 // CORS headers for all responses
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('DENO_ENV') === 'production' 
+    ? 'https://join.tryroamcast.com' 
+    : '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
