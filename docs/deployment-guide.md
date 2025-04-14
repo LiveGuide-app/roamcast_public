@@ -63,7 +63,7 @@ Add this to your npm scripts in package.json:
 
 ## 2. Infrastructure Migration
 
-### 2.1 Supabase Setup
+### 2.1 Supabase Setup - DONE
 1. Create new production project in Supabase dashboard
 2. Migrate your database schema:
    ```bash
@@ -84,7 +84,7 @@ Add this to your npm scripts in package.json:
    ```
 6. Verify RLS policies are properly configured for production
 
-### 2.2 Stripe Migration
+### 2.2 Stripe Migration - DONE
 1. Activate your production Stripe account
 2. Set up production webhooks:
    - Create a webhook endpoint in Stripe dashboard pointed to your production API

@@ -18,7 +18,6 @@ export const config = {
   livekit: {
     wsUrl: process.env.NEXT_PUBLIC_LIVEKIT_WS_URL || '',
     apiKey: process.env.NEXT_PUBLIC_LIVEKIT_API_KEY || '',
-    apiSecret: process.env.NEXT_PUBLIC_LIVEKIT_API_SECRET || '',
   },
   supabase: getSupabaseConfig(),
   app: {
@@ -32,7 +31,6 @@ declare global {
   interface ProcessEnv {
     NEXT_PUBLIC_LIVEKIT_WS_URL: string;
     NEXT_PUBLIC_LIVEKIT_API_KEY: string;
-    NEXT_PUBLIC_LIVEKIT_API_SECRET: string;
     NEXT_PUBLIC_SUPABASE_URL: string;
     NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   }

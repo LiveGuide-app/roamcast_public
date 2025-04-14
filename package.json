@@ -11,7 +11,10 @@
     "prod": "cp .env.production .env && expo start",
     "build:prod": "cp .env.production .env && eas build",
     "build:prod:ios": "cp .env.production .env && eas build --platform ios",
-    "build:prod:android": "cp .env.production .env && eas build --platform android"
+    "build:prod:android": "cp .env.production .env && eas build --platform android",
+    "build:preview": "cp .env.production .env && eas build --profile preview",
+    "build:preview:ios": "cp .env.production .env && eas build --platform ios --profile preview",
+    "build:preview:android": "cp .env.production .env && eas build --platform android --profile preview"
   },
   "dependencies": {
     "@anycable/web": "^1.1.0",
