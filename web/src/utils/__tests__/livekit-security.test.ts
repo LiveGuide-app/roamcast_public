@@ -17,7 +17,7 @@ describe('LiveKit Security Utilities', () => {
   beforeEach(() => {
     (getLiveKitConfig as jest.Mock).mockReturnValue(mockConfig);
     // Mock window to be undefined (server environment)
-    global.window = undefined as any;
+    global.window = undefined as unknown as Window & typeof globalThis;
   });
 
   afterAll(() => {
@@ -61,7 +61,7 @@ describe('LiveKit Security Utilities', () => {
 
     it('should throw error if called from client-side', async () => {
       // Mock window to be defined (client environment)
-      global.window = {} as any;
+      global.window = {} as Window & typeof globalThis;
       
       await expect(generateLiveKitToken('test-user', 'test-room'))
         .rejects

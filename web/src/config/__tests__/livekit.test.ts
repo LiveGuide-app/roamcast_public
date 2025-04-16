@@ -7,7 +7,7 @@ describe('LiveKit Configuration', () => {
     jest.resetModules();
     process.env = { ...originalEnv };
     // Mock window to be undefined (server environment)
-    global.window = undefined as any;
+    global.window = undefined as unknown as Window & typeof globalThis;
   });
 
   afterAll(() => {
@@ -47,7 +47,7 @@ describe('LiveKit Configuration', () => {
 
   it('should throw error when called from client-side', () => {
     // Mock window to be defined (client environment)
-    global.window = {} as any;
+    global.window = {} as Window & typeof globalThis;
     
     expect(() => getLiveKitConfig()).toThrow('getLiveKitConfig should only be called server-side');
   });
