@@ -110,6 +110,54 @@ export default function Home() {
     };
   }, [currentTour, isConnected, disconnectFromTour]);
 
+  // Add visibility change handler to refresh tour data when page becomes visible again
+  useEffect(() => {
+    if (typeof document === 'undefined' || !currentTour) return;
+
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && currentTour) {
+        appLogger.logInfo('Page visible again, refreshing tour data');
+        try {
+          // Re-fetch the current tour data directly
+          const { data, error } = await supabase
+            .from('tours')
+            .select('*')
+            .eq('id', currentTour.id)
+            .single();
+          
+          if (error) {
+            appLogger.logError('Failed to refresh tour data:', error);
+            return;
+          }
+          
+          if (data && data.status !== currentTour.status) {
+            appLogger.logInfo('Tour status changed while page was hidden', { 
+              oldStatus: currentTour.status, 
+              newStatus: data.status 
+            });
+            
+            // Update the current tour with fresh data
+            setCurrentTour(data as Tour);
+            
+            // If tour is no longer active and we're connected, disconnect
+            if (data.status !== 'active' && isConnected) {
+              appLogger.logInfo('Tour is no longer active, disconnecting');
+              disconnectFromTour();
+            }
+          }
+        } catch (err) {
+          appLogger.logError('Error refreshing tour data:', err instanceof Error ? err : new Error(String(err)));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentTour, isConnected, disconnectFromTour]);
+
   const handleStartAudio = useCallback(async () => {
     if (!currentTour) return;
     try {
