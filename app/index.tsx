@@ -109,17 +109,12 @@ export default function LandingScreen() {
       <View style={styles.userTypeContainer}>
         <Text style={styles.sectionTitle}>How would you like to use Roamcast?</Text>
         
-        <Button
-          title="I'm a Guest"
-          onPress={() => setUserType('guest')}
-          variant="primary"
-          style={styles.userTypeButton}
-        />
+        {/* Guest option temporarily removed */}
         
         <Button
-          title="I'm a Guide"
+          title="Login / Signup"
           onPress={handleGuideLogin}
-          variant="outline"
+          variant="primary" // Changed to primary since it's the only button now
           style={styles.userTypeButton}
         />
       </View>
