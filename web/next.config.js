@@ -6,6 +6,13 @@ const nextConfig = {
       enabled: true
     }
   },
+  // Configure image domains for Supabase storage
+  images: {
+    domains: [
+      'jwvnlhpnnmvgqzvzeocz.supabase.co',
+      'vrcvvfpliinrbhksrszp.supabase.co'
+    ],
+  },
   // Configure headers for audio streaming and Stripe
   async headers() {
     return [

@@ -104,7 +104,7 @@ Add this to your npm scripts in package.json:
 
 ## 3. Mobile App Deployment
 
-### 3.1 Update EAS Configuration
+### 3.1 Update EAS Configuration - DONE
 1. Modify `eas.json` to include a production profile that uses production environment variables:
 
 ```json

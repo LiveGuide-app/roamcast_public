@@ -112,10 +112,10 @@ export default function GuideProfile() {
           onDelete={handleDeleteRecommendations}
         />
 
-        <ProfileSettings
+        {/*<ProfileSettings
           onChangePassword={handleChangePassword}
           onChangeEmail={handleChangeEmail}
-        />
+        />*/}
 
         <FAQ faqUrl="https://www.tryroamcast.com" />
 

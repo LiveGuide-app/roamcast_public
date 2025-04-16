@@ -1,18 +1,62 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { colors, spacing, borderRadius, shadows } from '../../config/theme';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../components/auth/AuthContext';
 import { validatePassword, validatePasswordConfirmation, ValidationError } from '../../utils/validation';
+import { supabase } from '@/lib/supabase';
+import appLogger from '@/utils/appLogger';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { updatePassword } = useAuth();
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [hasRecoverySession, setHasRecoverySession] = useState(false);
+
+  // Handle deep link parameters if they exist
+  useEffect(() => {
+    // Deep links might come with various URL parameters
+    const handleDeepLink = async () => {
+      try {
+        // Check for token in URL params - it could be in various formats
+        const accessToken = params.access_token || '';
+        const refreshToken = params.refresh_token || '';
+        const type = params.type || '';
+        
+        appLogger.logInfo('Params received for password reset', { 
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          type
+        });
+        
+        if (accessToken && type === 'recovery') {
+          // We need to set the session manually from the tokens
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken as string,
+            refresh_token: refreshToken as string
+          });
+          
+          if (error) {
+            appLogger.logError('Error setting recovery session', { error });
+            setErrors([{ field: 'general', message: 'Error setting recovery session. Please try again.' }]);
+          } else {
+            appLogger.logInfo('Recovery session set successfully');
+            setHasRecoverySession(true);
+          }
+        }
+      } catch (error) {
+        appLogger.logError('Error processing password reset deep link', { error });
+        setErrors([{ field: 'general', message: 'Error processing recovery link. Please try again.' }]);
+      }
+    };
+
+    handleDeepLink();
+  }, [params]);
 
   const handleResetPassword = async () => {
     // Clear previous errors
@@ -27,6 +71,11 @@ export default function ResetPasswordScreen() {
         ...passwordValidation.errors,
         ...confirmPasswordValidation.errors
       ]);
+      return;
+    }
+
+    if (!hasRecoverySession) {
+      setErrors([{ field: 'general', message: 'No active recovery session. Please use the reset link from your email.' }]);
       return;
     }
 
