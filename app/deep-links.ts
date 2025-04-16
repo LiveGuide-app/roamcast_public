@@ -18,7 +18,14 @@ export const linking: LinkingOptions<any> = {
       },
       '(auth)': {
         screens: {
-          'reset-password': 'reset-password',
+          'reset-password': {
+            path: 'reset-password',
+            parse: {
+              access_token: (token: string) => token,
+              refresh_token: (token: string) => token,
+              type: (type: string) => type,
+            }
+          },
           'login': 'login',
           'signup': 'signup'
         }
