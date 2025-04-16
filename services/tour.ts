@@ -455,4 +455,26 @@ export async function getTourAverageRating(tourId: string): Promise<{ averageRat
   const average = Number((sum / totalReviews).toFixed(1));
 
   return { averageRating: average, totalReviews };
-} 
+}
+
+export const getRecentTourCount = async (): Promise<number> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new TourError('User must be authenticated to fetch tour count', TourErrorCode.UNAUTHORIZED);
+  }
+
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id')
+    .eq('guide_id', user.id)
+    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    .is('deleted_at', null);
+
+  if (error) {
+    appLogger.logError('Error fetching recent tour count:', error);
+    throw new TourError('Failed to fetch recent tour count', TourErrorCode.NETWORK_ERROR);
+  }
+
+  return data.length;
+}; 

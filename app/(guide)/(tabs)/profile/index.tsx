@@ -29,6 +29,7 @@ export default function GuideProfile() {
     updateProfileImageUrl,
     updateRecommendationsLink,
     fullName,
+    recentTourCount,
   } = useProfileData();
 
   const { handleImagePick, isUploading } = useProfileImage({
@@ -103,6 +104,7 @@ export default function GuideProfile() {
           stripeAccountEnabled={stripeAccountEnabled}
           isLoading={isLoading || isStripeLoading}
           onStripePress={handleStripePress}
+          recentTourCount={recentTourCount}
         />
 
         <RecommendationsForm

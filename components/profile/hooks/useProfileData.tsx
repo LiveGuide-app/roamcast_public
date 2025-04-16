@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
-import { getGuideRatings, GuideRatings } from '@/services/tour';
+import { getGuideRatings, GuideRatings, getRecentTourCount } from '@/services/tour';
 import appLogger from '@/utils/appLogger';
 
 interface ProfileData {
@@ -12,6 +12,7 @@ interface ProfileData {
   recommendationsLink: string | null;
   fullName: string | null;
   ratings: GuideRatings;
+  recentTourCount: number;
   isLoading: boolean;
   ratingError: string | null;
 }
@@ -25,6 +26,7 @@ export const useProfileData = () => {
     recommendationsLink: null,
     fullName: null,
     ratings: { averageRating: 0, totalReviews: 0 },
+    recentTourCount: 0,
     isLoading: true,
     ratingError: null,
   });
@@ -46,9 +48,13 @@ export const useProfileData = () => {
         throw userError;
       }
 
-      // Fetch ratings
+      // Fetch ratings and recent tour count in parallel
       try {
-        const guideRatings = await getGuideRatings();
+        const [guideRatings, tourCount] = await Promise.all([
+          getGuideRatings(),
+          getRecentTourCount()
+        ]);
+        
         setProfileData(prev => ({
           ...prev,
           user,
@@ -57,6 +63,7 @@ export const useProfileData = () => {
           recommendationsLink: userData?.recommendations_link || null,
           fullName: userData?.full_name || null,
           ratings: guideRatings,
+          recentTourCount: tourCount,
           isLoading: false,
         }));
       } catch (error) {

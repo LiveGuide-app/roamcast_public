@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import { colors, spacing } from '@/config/theme';
 import { Button } from '@/components/Button';
 
@@ -7,13 +7,20 @@ interface PaymentSettingsProps {
   stripeAccountEnabled: boolean;
   isLoading: boolean;
   onStripePress: () => void;
+  recentTourCount?: number;
 }
 
 export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
   stripeAccountEnabled,
   isLoading,
   onStripePress,
+  recentTourCount = 0,
 }) => {
+  const tourLimit = 2;
+  const tourLimitText = stripeAccountEnabled 
+    ? 'Unlimited tours available' 
+    : `${recentTourCount}/${tourLimit} tours used in the last 7 days`;
+
   return (
     <View style={styles.section}>
       <View style={styles.headerContainer}>
@@ -33,8 +40,16 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
         )}
       </View>
       <Text style={styles.sectionDescription}>
-        Roamcast helps you earn tips from guests after each tour. They'll be prompted to leave a review and send an optional tip. Securely set up or link your Stripe account below to receive payments directly. A small processing fee applies.
+      Roamcast makes it easy to earn tips after each tour. Guests can tip you directly in the app. Set up or link your free{' '}
+        <Text 
+          style={{ color: colors.primary.main, textDecorationLine: 'underline' }}
+          onPress={() => Linking.openURL('https://stripe.com')}
+        >
+          Stripe
+        </Text>
+        {' '}account below to get paid—setup takes just 5 minutes. A small processing fee applies.
       </Text>
+      
       {isLoading ? (
         <ActivityIndicator color={colors.primary.main} />
       ) : (
@@ -44,7 +59,23 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
           onPress={onStripePress}
         />
       )}
+      
+      <View style={styles.tourLimitContainer}>
+        <Text style={[
+          styles.tourLimitText, 
+          { color: stripeAccountEnabled ? colors.success.main : (recentTourCount >= tourLimit ? colors.error.main : colors.warning.main) }
+        ]}>
+          {tourLimitText}
+        </Text>
+        {!stripeAccountEnabled && (
+          <Text style={styles.tourLimitDescription}>
+            Connect your Stripe account to get unlimited tours
+          </Text>
+        )}
+      </View>
     </View>
+
+    
   );
 };
 
@@ -79,5 +110,20 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.lg,
     lineHeight: 20,
+  },
+  tourLimitContainer: {
+
+    padding: spacing.md,
+    backgroundColor: colors.background.default,
+    borderRadius: 8,
+  },
+  tourLimitText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  tourLimitDescription: {
+    fontSize: 14,
+    color: colors.text.secondary,
   },
 }); 
