@@ -13,7 +13,6 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'implicit',
-      site_url: 'https://www.tryroamcast.com',
     },
     global: {
       headers: {
