@@ -26,6 +26,8 @@
     "@react-navigation/native-stack": "^6.9.17",
     "@stripe/stripe-react-native": "^0.35.0",
     "@supabase/supabase-js": "^2.39.3",
+    "@types/base-64": "^1.0.2",
+    "base-64": "^1.0.0",
     "combined-stream": "^1.0.8",
     "expo": "~50.0.5",
     "expo-application": "~5.8.3",

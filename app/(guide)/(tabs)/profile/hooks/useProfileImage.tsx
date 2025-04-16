@@ -3,7 +3,6 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { Alert } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { Buffer } from 'buffer';
 import appLogger from '@/utils/appLogger';
 
 interface UseProfileImageProps {
@@ -44,29 +43,38 @@ export const useProfileImage = ({ userId, onImageUpdated }: UseProfileImageProps
       try {
         setIsUploading(true);
         const imageUri = result.assets[0].uri;
-        
-        // Read the file
-        const base64 = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
-        // Upload to Supabase Storage
         const fileName = `${userId}-${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage
-          .from('profile-images')
-          .upload(fileName, Buffer.from(base64, 'base64'), {
-            contentType: 'image/jpeg',
-            upsert: true,
-          });
-
-        if (uploadError) {
-          throw uploadError;
+        
+        // Get Supabase storage URL with presigned URL for direct upload
+        const { data } = await supabase.storage.from('profile-images').createSignedUploadUrl(fileName);
+        
+        if (!data) {
+          throw new Error('Failed to get upload URL');
+        }
+        
+        appLogger.logInfo('Uploading image', { fileName, signedUrl: !!data.signedUrl });
+        
+        // Upload file directly using Expo's FileSystem
+        const uploadResult = await FileSystem.uploadAsync(data.signedUrl, imageUri, {
+          httpMethod: 'PUT',
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          headers: {
+            'Content-Type': 'image/jpeg'
+          }
+        });
+        
+        if (uploadResult.status !== 200) {
+          throw new Error(`Upload failed with status ${uploadResult.status}`);
         }
 
         // Get public URL
         const { data: publicUrl } = supabase.storage
           .from('profile-images')
           .getPublicUrl(fileName);
+
+        if (!publicUrl || !publicUrl.publicUrl) {
+          throw new Error('Failed to get public URL for uploaded image');
+        }
 
         // Update user profile
         const { error: updateError } = await supabase
@@ -75,6 +83,7 @@ export const useProfileImage = ({ userId, onImageUpdated }: UseProfileImageProps
           .eq('id', userId);
 
         if (updateError) {
+          appLogger.logError('User profile update error', new Error(updateError.message || 'Unknown update error'));
           throw updateError;
         }
 
@@ -83,7 +92,12 @@ export const useProfileImage = ({ userId, onImageUpdated }: UseProfileImageProps
         setIsUploading(false);
       }
     } catch (error) {
-      appLogger.logError('Error handling image:', error instanceof Error ? error : new Error(String(error)));
+      // Log error details
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      appLogger.logError('Error handling image upload', error instanceof Error ? error : new Error(errorMessage), {
+        errorType: typeof error,
+        errorJSON: JSON.stringify(error)
+      });
       Alert.alert('Error', 'Failed to update profile picture. Please try again.');
     }
   };
