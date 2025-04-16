@@ -92,16 +92,19 @@ export const useProfileData = () => {
     try {
       setProfileData(prev => ({ ...prev, isLoading: true }));
       
+      // If link is empty string, set it to null in the database
+      const linkValue = link.trim() === '' ? null : link.trim();
+      
       const { error } = await supabase
         .from('users')
-        .update({ recommendations_link: link })
+        .update({ recommendations_link: linkValue })
         .eq('id', profileData.user?.id);
 
       if (error) throw error;
 
       setProfileData(prev => ({
         ...prev,
-        recommendationsLink: link,
+        recommendationsLink: linkValue,
         isLoading: false,
       }));
 

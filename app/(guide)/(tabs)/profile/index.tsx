@@ -66,6 +66,15 @@ export default function GuideProfile() {
     }
   };
 
+  const handleDeleteRecommendations = async () => {
+    const success = await updateRecommendationsLink('');
+    if (success) {
+      Alert.alert('Success', 'Recommendations link removed');
+    } else {
+      Alert.alert('Error', 'Failed to remove recommendations link');
+    }
+  };
+
   const handleChangePassword = () => {
     setCredentialsModalType('password');
     setCredentialsModalVisible(true);
@@ -100,6 +109,7 @@ export default function GuideProfile() {
           recommendationsLink={recommendationsLink}
           isLoading={isLoading}
           onSave={handleSaveRecommendations}
+          onDelete={handleDeleteRecommendations}
         />
 
         <ProfileSettings
