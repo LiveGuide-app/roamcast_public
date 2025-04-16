@@ -29,6 +29,7 @@ export const useGuideLiveKit = (tourId: string) => {
     isMicrophoneEnabled: false,
   });
   const autoEndTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAppStateRef = useRef<AppStateStatus>('unknown');
 
   // Initialize audio session
   const initializeAudio = useCallback(async () => {
@@ -214,18 +215,28 @@ export const useGuideLiveKit = (tourId: string) => {
     }
   }, [state.room, cleanupAudio]);
 
-  // Handle app state changes
+  // Handle app state changes - simplified to maintain connection
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
-    if (nextAppState === 'background' && state.isConnected) {
-      appLogger.logInfo('Guide app to background, disconnecting (no cleanup)');
-      await disconnect(false);
-    } else if (nextAppState === 'active' && state.isMicrophoneEnabled) {
-      appLogger.logInfo('Guide app to foreground, reconnecting');
-      await connect();
+    appLogger.logInfo('App state changed:', { 
+      from: lastAppStateRef.current, 
+      to: nextAppState 
+    });
+
+    // Only reconnect if needed when coming back to foreground
+    if (nextAppState === 'active' && lastAppStateRef.current === 'background') {
+      if (state.isMicrophoneEnabled && !state.isConnected) {
+        appLogger.logInfo('Guide app to foreground, reconnecting if needed');
+        await connect();
+      }
     }
-  }, [state.isConnected, state.isMicrophoneEnabled, connect, disconnect]);
+
+    lastAppStateRef.current = nextAppState;
+  }, [state.isConnected, state.isMicrophoneEnabled, connect]);
 
   useEffect(() => {
+    // Initialize the lastAppStateRef with the current app state
+    lastAppStateRef.current = AppState.currentState;
+    
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     
     return () => {

@@ -1,6 +1,6 @@
 import { Room, RoomEvent, RemoteParticipant, LocalParticipant, setLogLevel, LogLevel, Track, TrackPublication, RemoteTrackPublication } from 'livekit-client';
 import { AudioSession } from '@livekit/react-native';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getDeviceId } from '@/services/device';
@@ -30,6 +30,7 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
     isDisconnecting: false
   });
   const [isMuted, setIsMuted] = useState(false);
+  const lastAppStateRef = useRef<AppStateStatus>('unknown');
 
   // Function to mute/unmute all audio tracks
   const toggleMute = useCallback(() => {
@@ -250,18 +251,28 @@ export const useGuestLiveKit = (tourId: string, isActiveTour: boolean, hasLeft: 
     }
   }, [isActiveTour, hasLeft, state.isConnected, state.isDisconnecting, connect, disconnect]);
 
-  // Handle app state changes
+  // Handle app state changes - simplified to maintain connection
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
-    if (nextAppState === 'background' && state.isConnected && !state.isDisconnecting) {
-      appLogger.logInfo('Guest app to background, disconnecting');
-      await disconnect();
-    } else if (nextAppState === 'active' && isActiveTour && !hasLeft && !state.isConnected && !state.isDisconnecting) {
-      appLogger.logInfo('Guest app to foreground, reconnecting to active tour');
-      await connect();
+    appLogger.logInfo('Guest app state changed:', { 
+      from: lastAppStateRef.current, 
+      to: nextAppState 
+    });
+
+    // Only reconnect if needed when coming back to foreground
+    if (nextAppState === 'active' && lastAppStateRef.current === 'background') {
+      if (isActiveTour && !hasLeft && !state.isConnected && !state.isDisconnecting) {
+        appLogger.logInfo('Guest app to foreground, reconnecting to active tour if needed');
+        await connect();
+      }
     }
-  }, [state.isConnected, state.isDisconnecting, isActiveTour, hasLeft, connect, disconnect]);
+
+    lastAppStateRef.current = nextAppState;
+  }, [state.isConnected, state.isDisconnecting, isActiveTour, hasLeft, connect]);
 
   useEffect(() => {
+    // Initialize the lastAppStateRef with the current app state
+    lastAppStateRef.current = AppState.currentState;
+    
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => {
       subscription.remove();
