@@ -31,8 +31,23 @@
         "EXPO_PUBLIC_APP_URL_SCHEME": "roamcast"
       }
     },
+    "production-preview": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vrcvvfpliinrbhksrszp.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyY3Z2ZnBsaWlucmJoa3Nyc3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2Mjc0NzQsImV4cCI6MjA2MDIwMzQ3NH0.-kNp4zuGtDm2P9mRvkNla_1CEXyeLPoPg7WAYwXzBYo",
+        "EXPO_PUBLIC_LIVEKIT_WS_URL": "wss://livekit.beatbrief.ai:443",
+        "EXPO_PUBLIC_LIVEKIT_API_KEY": "18275453f0c2567491a3",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_live_51R7dsBFPS2EO4HN9s9SoOXI5REmhvjI04gvsUBfbp0GH471fq7INjLH5QJ1Eg8TxNIHHRY9wHpp3pd8YN2NcVR0d00lR3ATV72",
+        "EXPO_PUBLIC_APP_URL_SCHEME": "roamcast"
+      }
+    },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
+      "distribution": "store",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://vrcvvfpliinrbhksrszp.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyY3Z2ZnBsaWlucmJoa3Nyc3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2Mjc0NzQsImV4cCI6MjA2MDIwMzQ3NH0.-kNp4zuGtDm2P9mRvkNla_1CEXyeLPoPg7WAYwXzBYo",
