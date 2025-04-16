@@ -107,7 +107,7 @@ export default function LandingScreen() {
   const renderUserTypeSelection = () => {
     return (
       <View style={styles.userTypeContainer}>
-        <Text style={styles.sectionTitle}>How would you like to use Roamcast?</Text>
+        <Text style={styles.sectionTitle}>Log in to start your Roamcast journey</Text>
         
         {/* Guest option temporarily removed */}
         

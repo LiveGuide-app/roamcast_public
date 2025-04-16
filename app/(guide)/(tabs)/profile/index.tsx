@@ -5,15 +5,15 @@ import { colors, spacing } from '@/config/theme';
 import { useAuth } from '@/components/auth/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
-import { ProfileHeader } from './components/ProfileHeader';
-import { PaymentSettings } from './components/PaymentSettings';
-import { RecommendationsForm } from './components/RecommendationsForm';
-import { ProfileSettings } from './components/ProfileSettings';
-import { FAQ } from './components/FAQ';
-import { useProfileData } from './hooks/useProfileData';
-import { useProfileImage } from './hooks/useProfileImage';
-import { useStripeIntegration } from './hooks/useStripeIntegration';
-import { ChangeCredentialsModal } from './components/ChangeCredentialsModal';
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { PaymentSettings } from '@/components/profile/PaymentSettings';
+import { RecommendationsForm } from '@/components/profile/RecommendationsForm';
+import { ProfileSettings } from '@/components/profile/ProfileSettings';
+import { FAQ } from '@/components/profile/FAQ';
+import { useProfileData } from '@/components/profile/hooks/useProfileData';
+import { useProfileImage } from '@/components/profile/hooks/useProfileImage';
+import { useStripeIntegration } from '@/components/profile/hooks/useStripeIntegration';
+import { ChangeCredentialsModal } from '@/components/profile/ChangeCredentialsModal';
 
 export default function GuideProfile() {
   const router = useRouter();
