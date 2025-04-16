@@ -26,6 +26,9 @@ export function validateLiveKitToken(token: string | null): boolean {
 
 /**
  * Generates a LiveKit token for a user to join a room
+ * This function must only be used in server-side contexts (API routes, Server Actions)
+ * and should never be called from client components.
+ * 
  * @param userId The user's ID
  * @param roomName The name of the room to join
  * @returns A signed JWT token for LiveKit authentication
@@ -33,6 +36,11 @@ export function validateLiveKitToken(token: string | null): boolean {
 export async function generateLiveKitToken(userId: string, roomName: string): Promise<string> {
   if (!userId) throw new Error('userId is required');
   if (!roomName) throw new Error('roomName is required');
+
+  // Ensure we're in a server-side context
+  if (typeof window !== 'undefined') {
+    throw new Error('generateLiveKitToken can only be called server-side');
+  }
 
   const { apiKey, apiSecret } = getLiveKitConfig();
   

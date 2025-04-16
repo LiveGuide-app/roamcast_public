@@ -16,6 +16,13 @@ describe('LiveKit Security Utilities', () => {
 
   beforeEach(() => {
     (getLiveKitConfig as jest.Mock).mockReturnValue(mockConfig);
+    // Mock window to be undefined (server environment)
+    global.window = undefined as any;
+  });
+
+  afterAll(() => {
+    // Reset window
+    global.window = window;
   });
 
   describe('validateLiveKitToken', () => {
@@ -35,11 +42,11 @@ describe('LiveKit Security Utilities', () => {
   });
 
   describe('generateLiveKitToken', () => {
-    it('should generate a valid LiveKit token', () => {
+    it('should generate a valid LiveKit token in server environment', async () => {
       const userId = 'test-user';
       const roomName = 'test-room';
       
-      const token = generateLiveKitToken(userId, roomName);
+      const token = await generateLiveKitToken(userId, roomName);
       
       expect(token).toBeTruthy();
       expect(typeof token).toBe('string');
@@ -52,14 +59,23 @@ describe('LiveKit Security Utilities', () => {
       expect(decodedToken.grants.room).toBe(roomName);
     });
 
-    it('should throw error if LiveKit config is missing', () => {
+    it('should throw error if called from client-side', async () => {
+      // Mock window to be defined (client environment)
+      global.window = {} as any;
+      
+      await expect(generateLiveKitToken('test-user', 'test-room'))
+        .rejects
+        .toThrow('generateLiveKitToken can only be called server-side');
+    });
+
+    it('should throw error if LiveKit config is missing', async () => {
       (getLiveKitConfig as jest.Mock).mockReturnValue({
         apiKey: '',
         apiSecret: '',
         wsUrl: '',
       });
 
-      expect(() => generateLiveKitToken('test-user', 'test-room')).toThrow();
+      await expect(generateLiveKitToken('test-user', 'test-room')).rejects.toThrow();
     });
   });
 }); 

@@ -17,7 +17,6 @@ const getSupabaseConfig = () => {
 export const config = {
   livekit: {
     wsUrl: process.env.NEXT_PUBLIC_LIVEKIT_WS_URL || '',
-    apiKey: process.env.NEXT_PUBLIC_LIVEKIT_API_KEY || '',
   },
   supabase: getSupabaseConfig(),
   app: {
@@ -30,7 +29,8 @@ export const config = {
 declare global {
   interface ProcessEnv {
     NEXT_PUBLIC_LIVEKIT_WS_URL: string;
-    NEXT_PUBLIC_LIVEKIT_API_KEY: string;
+    LIVEKIT_API_KEY: string;
+    LIVEKIT_API_SECRET: string;
     NEXT_PUBLIC_SUPABASE_URL: string;
     NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   }
