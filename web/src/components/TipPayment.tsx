@@ -236,9 +236,8 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
                 <div className="flex justify-between">
                   <span className="text-gray-600">Support Fee:</span>
                   <span className="font-medium">{formatCurrency((fees.processingFee + fees.platformFee) / 100, currency)}</span>
-                  <span className="text-xs text-gray-500 mt-2 italic">This small support fee ensures your tip reaches the guide in full.</span>
                 </div>
-                
+                <p className="text-xs text-gray-500 mt-2 italic">This small support fee ensures your tip reaches the guide in full.</p>
                 <div className="flex justify-between pt-2 border-t border-gray-200">
                   <span className="font-medium text-gray-900">Total:</span>
                   <span className="font-medium text-gray-900">{formatCurrency(fees.totalAmount / 100, currency)}</span>
