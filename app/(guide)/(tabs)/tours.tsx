@@ -80,7 +80,8 @@ export default function ToursOverview() {
     const grouped = {
       live: tours.filter(t => t.status === 'active'),
       upcoming: tours.filter(t => t.status === 'pending'),
-      completed: tours.filter(t => t.status === 'completed')
+      completed: tours.filter(t => t.status === 'completed'),
+      cancelled: tours.filter(t => t.status === 'cancelled')
     };
     return grouped;
   };
@@ -167,6 +168,13 @@ export default function ToursOverview() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Completed Tours</Text>
             {groupedTours.completed.map(renderTourCard)}
+          </View>
+        )}
+
+        {groupedTours.cancelled.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Cancelled Tours</Text>
+            {groupedTours.cancelled.map(renderTourCard)}
           </View>
         )}
       </ScrollView>

@@ -1,22 +1,16 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.17.0/deno/stripe.mjs'
-import { tipPaymentSchema } from '../_shared/schemas.ts'
-import { validateRequest } from '../_shared/validation.ts'
-import { sanitizeObject } from '../_shared/sanitization.ts'
-import { rateLimit } from '../_shared/rate-limiting.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('DENO_ENV') === 'production' 
-    ? 'https://join.tryroamcast.com' 
-    : '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts'
+import { 
+  getFeeStructure, 
+  calculateFees, 
+  validateTipAmount, 
+  validateCurrency 
+} from '../_shared/fee-calculation.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
-  httpClient: Stripe.createFetchHttpClient(),
 })
 
 serve(async (req) => {
@@ -26,45 +20,35 @@ serve(async (req) => {
   }
 
   try {
-    // Only allow POST requests
-    if (req.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(req, {
-      maxRequests: 30,
-      windowMs: 60 * 1000,
-    });
-
-    if (!rateLimitResult.success) {
-      return new Response(
-        JSON.stringify({ error: rateLimitResult.error }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Parse and validate request body
-    const body = await req.json()
-    const sanitizedBody = sanitizeObject(body)
-    const validationResult = validateRequest(sanitizedBody, tipPaymentSchema)
-    
-    if (!validationResult.success) {
+    // Get request body
+    const { tourParticipantId, amount, currency } = await req.json()
+
+    // Validate inputs
+    if (!tourParticipantId || !amount || !currency) {
       return new Response(
-        JSON.stringify({ error: validationResult.error }),
+        JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const { tourParticipantId, amount, currency } = validationResult.data
+    if (!validateTipAmount(amount)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid tip amount' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!validateCurrency(currency)) {
+      return new Response(
+        JSON.stringify({ error: 'Unsupported currency' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Get the tour participant and related tour info
     const { data: participant, error: participantError } = await supabase
@@ -99,13 +83,24 @@ serve(async (req) => {
       )
     }
 
+    // Get fee structure and calculate fees
+    const feeStructure = await getFeeStructure(supabase, currency)
+    if (!feeStructure) {
+      return new Response(
+        JSON.stringify({ error: 'Fee structure not found for currency' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const fees = calculateFees(amount, feeStructure)
+
     // Create a Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       ui_mode: 'embedded',
       payment_intent_data: {
-        application_fee_amount: Math.round(amount * 0.075), // 7.5% platform fee
+        application_fee_amount: fees.platformFee, // Only take platform fee
         setup_future_usage: 'on_session',
       },
       line_items: [
@@ -116,13 +111,16 @@ serve(async (req) => {
               name: `Tip for ${guide.full_name}`,
               description: 'Thank you for the great tour!',
             },
-            unit_amount: amount,
+            unit_amount: fees.totalAmount, // Use total amount including all fees
           },
           quantity: 1,
         },
       ],
       metadata: {
         tourParticipantId,
+        tipAmount: fees.tipAmount,
+        processingFee: fees.processingFee,
+        platformFee: fees.platformFee
       },
       return_url: `${req.headers.get('origin')}/tour/thank-you?session_id={CHECKOUT_SESSION_ID}&tourId=${participant.tour_id}&guideId=${guide.id}`,
       customer_creation: 'if_required',
@@ -142,13 +140,14 @@ serve(async (req) => {
       .from('tour_tips')
       .insert({
         tour_participant_id: tourParticipantId,
-        amount,
-        currency,
+        amount: fees.tipAmount,
+        currency: currency.toLowerCase(),
         payment_intent_id: session.payment_intent,
         checkout_session_id: session.id,
         status: 'pending',
         stripe_account_id: guide.stripe_account_id,
-        application_fee_amount: Math.round(amount * 0.075)
+        processing_fee_amount: fees.processingFee,
+        platform_fee_amount: fees.platformFee
       })
 
     if (tipError) {
@@ -161,7 +160,8 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        clientSecret: session.client_secret
+        clientSecret: session.client_secret,
+        fees
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

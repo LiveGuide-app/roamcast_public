@@ -4,6 +4,7 @@ import type { Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
 import { DeviceIdService } from '@/services/deviceId';
 import { formatCurrency } from '@/utils/currency';
+import { useFeeCalculation } from '@/hooks/useFeeCalculation';
 
 interface TipPaymentProps {
   tourParticipantId: string;
@@ -73,6 +74,9 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
     const [error, setError] = useState<string | null>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [showCheckout, setShowCheckout] = useState(false);
+
+    // Use the fee calculation hook
+    const { fees, isCalculating, error: feeError } = useFeeCalculation(selectedAmount, currency);
 
     // Handle return from checkout
     useEffect(() => {
@@ -219,6 +223,41 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
           >
             No tip
           </button>
+
+          {/* Fee Breakdown */}
+          {selectedAmount && fees && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-2">
+              <h4 className="font-medium text-gray-900">Payment Breakdown</h4>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tip Amount:</span>
+                  <span className="font-medium">{formatCurrency(fees.tipAmount / 100, currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Processing Fee:</span>
+                  <span className="font-medium">{formatCurrency(fees.processingFee / 100, currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Platform Fee:</span>
+                  <span className="font-medium">{formatCurrency(fees.platformFee / 100, currency)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-gray-200">
+                  <span className="font-medium text-gray-900">Total:</span>
+                  <span className="font-medium text-gray-900">{formatCurrency(fees.totalAmount / 100, currency)}</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 italic">
+                Your guide will receive the full tip amount of {formatCurrency(fees.tipAmount / 100, currency)}
+              </p>
+            </div>
+          )}
+
+          {isCalculating && (
+            <div className="flex justify-center items-center space-x-2 text-sm text-gray-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <span>Calculating fees...</span>
+            </div>
+          )}
         </div>
 
         {clientSecret && showCheckout && (
@@ -230,9 +269,9 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
           />
         )}
 
-        {error && (
+        {(error || feeError) && (
           <div className="p-4 bg-danger bg-opacity-10 text-danger rounded-md border border-danger border-opacity-20">
-            {error}
+            {error || feeError}
           </div>
         )}
 

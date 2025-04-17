@@ -1,5 +1,5 @@
 import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 import { supabase } from '@/lib/supabase';
 import { getDeviceId } from '@/services/device';
@@ -19,6 +19,13 @@ type TipPaymentProps = {
   currency?: string;
 };
 
+interface FeeCalculation {
+  tipAmount: number;
+  processingFee: number;
+  platformFee: number;
+  totalAmount: number;
+}
+
 export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({ 
   tourParticipantId,
   onAmountChange,
@@ -29,6 +36,9 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [calculating, setCalculating] = useState(false);
+  const [fees, setFees] = useState<FeeCalculation | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const MAX_TIP_AMOUNT = 10000; // 100 currency units in cents
@@ -40,6 +50,63 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
     onPaymentReady(false);
   }, []);
 
+  // Calculate fees when amount changes
+  useEffect(() => {
+    const calculateFees = async () => {
+      const amount = selectedAmount || (customAmount ? parseInt(customAmount, 10) * 100 : null);
+      
+      if (!amount || isNaN(amount) || amount <= 0) {
+        setFees(null);
+        onAmountChange(null);
+        onPaymentReady(false);
+        return;
+      }
+
+      setCalculating(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/calculate-fees`,
+          {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({ 
+              amount, 
+              currency 
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to calculate fees');
+        }
+
+        const data = await response.json();
+        setFees(data);
+        onAmountChange(amount);
+        onPaymentReady(true);
+      } catch (error) {
+        console.error('Error calculating fees:', error);
+        setError('Failed to calculate fees. Please try again.');
+        onAmountChange(null);
+        onPaymentReady(false);
+      } finally {
+        setCalculating(false);
+      }
+    };
+
+    // Debounce the calculation to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      calculateFees();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedAmount, customAmount, currency, onAmountChange, onPaymentReady]);
+
   useImperativeHandle(ref, () => ({
     handlePayment: async () => {
       const amount = selectedAmount || (customAmount ? parseInt(customAmount, 10) * 100 : null);
@@ -49,37 +116,57 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
         return;
       }
 
+      if (!fees) {
+        Alert.alert('Error', 'Please wait for fee calculation to complete');
+        return;
+      }
+
       try {
         setIsLoading(true);
-        // Initialize payment sheet first
-        const isInitialized = await initializePaymentSheet(amount);
-        if (!isInitialized) {
-          return;
-        }
-
-        // Present payment sheet
-        const { error: presentError } = await presentPaymentSheet();
         
-        if (presentError) {
-          if (presentError.code === 'Canceled') {
-            return;
+        // Create payment intent
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/stripe-tip-payment`,
+          {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              tourParticipantId,
+              amount,
+              currency
+            })
           }
-          throw presentError;
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Payment failed');
         }
 
-        // Payment successful
-        onPaymentComplete();
+        const data = await response.json();
         
-        // Reset form
-        setSelectedAmount(null);
-        setCustomAmount('');
-        onAmountChange(null);
-      } catch (err) {
-        appLogger.logError('Payment error:', err instanceof Error ? err : new Error(String(err)));
-        Alert.alert(
-          'Error',
-          err instanceof Error ? err.message : 'Payment failed'
-        );
+        if (data.clientSecret) {
+          // Initialize payment sheet
+          await initializePaymentSheet(amount);
+          
+          // Present payment sheet
+          const { error: presentError } = await presentPaymentSheet();
+          
+          if (presentError) {
+            throw new Error(presentError.message);
+          }
+          
+          // Payment successful
+          onPaymentComplete();
+        } else {
+          throw new Error('Invalid response from payment service');
+        }
+      } catch (error) {
+        console.error('Payment error:', error);
+        Alert.alert('Error', error instanceof Error ? error.message : 'Payment failed. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -89,83 +176,65 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   const handleAmountSelect = (amount: number | null) => {
     setSelectedAmount(amount);
     setCustomAmount('');
-    onAmountChange(amount);
-    // Signal payment readiness
-    onPaymentReady(amount !== null);
   };
 
   const handleCustomAmountChange = (text: string) => {
-    // Remove non-numeric characters
-    const numericValue = text.replace(/[^0-9]/g, '');
-    setCustomAmount(numericValue);
-    setSelectedAmount(null);
-    const amount = numericValue ? parseInt(numericValue, 10) * 100 : null; // Convert to cents
-    
-    if (amount && amount > MAX_TIP_AMOUNT) {
-      Alert.alert('Invalid Amount', `Maximum tip amount is ${formatCurrency(MAX_TIP_AMOUNT / 100, currency)}`);
-      setCustomAmount('');
-      onAmountChange(null);
-      onPaymentReady(false);
-    } else {
-      onAmountChange(amount);
-      onPaymentReady(!!amount);
+    // Only allow numbers
+    if (/^\d*$/.test(text)) {
+      setCustomAmount(text);
+      setSelectedAmount(null);
     }
   };
 
   const initializePaymentSheet = async (amount: number) => {
     try {
+      // Get device ID for tracking
       const deviceId = await getDeviceId();
-
+      
       // Create payment intent
-      const { data, error: supabaseError } = await supabase.functions.invoke('stripe-tip-payment', {
-        body: {
-          tourParticipantId,
-          amount,
-          currency,
-          deviceId,
-        },
-      });
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/stripe-create-checkout`,
+        {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            tourParticipantId,
+            amount,
+            currency,
+            deviceId
+          })
+        }
+      );
 
-      if (supabaseError) {
-        appLogger.logError('Supabase error:', supabaseError instanceof Error ? supabaseError : new Error(String(supabaseError)));
-        throw new Error(supabaseError.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create payment intent');
       }
 
-      const { 
-        paymentIntent: paymentIntentClientSecret
-      } = data;
+      const data = await response.json();
+      
+      if (!data.clientSecret) {
+        throw new Error('No client secret returned');
+      }
 
       // Initialize payment sheet
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: 'Roamcast',
-        paymentIntentClientSecret,
-        allowsDelayedPaymentMethods: true,
-        returnURL: 'roamcast://stripe/return',
+        paymentIntentClientSecret: data.clientSecret,
         defaultBillingDetails: {
           name: 'Guest',
-        },
-        applePay: {
-          merchantCountryCode: 'GB',
-        },
-        googlePay: {
-          merchantCountryCode: 'GB',
-          testEnv: true,
         },
       });
 
       if (initError) {
-        appLogger.logError('Init payment sheet error:', initError instanceof Error ? initError : new Error(String(initError)));
-        throw initError;
+        throw new Error(initError.message);
       }
-
-      return true;
-    } catch (err) {
-      appLogger.logError('Payment initialization error:', err instanceof Error ? err : new Error(String(err)));
-      Alert.alert(
-        'Error',
-        err instanceof Error ? err.message : 'Failed to initialize payment'
-      );
-      return false;
+    } catch (error) {
+      appLogger.logError('Error initializing payment sheet:', error instanceof Error ? error : new Error(String(error)));
+      throw error;
     }
   };
 
@@ -174,25 +243,24 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
   };
 
   const getCurrencySymbol = () => {
-    return formatCurrency(0, currency).replace(/[\d,]/g, '');
+    return currency === 'gbp' ? '£' : currency === 'usd' ? '$' : '€';
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.amountContainer}>
+      <View style={styles.amountButtons}>
         {predefinedAmounts.map((amount) => (
           <TouchableOpacity
             key={amount}
             style={[
               styles.amountButton,
-              selectedAmount === amount && styles.selectedButton,
+              selectedAmount === amount && styles.selectedAmountButton
             ]}
             onPress={() => handleAmountSelect(amount)}
-            disabled={isLoading}
           >
             <Text style={[
-              styles.amountText,
-              selectedAmount === amount && styles.selectedText,
+              styles.amountButtonText,
+              selectedAmount === amount && styles.selectedAmountButtonText
             ]}>
               {formatAmount(amount)}
             </Text>
@@ -201,120 +269,166 @@ export const TipPayment = forwardRef<TipPaymentHandle, TipPaymentProps>(({
       </View>
 
       <View style={styles.customAmountContainer}>
-        <Text style={styles.label}>Custom Amount</Text>
+        <Text style={styles.customAmountLabel}>Custom Amount:</Text>
         <View style={styles.inputContainer}>
-          <Text style={styles.currencySymbol}>
-            {getCurrencySymbol()}
-          </Text>
+          <Text style={styles.currencySymbol}>{getCurrencySymbol()}</Text>
           <TextInput
             style={styles.input}
             value={customAmount}
             onChangeText={handleCustomAmountChange}
+            keyboardType="number-pad"
             placeholder="0"
-            keyboardType="numeric"
-            maxLength={6}
-            editable={!isLoading}
+            placeholderTextColor="#999"
           />
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.noTipButton,
-          selectedAmount === null && !customAmount && styles.noTipButtonUnselected,
-        ]}
-        onPress={() => handleAmountSelect(null)}
-        disabled={isLoading}
-      >
-        <Text style={[
-          styles.noTipText,
-          selectedAmount === null && !customAmount && styles.noTipTextUnselected,
-        ]}>
-          No tip
-        </Text>
-      </TouchableOpacity>
+      {calculating && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.primary.main} />
+          <Text style={styles.loadingText}>Calculating fees...</Text>
+        </View>
+      )}
+
+      {error && (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
+
+      {fees && !calculating && (
+        <View style={styles.feeBreakdown}>
+          <Text style={styles.feeTitle}>Payment Breakdown</Text>
+          <View style={styles.feeRow}>
+            <Text>Tip Amount:</Text>
+            <Text>{formatCurrency(fees.tipAmount, currency)}</Text>
+          </View>
+          <View style={styles.feeRow}>
+            <Text>Processing Fee:</Text>
+            <Text>{formatCurrency(fees.processingFee + fees.platformFee, currency)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalText}>Total:</Text>
+            <Text style={styles.totalAmount}>{formatCurrency(fees.totalAmount, currency)}</Text>
+          </View>
+          <Text style={styles.notice}>
+            Your guide will receive the full tip amount of {formatCurrency(fees.tipAmount, currency)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 });
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    marginTop: 10,
   },
-  amountContainer: {
+  amountButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   amountButton: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    backgroundColor: colors.background.paper,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background.paper,
+    borderColor: colors.border.light,
+    width: '30%',
+    alignItems: 'center',
   },
-  selectedButton: {
-    borderColor: colors.primary.main,
+  selectedAmountButton: {
     backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
   },
-  amountText: {
-    textAlign: 'center',
+  amountButtonText: {
     fontSize: 16,
     color: colors.text.primary,
   },
-  selectedText: {
+  selectedAmountButtonText: {
     color: colors.text.white,
+    fontWeight: 'bold',
   },
   customAmountContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    color: colors.text.secondary,
+  customAmountLabel: {
+    fontSize: 16,
     marginBottom: 8,
+    color: colors.text.primary,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border.light,
     borderRadius: borderRadius.md,
     paddingHorizontal: 12,
-    backgroundColor: colors.background.paper,
   },
   currencySymbol: {
-    fontSize: 16,
+    fontSize: 18,
+    marginRight: 8,
     color: colors.text.primary,
-    marginRight: 4,
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
+    height: 50,
+    fontSize: 18,
     color: colors.text.primary,
   },
-  noTipButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background.paper,
-    marginBottom: 16,
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
   },
-  noTipButtonUnselected: {
-    backgroundColor: colors.background.default,
-    borderStyle: 'dashed',
-  },
-  noTipText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: colors.text.primary,
-  },
-  noTipTextUnselected: {
+  loadingText: {
+    marginLeft: 8,
     color: colors.text.secondary,
+  },
+  errorText: {
+    color: colors.error.main,
+    marginVertical: 12,
+  },
+  feeBreakdown: {
+    padding: 16,
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.md,
+    marginVertical: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  feeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: colors.text.primary,
+  },
+  feeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+    paddingTop: 8,
+  },
+  totalText: {
+    fontWeight: 'bold',
+    color: colors.text.primary,
+  },
+  totalAmount: {
+    fontWeight: 'bold',
+    color: colors.text.primary,
+  },
+  notice: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
   },
 }); 

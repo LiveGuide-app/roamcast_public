@@ -91,9 +91,12 @@ serve(async (req) => {
     // Create account link for hosted onboarding
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: 'https://dashboard.stripe.com/test/connect/accounts/' + account.id,
-      return_url: 'https://dashboard.stripe.com/test/connect/accounts/' + account.id,
+      refresh_url: `https://dashboard.stripe.com/connect/accounts/${account.id}?open_drawer_app=${Deno.env.get('EXPO_PUBLIC_APP_URL_SCHEME')}`,
+      return_url: `https://dashboard.stripe.com/connect/accounts/${account.id}?open_drawer_app=${Deno.env.get('EXPO_PUBLIC_APP_URL_SCHEME')}`,
       type: 'account_onboarding',
+      collection_options: {
+        fields: 'eventually_due',
+      },
     })
 
     // Update guide's Stripe account ID

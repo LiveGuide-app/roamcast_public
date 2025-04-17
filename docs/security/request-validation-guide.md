@@ -293,7 +293,7 @@ serve(async (req) => {
       currency,
       payment_method: paymentMethodId,
       confirm: true,
-      application_fee_amount: Math.round(amount * 0.05), // 5% platform fee
+      application_fee_amount: Math.round(amount * 0.075), // 7.5% platform fee
       transfer_data: {
         destination: guide.stripe_account_id,
       },

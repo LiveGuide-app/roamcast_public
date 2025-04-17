@@ -27,6 +27,5 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
     flowType: 'implicit',
-    url: supabaseUrl,
   },
 }); 

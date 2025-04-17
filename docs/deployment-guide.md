@@ -144,7 +144,7 @@ Add this to your npm scripts in package.json:
    - App descriptions
    - Privacy policy URL
 
-### 3.3 Production Build and Submit
+### 3.3 Production Build and Submit - DONE
 ```bash
 # Clear any previous build cache
 eas build:clean
@@ -160,7 +160,7 @@ eas submit -p android --latest
 
 ## 4. Web Deployment
 
-### 4.1 Production Setup
+### 4.1 Production Setup - DONE
 1. Configure production hosting on Vercel:
    - Connect your GitHub repository to Vercel
    - Create a new project from the repository
@@ -183,7 +183,7 @@ eas submit -p android --latest
    - Enable password protection for preview environments if needed
    - Configure deployment checks or integration tests
 
-### 4.2 Branch Strategy
+### 4.2 Branch Strategy - DONE
 1. Create production branch:
 ```bash
 git checkout -b production

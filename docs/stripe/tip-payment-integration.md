@@ -215,8 +215,8 @@ serve(async (req) => {
     // Get guide's default currency or use provided currency
     const guideCurrency = participant.tours.users.stripe_default_currency || currency
 
-    // Calculate application fee (5% of tip amount)
-    const applicationFeeAmount = Math.round(amount * 0.05)
+    // Calculate application fee (7.5% platform fee)
+    const applicationFeeAmount = Math.round(amount * 0.075)
 
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StatusBar, Alert, View, StyleSheet } from 'react-native';
+import { ScrollView, StatusBar, Alert, View, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing } from '@/config/theme';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -30,6 +30,7 @@ export default function GuideProfile() {
     updateRecommendationsLink,
     fullName,
     recentTourCount,
+    refreshProfile,
   } = useProfileData();
 
   const { handleImagePick, isUploading } = useProfileImage({
@@ -45,6 +46,7 @@ export default function GuideProfile() {
 
   const [credentialsModalVisible, setCredentialsModalVisible] = useState(false);
   const [credentialsModalType, setCredentialsModalType] = useState<'password' | 'email'>('password');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleStripePress = async () => {
     const url = await (stripeAccountEnabled ? handleStripeDashboard() : handleStripeOnboarding());
@@ -86,10 +88,25 @@ export default function GuideProfile() {
     setCredentialsModalVisible(true);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshProfile();
+    setIsRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.default }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.default} />
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
+          />
+        }
+      >
         <ProfileHeader
           user={user}
           profileImageUrl={profileImageUrl}

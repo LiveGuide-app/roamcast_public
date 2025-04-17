@@ -34,7 +34,7 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
               styles.statusText, 
               { color: stripeAccountEnabled ? colors.background.paper : colors.background.paper }
             ]}>
-              {stripeAccountEnabled ? 'Stripe Connected' : 'Stripe Not Connected'}
+              {stripeAccountEnabled ? 'Payments Connected' : 'Payments Not Connected'}
             </Text>
           </View>
         )}
@@ -54,7 +54,7 @@ export const PaymentSettings: React.FC<PaymentSettingsProps> = ({
         <ActivityIndicator color={colors.primary.main} />
       ) : (
         <Button
-          title={stripeAccountEnabled ? 'See Earnings in Stripe Dashbaord' : 'Set up tip payments'}
+          title={stripeAccountEnabled ? 'Control your Earnings in your Dashboard' : 'Set up Tip Payments'}
           variant="primary"
           onPress={onStripePress}
         />
