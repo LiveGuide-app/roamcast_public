@@ -8,7 +8,7 @@ import { useFeeCalculation } from '@/hooks/useFeeCalculation';
 
 interface TipPaymentProps {
   tourParticipantId: string;
-  onAmountChange: (amount: number | null) => void;
+  onAmountChange: (amount: number | null, totalAmount: number | null) => void;
   onPaymentReady: (ready: boolean) => void;
   onPaymentComplete: () => void;
   currency: string;
@@ -93,6 +93,13 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
       }
     }, [onPaymentComplete]);
 
+    useEffect(() => {
+      // When fees are calculated, update the parent component with total amount
+      if (fees && selectedAmount) {
+        onAmountChange(selectedAmount, fees.totalAmount / 100);
+      }
+    }, [fees, selectedAmount, onAmountChange]);
+
     useImperativeHandle(ref, () => ({
       handlePayment: async () => {
         if (!selectedAmount) {
@@ -141,8 +148,15 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
 
     const handleAmountSelect = async (amount: number | null) => {
       setSelectedAmount(amount);
-      onAmountChange(amount);
-      onPaymentReady(amount !== null);
+      // When no amount is selected, pass null for both amount and totalAmount
+      if (amount === null) {
+        onAmountChange(null, null);
+        onPaymentReady(false);
+      } else {
+        // Initially just pass the tip amount, the effect will update with total when fees are calculated
+        onAmountChange(amount, null);
+        onPaymentReady(amount !== null);
+      }
     };
 
     const handleCustomAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,11 +172,12 @@ const TipPaymentForm = forwardRef<{ handlePayment: () => Promise<void> }, TipPay
       
       if (amount && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
         setSelectedAmount(amount);
-        onAmountChange(amount);
+        // Just pass amount initially, the effect will update with total
+        onAmountChange(amount, null);
         onPaymentReady(true);
       } else {
         setSelectedAmount(null);
-        onAmountChange(null);
+        onAmountChange(null, null);
         onPaymentReady(false);
         if (amount && amount > MAX_AMOUNT) {
           setError(`Maximum tip amount is ${formatCurrency(MAX_AMOUNT, currency)}`);

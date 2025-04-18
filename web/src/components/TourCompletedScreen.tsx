@@ -38,6 +38,7 @@ export const TourCompletedScreen = forwardRef<{
   const [guideInfo, setGuideInfo] = useState<GuideInfo | null>(null);
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [selectedTipAmount, setSelectedTipAmount] = useState<number | null>(null);
+  const [totalTipAmount, setTotalTipAmount] = useState<number | null>(null);
   const [isPaymentReady, setIsPaymentReady] = useState(false);
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null>>(nullStripePromise);
@@ -167,8 +168,9 @@ export const TourCompletedScreen = forwardRef<{
     setSelectedRating(rating);
   };
 
-  const handleTipAmountChange = (amount: number | null) => {
+  const handleTipAmountChange = (amount: number | null, totalAmount: number | null) => {
     setSelectedTipAmount(amount);
+    setTotalTipAmount(totalAmount);
     // Only update payment ready state if we have a valid amount
     setIsPaymentReady(amount !== null);
   };
@@ -217,6 +219,13 @@ export const TourCompletedScreen = forwardRef<{
     if (isSubmitting) return "Processing...";
     if (selectedRating === 0) return "Select a Rating";
     if (!selectedTipAmount) return `Submit Rating`;
+    
+    // If we have a total amount (including fees), show that instead of just the tip amount
+    if (totalTipAmount) {
+      return `Submit Rating & Pay ${formatCurrency(totalTipAmount, guideInfo?.stripe_default_currency || 'gbp')}`;
+    }
+    
+    // Fall back to showing just the tip amount if total not calculated yet
     return `Submit Rating & Tip ${formatTipAmount(selectedTipAmount)}`;
   };
 
