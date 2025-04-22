@@ -36,15 +36,20 @@ export async function getFeeStructure(supabase: SupabaseClient, currency: string
 }
 
 export function calculateFees(tipAmount: number, feeStructure: FeeStructure): FeeCalculation {
+  // Note: All amounts are in cents
+  // tipAmount - the tip amount in cents (e.g., 1000 for $10.00)
+  // feeStructure.percentage_fee - the percentage as a number (e.g., 2.9 for 2.9%)
+  // feeStructure.fixed_fee - already in cents (e.g., 30 for $0.30)
+  
   // Calculate Stripe's processing fee (percentage + fixed)
   const percentageFeeAmount = Math.round(tipAmount * (feeStructure.percentage_fee / 100));
-  const processingFee = percentageFeeAmount + (feeStructure.fixed_fee *100);
+  const processingFee = Math.round(percentageFeeAmount + feeStructure.fixed_fee);
   
   // Calculate platform fee (7.5%)
   const platformFee = Math.round(tipAmount * PLATFORM_FEE_PERCENTAGE);
   
   // Calculate total amount including all fees
-  const totalAmount = tipAmount + processingFee + platformFee;
+  const totalAmount = Math.round(tipAmount + processingFee + platformFee);
 
   // Log the calculation details
   console.log('Fee calculation:', {

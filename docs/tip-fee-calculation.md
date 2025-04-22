@@ -7,7 +7,7 @@ This document outlines how tip amounts and processing fees are calculated and pr
 Fees are stored in the `currency_fee_structures` table with the following fields:
 - `currency_code`: The currency for this fee structure (e.g., 'gbp', 'usd')
 - `percentage_fee`: The Stripe processing fee percentage (e.g., 2.9%)
-- `fixed_fee`: The fixed fee per transaction (e.g., 0.30)
+- `fixed_fee`: The fixed fee per transaction in cents (e.g., 30 for $0.30)
 - `is_active`: Whether this fee structure is currently active
 
 The platform fee is consistently 7.5%
@@ -28,7 +28,7 @@ total_amount = T + total_fees
 #### Example 1: £10.00 Tip
 Given:
 - Stripe fee: 2.9%
-- Fixed fee: £0.30
+- Fixed fee: £0.30 (stored as 30 cents in the database)
 - Platform fee: 7.5%
 
 ```
@@ -91,7 +91,6 @@ ADD COLUMN IF NOT EXISTS platform_fee_amount integer;
 interface FeeStructure {
   percentage_fee: number;
   fixed_fee: number;
-  platform_fee: number;
   currency_code: string;
 }
 
@@ -102,9 +101,15 @@ interface FeeCalculation {
   totalAmount: number;
 }
 
-function calculateFees(tipAmount: number, feeStructure: FeeStructure): FeeCalculation {
-  const processingFee = Math.round((tipAmount * feeStructure.percentage_fee) + feeStructure.fixed_fee);
-  const platformFee = Math.round(tipAmount * feeStructure.platform_fee);
+export function calculateFees(tipAmount: number, feeStructure: FeeStructure): FeeCalculation {
+  // Note: All amounts are in cents
+  // tipAmount - the tip amount in cents (e.g., 1000 for $10.00)
+  // feeStructure.percentage_fee - the percentage as a number (e.g., 2.9 for 2.9%)
+  // feeStructure.fixed_fee - already in cents (e.g., 30 for $0.30)
+  
+  const percentageFeeAmount = Math.round(tipAmount * (feeStructure.percentage_fee / 100));
+  const processingFee = percentageFeeAmount + feeStructure.fixed_fee;
+  const platformFee = Math.round(tipAmount * 0.075); // 7.5% platform fee
   
   return {
     tipAmount,

@@ -222,7 +222,7 @@ export const TourCompletedScreen = forwardRef<{
     
     // If we have a total amount (including fees), show that instead of just the tip amount
     if (totalTipAmount) {
-      return `Submit Rating & Pay ${formatCurrency(totalTipAmount, guideInfo?.stripe_default_currency || 'gbp')}`;
+      return `Submit Rating & Tip ${formatCurrency(totalTipAmount, guideInfo?.stripe_default_currency || 'gbp')}`;
     }
     
     // Fall back to showing just the tip amount if total not calculated yet
