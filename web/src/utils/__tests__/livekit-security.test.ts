@@ -27,7 +27,7 @@ describe('LiveKit Security Utilities', () => {
 
   describe('validateLiveKitToken', () => {
     it('should return true for a valid JWT token', () => {
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoiZGF0YSJ9.dummy-signature';
       expect(validateLiveKitToken(validToken)).toBe(true);
     });
 
