@@ -85,3 +85,61 @@ Icon?
 **/Icon\r
 **(null)
 **/.icloud
+
+# Environment variables
+.env
+.env.development
+.env.production
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# macOS
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+debug.log
+
+# Local env files
+.env*.local
+
+# Expo
+.expo/
+web-build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+
+# Misc
+*.log
+*.pid
+*.seed
+*.pid.lock
+.DS_Store
+Thumbs.db

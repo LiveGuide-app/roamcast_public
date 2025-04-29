@@ -4,21 +4,13 @@ import { liveKitTokenSchema } from '../_shared/schemas.ts'
 import { validateRequest } from '../_shared/validation.ts'
 import { sanitizeObject } from '../_shared/sanitization.ts'
 import { rateLimit } from '../_shared/rate-limiting.ts'
+import { corsHeaders } from '../_shared/cors.ts'
 
 const apiKey = Deno.env.get('LIVEKIT_API_KEY')
 const apiSecret = Deno.env.get('LIVEKIT_API_SECRET')
 
 if (!apiKey || !apiSecret) {
   throw new Error('Missing LiveKit credentials')
-}
-
-// CORS headers for all responses
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('DENO_ENV') === 'production' 
-    ? 'https://join.tryroamcast.com' 
-    : '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {

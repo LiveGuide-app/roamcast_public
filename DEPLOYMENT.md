@@ -1,52 +1,58 @@
-# Roamcast Deployment Guide
+# Deployment Guide
 
-## Environment Setup 
+This document outlines the deployment process for the Roamcast application.
 
-### Native App
+## Prerequisites
 
-We've set up distinct environment files for development and production:
+- Expo account
+- Supabase project
+- LiveKit server
+- Stripe account
+- Apple Developer account (for iOS)
+- Google Play Developer account (for Android)
 
-- `.env.development` - Contains development environment variables
-- `.env.production` - Contains production environment variables (update with actual production values)
+## Environment Setup
 
-**Scripts:**
-- Development: `npm run dev`
-- Production simulation: `npm run prod`
-- Production build: `npm run build:prod`
-- Platform-specific builds: `npm run build:prod:ios` or `npm run build:prod:android`
+1. Create the following environment files:
+   - `.env.development` - Development environment variables
+   - `.env.production` - Production environment variables
 
-### Web App
+2. Required environment variables:
+   - Supabase configuration
+   - LiveKit configuration
+   - Stripe configuration
 
-We've set up distinct environment files for development and production:
+## Building for Production
 
-- `web/.env.local.development` - Contains development environment variables
-- `web/.env.local.production` - Contains production environment variables (update with actual production values)
+### iOS
 
-**Scripts:**
-- Development: `cd web && npm run dev:local`
-- Production simulation: `cd web && npm run prod:local`
-- Production build: `cd web && npm run build:prod`
-- Production start: `cd web && npm run start:prod`
+```bash
+npm run build:prod:ios
+```
 
-## Before Going to Production
+### Android
 
-1. Update `.env.production` and `web/.env.local.production` with your actual production values:
-   - Supabase production URL and keys
-   - LiveKit production URL and keys
-   - Stripe production keys
-   - App URL scheme (remove `-dev` suffix if present)
+```bash
+npm run build:prod:android
+```
 
-2. Follow the more detailed instructions in the full deployment guide:
-   - Set up production infrastructure (Supabase, LiveKit, Stripe)
-   - Configure mobile app stores
-   - Set up production web hosting
-   - Create production branches
+## Deployment Steps
 
-## Switching Between Environments
+1. Update version numbers in `app.json`
+2. Build the application
+3. Submit to app stores
+4. Update server configurations if needed
 
-- For native app development, use: `npm run dev`
-- For native app production testing, use: `npm run prod`
-- For web app development, use: `cd web && npm run dev:local`
-- For web app production testing, use: `cd web && npm run prod:local`
+## Monitoring
 
-Remember to keep your production credentials secure and never commit them to version control. 
+- Monitor application performance
+- Track error rates
+- Monitor server health
+- Check payment processing
+
+## Rollback Procedure
+
+1. Identify the last stable version
+2. Revert code changes if needed
+3. Rebuild and redeploy
+4. Notify users if necessary 
