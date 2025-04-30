@@ -1,6 +1,6 @@
 # Roamcast
 
-Roamcast is a mobile application built with React Native and Expo that enables live audio tours and experiences. The app allows tour guides to stream audio content to participants in real-time, creating an immersive experience for users.
+Roamcast is a mobile application developed by Remo Rohner and built with React Native and Expo that enables live audio tours and experiences. The app allows tour guides to stream audio content to participants in real-time, creating an immersive experience for users.
 
 ## Features
 
